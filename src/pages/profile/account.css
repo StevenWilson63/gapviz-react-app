@@ -220,24 +220,29 @@ input:-webkit-autofill:active {
   width: 100%;
 }
 
-/* Make the input full width like other fields */
 .password-wrapper input {
   width: 100%;
-  padding-right: 40px; /* space for the eye icon */
+  padding-right: 44px; /* space for the icon */
 }
 
-/* Eye icon inside the field */
 .password-toggle {
   position: absolute;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  font-size: 22px;
-  color: #fff;
-  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.password-toggle:hover {
+.password-toggle img {
+  width: 22px;
+  height: 22px;
+  filter: invert(1); /* makes the icon white on dark background */
+  opacity: 0.85;
+}
+
+.password-toggle img:hover {
   opacity: 1;
 }

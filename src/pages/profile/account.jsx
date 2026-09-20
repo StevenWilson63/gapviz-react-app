@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import "./account.css";
+import OpenEyeIcon from "../../assets/icons/open-eye.svg";
+import ClosedEyeIcon from "../../assets/icons/closed-eye.svg";
 
 export default function Account() {
 
@@ -70,12 +72,17 @@ export default function Account() {
       placeholder="••••••••"
     />
 
-    <span
+   <span
   className="password-toggle"
   onClick={() => setShowPassword(!showPassword)}
 >
-  {showPassword ? "𓁹" : "𓁺"}
+  {showPassword ? (
+    <img src={OpenEyeIcon} alt="Show password" />
+  ) : (
+    <img src={ClosedEyeIcon} alt="Hide password" />
+  )}
 </span>
+
 
   </div>
 </div>
