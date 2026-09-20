@@ -190,3 +190,23 @@ input:-webkit-autofill:active {
 .account-delete:hover {
   background: #d41414;
 }
+/* Password field wrapper */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Eye icon */
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #fff;
+  opacity: 0.8;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+}

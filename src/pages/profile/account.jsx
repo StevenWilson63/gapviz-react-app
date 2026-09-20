@@ -12,6 +12,8 @@ export default function Account() {
   const savedName = localStorage.getItem("gv-name");
   const savedEmail = localStorage.getItem("gv-email");
   const savedPassword = localStorage.getItem("gv-password");
+  const [showPassword, setShowPassword] = useState(false);
+
 
   if (savedName) setName(savedName);
   if (savedEmail) setEmail(savedEmail);
@@ -56,15 +58,26 @@ export default function Account() {
           />
         </div>
 
-<div className="account-field">
+<div className="account-field password-field">
   <label>Password</label>
-  <input
-    type="password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    placeholder="••••••••"
-  />
+
+  <div className="password-wrapper">
+    <input
+      type={showPassword ? "text" : "password"}
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      placeholder="••••••••"
+    />
+
+    <span
+      className="password-toggle"
+      onClick={() => setShowPassword(!showPassword)}
+    >
+      {showPassword ? "🙈" : "👁️"}
+    </span>
+  </div>
 </div>
+
 
 <div className="account-field">
   <label>Date Joined</label>
