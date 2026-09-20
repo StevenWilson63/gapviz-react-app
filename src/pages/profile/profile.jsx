@@ -85,11 +85,12 @@ export default function Profile() {
 
         {/* Logout — styled like Delete Account */}
         <div
-          className="profile-row logout-row"
-          onClick={() => navigate("/profile/logout")}
-        >
-          Logout
-        </div>
+  className="logout-row"
+  onClick={() => navigate("/profile/logout")}
+>
+  Logout
+</div>
+
 
       </div>
     </div>
