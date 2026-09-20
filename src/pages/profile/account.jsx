@@ -6,8 +6,16 @@ export default function Account() {
   // ⭐ Add state here
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-const [dateJoined, setDateJoined] = useState("12 Aug 2026");
+  const [password, setPassword] = useState("");
+  const [dateJoined, setDateJoined] = useState("12 Aug 2026");
+  
+  // ⭐ STEP 4A — Save handler goes HERE
+  function handleSave() {
+    localStorage.setItem("gv-name", name);
+    localStorage.setItem("gv-email", email);
+    localStorage.setItem("gv-password", password);
+  }
+
   return (
     <div className="account-screen">
 
@@ -63,7 +71,7 @@ const [dateJoined, setDateJoined] = useState("12 Aug 2026");
 </button>
 
 
-        <button className="account-save">
+        <button className="account-save" onClick={handleSave}>
           Save Changes
         </button>
 
