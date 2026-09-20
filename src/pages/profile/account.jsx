@@ -30,6 +30,27 @@ export default function Account() {
     localStorage.setItem("gv-password", password);
   }
 
+function handleDeleteAccount() {
+  // Ask user to confirm
+  const confirmed = window.confirm("Are you sure you want to delete your account?");
+
+  if (!confirmed) {
+    return; // User cancelled
+  }
+
+  // Clear saved data
+  localStorage.removeItem("gv-name");
+  localStorage.removeItem("gv-email");
+  localStorage.removeItem("gv-password");
+
+  // Reset fields
+  setName("");
+  setEmail("");
+  setPassword("");
+}
+
+
+
   return (
     <div className="account-screen">
 
@@ -99,9 +120,10 @@ export default function Account() {
   />
 </div>
 
-<button className="account-delete">
+<button className="account-delete" onClick={handleDeleteAccount}>
   Delete Account
 </button>
+
 
 
         <button className="account-save" onClick={handleSave}>
