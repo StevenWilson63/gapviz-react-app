@@ -6,7 +6,8 @@ export default function Account() {
   // ⭐ Add state here
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-
+    const [password, setPassword] = useState("");
+const [dateJoined, setDateJoined] = useState("12 Aug 2026");
   return (
     <div className="account-screen">
 
@@ -37,6 +38,30 @@ export default function Account() {
             placeholder="steven@example.com"
           />
         </div>
+
+<div className="account-field">
+  <label>Password</label>
+  <input
+    type="password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    placeholder="••••••••"
+  />
+</div>
+
+<div className="account-field">
+  <label>Date Joined</label>
+  <input
+    type="text"
+    value={dateJoined}
+    readOnly
+  />
+</div>
+
+<button className="account-delete">
+  Delete Account
+</button>
+
 
         <button className="account-save">
           Save Changes
