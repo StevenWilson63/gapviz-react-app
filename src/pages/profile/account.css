@@ -29,8 +29,16 @@
   justify-content: center;
 }
 
-/* Avatar circle */
-.avatar-img,
+/* IMAGE avatar (actual photo) */
+.avatar-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  object-fit: cover;
+}
+
+/* TEXT avatar (initials) */
 #top-avatar {
   width: 90px;
   height: 90px;
@@ -42,17 +50,18 @@
   font-size: 20px;
   font-weight: 600;
 
-  /* CRITICAL FIXES */
   display: flex;
   align-items: center;
   justify-content: center;
 
-  line-height: 0;          /* FIX 1: removes vertical text offset */
-  vertical-align: middle;  /* FIX 2: stops inline baseline alignment */
-  text-align: center;      /* FIX 3: ensures horizontal centering */
+  /* CRITICAL FIXES */
+  line-height: 90px;        /* EXACT height of circle */
+  text-align: center;
+  vertical-align: middle;
 
   text-transform: uppercase;
 }
+
 
 
 /* Field layout */
