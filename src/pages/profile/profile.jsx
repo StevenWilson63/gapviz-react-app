@@ -11,6 +11,7 @@ export default function Profile() {
 
       <div className="profile-list">
 
+        {/* Account */}
         <div
           className="profile-row"
           onClick={() => navigate("/profile/account")}
@@ -18,6 +19,7 @@ export default function Profile() {
           Account
         </div>
 
+        {/* Subscription */}
         <div
           className="profile-row"
           onClick={() => navigate("/profile/subscription")}
@@ -25,18 +27,68 @@ export default function Profile() {
           Subscription
         </div>
 
+        {/* Your DJs */}
         <div
           className="profile-row"
           onClick={() => navigate("/profile/dj")}
         >
-          DJ Settings
+          Your DJs
         </div>
 
+        {/* Connected Services */}
         <div
           className="profile-row"
-          onClick={() => navigate("/profile/app")}
+          onClick={() => navigate("/profile/connected-services")}
         >
-          App Settings
+          Connected Services
+        </div>
+
+        {/* Notifications */}
+        <div
+          className="profile-row"
+          onClick={() => navigate("/profile/notifications")}
+        >
+          Notifications
+        </div>
+
+        {/* Appearance */}
+        <div
+          className="profile-row"
+          onClick={() => navigate("/profile/appearance")}
+        >
+          Appearance
+        </div>
+
+        {/* Privacy & Data */}
+        <div
+          className="profile-row"
+          onClick={() => navigate("/profile/privacy-data")}
+        >
+          Privacy & Data
+        </div>
+
+        {/* Help & Support */}
+        <div
+          className="profile-row"
+          onClick={() => navigate("/profile/help-support")}
+        >
+          Help & Support
+        </div>
+
+        {/* About */}
+        <div
+          className="profile-row"
+          onClick={() => navigate("/profile/about")}
+        >
+          About
+        </div>
+
+        {/* Logout */}
+        <div
+          className="profile-row logout-row"
+          onClick={() => navigate("/profile/logout")}
+        >
+          Logout
         </div>
 
       </div>
