@@ -83,7 +83,7 @@ export default function Profile() {
           About
         </div>
 
-        {/* Logout */}
+        {/* Logout — styled like Delete Account */}
         <div
           className="profile-row logout-row"
           onClick={() => navigate("/profile/logout")}
