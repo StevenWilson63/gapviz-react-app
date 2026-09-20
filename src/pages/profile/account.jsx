@@ -8,11 +8,12 @@ export default function Account() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [dateJoined, setDateJoined] = useState("12 Aug 2026");
+  const [showPassword, setShowPassword] = useState(false);
   React.useEffect(() => {
   const savedName = localStorage.getItem("gv-name");
   const savedEmail = localStorage.getItem("gv-email");
   const savedPassword = localStorage.getItem("gv-password");
-  const [showPassword, setShowPassword] = useState(false);
+ 
 
 
   if (savedName) setName(savedName);
