@@ -214,11 +214,30 @@ input:-webkit-autofill:active {
 }
 
 
+/* Password field wrapper must fill the full width */
 .password-wrapper {
   position: relative;
-  width: 100%;   /* ⭐ Fixes the short field */
+  width: 100%;
 }
+
+/* Make the input full width like other fields */
 .password-wrapper input {
   width: 100%;
   padding-right: 40px; /* space for the eye icon */
+}
+
+/* Eye icon inside the field */
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 22px;
+  color: #fff;
+  opacity: 0.8;
+}
+
+.password-toggle:hover {
+  opacity: 1;
 }
