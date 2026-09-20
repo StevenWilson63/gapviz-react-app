@@ -10,12 +10,9 @@ export default function Account() {
       <div className="account-card">
 
         <div className="account-avatar">
-          <img
-            src="/avatar.png"
-            alt="User Avatar"
-            className="avatar-img"
-          />
-        </div>
+  <div id="profile-avatar">SW</div>
+</div>
+
 
         <div className="account-field">
           <label>Name</label>

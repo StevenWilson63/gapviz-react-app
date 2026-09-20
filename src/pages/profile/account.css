@@ -38,6 +38,27 @@
   object-fit: cover;
 }
 
+#profile-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  background: #FF1A1A;
+  color: #fff;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 90px;   /* EXACT height → perfect vertical centering */
+  text-align: center;
+  text-transform: uppercase;
+}
+
+
 /* TEXT avatar (initials) */
 #top-avatar {
   width: 38px;
@@ -62,6 +83,25 @@
   text-transform: uppercase;
 }
 
+#profile-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  background: #FF1A1A;
+  color: #fff;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 90px;   /* EXACT height → perfect vertical centering */
+  text-align: center;
+  text-transform: uppercase;
+}
 
 
 /* Field layout */
