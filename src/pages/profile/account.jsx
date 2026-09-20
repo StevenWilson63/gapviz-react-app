@@ -71,11 +71,12 @@ export default function Account() {
     />
 
     <span
-      className="password-toggle"
-      onClick={() => setShowPassword(!showPassword)}
-    >
-      {showPassword ? "👁" : "👁‍🗨"}
-    </span>
+  className="password-toggle"
+  onClick={() => setShowPassword(!showPassword)}
+>
+  {showPassword ? "𓁹" : "𓁺"}
+</span>
+
   </div>
 </div>
 
