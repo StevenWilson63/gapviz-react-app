@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
+ line-height: 1;
   text-transform: uppercase;
 }
 
