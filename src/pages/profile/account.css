@@ -202,7 +202,7 @@ input:-webkit-autofill:active {
   position: absolute;
   right: 12px;
   top: 50%;
-  transform: translateY(-50%);   /* ⭐ Centers the icon vertically */
+  transform: translateY(-50%);
   cursor: pointer;
   font-size: 20px;
   color: #fff;
@@ -213,7 +213,12 @@ input:-webkit-autofill:active {
   opacity: 1;
 }
 
+
 .password-wrapper {
   position: relative;
   width: 100%;   /* ⭐ Fixes the short field */
+}
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px; /* space for the eye icon */
 }
