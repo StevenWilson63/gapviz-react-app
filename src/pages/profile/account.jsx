@@ -74,10 +74,11 @@ export default function Account() {
       className="password-toggle"
       onClick={() => setShowPassword(!showPassword)}
     >
-      {showPassword ? "🙈" : "👁️"}
+      {showPassword ? "👁" : "👁‍🗨"}
     </span>
   </div>
 </div>
+
 
 
 <div className="account-field">

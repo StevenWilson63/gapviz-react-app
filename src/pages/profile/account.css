@@ -201,12 +201,19 @@ input:-webkit-autofill:active {
 .password-toggle {
   position: absolute;
   right: 12px;
+  top: 50%;
+  transform: translateY(-50%);   /* ⭐ Centers the icon vertically */
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
   color: #fff;
   opacity: 0.8;
 }
 
 .password-toggle:hover {
   opacity: 1;
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;   /* ⭐ Fixes the short field */
 }
