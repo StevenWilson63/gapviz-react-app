@@ -40,14 +40,14 @@
 
 /* TEXT avatar (initials) */
 #top-avatar {
-  width: 90px;
-  height: 90px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 2px solid rgba(255, 26, 26, 0.35);
   background: #FF1A1A;
   color: #fff;
 
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 600;
 
   display: flex;
@@ -55,7 +55,7 @@
   justify-content: center;
 
   /* CRITICAL FIXES */
-  line-height: 90px;        /* EXACT height of circle */
+  line-height: 38px;        /* EXACT height of circle */
   text-align: center;
   vertical-align: middle;
 
