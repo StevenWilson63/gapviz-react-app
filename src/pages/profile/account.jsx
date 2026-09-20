@@ -19,10 +19,16 @@ export default function Account() {
           <input type="text" placeholder="Steven Wilson" />
         </div>
 
-        <div className="account-field">
-          <label>Email</label>
-          <input type="text" placeholder="steven@example.com" />
-        </div>
+       <div className="account-field">
+  <label>Email</label>
+  <input
+    type="text"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    placeholder="steven@example.com"
+  />
+</div>
+
 
         <button className="account-save">
           Save Changes
