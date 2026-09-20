@@ -38,11 +38,12 @@
   color: #FF1A1A !important;
 }
 .logout-row {
-  background-color: #c40000; /* Gapviz red */
-  color: #fff;
+  background-color: #c40000 !important; /* Gapviz red */
+  color: #fff !important;
   font-weight: 600;
   border-radius: 8px;
   padding: 14px;
   margin-top: 20px;
   text-align: center;
 }
+
