@@ -197,10 +197,11 @@ body {
 }
 
 .nav-item:hover {
-  border: 2px solid #ff1a1a;
-  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
   transform: scale(0.97);
+  /* no border */
+  /* no glow */
 }
+
 
 .nav-item img {
   width: 28px;
