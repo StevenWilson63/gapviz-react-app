@@ -246,3 +246,36 @@ input:-webkit-autofill:active {
 .password-toggle img:hover {
   opacity: 1;
 }
+/* Back to Profile button */
+.back-profile-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  color: #fff;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.back-profile-btn:hover {
+  opacity: 1;
+}
+
+/* Red confirmation box */
+.save-confirm-box {
+  background-color: #c40000;
+  color: #fff;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Delete button spacing */
+.account-delete {
+  margin-top: 24px;
+}
