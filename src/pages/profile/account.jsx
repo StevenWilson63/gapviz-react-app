@@ -212,6 +212,13 @@ export default function Account() {
     />
   </div>
 
+.phonetic-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;            /* ← THIS FIXES EVERYTHING */
+}
+
   <button className="play-sample-button hover-box" onClick={playSample}>
     ▶️ Play Sample
   </button>
