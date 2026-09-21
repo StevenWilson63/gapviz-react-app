@@ -201,7 +201,7 @@ export default function Account() {
         </div>
 
         {/* Phonetic Name + Play Sample */}
-<div className="account-field phonetic-row">
+<div className="phonetic-row">
   <div className="phonetic-input-wrapper hover-box">
     <label>Phonetic Name</label>
     <input
@@ -212,17 +212,11 @@ export default function Account() {
     />
   </div>
 
-.phonetic-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  width: 100%;            /* ← THIS FIXES EVERYTHING */
-}
-
   <button className="play-sample-button hover-box" onClick={playSample}>
     ▶️ Play Sample
   </button>
 </div>
+
 
 
 
