@@ -114,7 +114,7 @@ export default function Home() {
         </div>
 
         <div
-          className={`nav-item ${activeNav === "library" ? "active" : ""} hover-box`}
+          className={`nav-item ${activeNav === "library" ? "active" : ""}`}
           onClick={() => {
             setActiveNav("library");
             navigate("/library");
@@ -126,7 +126,7 @@ export default function Home() {
         </div>
 
         <div
-          className={`nav-item ${activeNav === "identify" ? "active" : ""} hover-box`}
+          className={`nav-item ${activeNav === "identify" ? "active" : ""}`}
           onClick={() => {
             setActiveNav("identify");
             navigate("/identify");
