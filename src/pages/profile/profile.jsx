@@ -7,13 +7,19 @@ export default function Profile() {
 
   return (
     <div className="profile-screen">
+
+      {/* Back to Home */}
+      <button className="back-home-btn" onClick={() => navigate("/")}>
+        ← Home
+      </button>
+
       <h1 className="profile-title">Profile</h1>
 
       <div className="profile-list">
 
         {/* Account */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/account")}
         >
           Account
@@ -21,7 +27,7 @@ export default function Profile() {
 
         {/* Subscription */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/subscription")}
         >
           Subscription
@@ -29,7 +35,7 @@ export default function Profile() {
 
         {/* Your DJs */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/dj")}
         >
           Your DJs
@@ -37,7 +43,7 @@ export default function Profile() {
 
         {/* Connected Services */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/connected-services")}
         >
           Connected Services
@@ -45,7 +51,7 @@ export default function Profile() {
 
         {/* Notifications */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/notifications")}
         >
           Notifications
@@ -53,7 +59,7 @@ export default function Profile() {
 
         {/* Appearance */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/appearance")}
         >
           Appearance
@@ -61,7 +67,7 @@ export default function Profile() {
 
         {/* Privacy & Data */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/privacy-data")}
         >
           Privacy & Data
@@ -69,7 +75,7 @@ export default function Profile() {
 
         {/* Help & Support */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/help-support")}
         >
           Help & Support
@@ -77,20 +83,19 @@ export default function Profile() {
 
         {/* About */}
         <div
-          className="profile-row"
+          className="profile-row hover-box"
           onClick={() => navigate("/profile/about")}
         >
           About
         </div>
 
-        {/* Logout — styled like Delete Account */}
+        {/* Logout — destructive, no glow */}
         <div
-  className="logout-row"
-  onClick={() => navigate("/profile/logout")}
->
-  Logout
-</div>
-
+          className="logout-row"
+          onClick={() => navigate("/profile/logout")}
+        >
+          Logout
+        </div>
 
       </div>
     </div>

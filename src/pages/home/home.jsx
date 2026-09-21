@@ -1,6 +1,5 @@
 // deploy trigger
 
-
 import React, { useState } from "react";
 import "./home.css";
 
@@ -9,7 +8,7 @@ import homeIcon from "../../assets/icons/home.svg";
 import djIcon from "../../assets/icons/dj.svg";
 import libraryIcon from "../../assets/icons/library.svg";
 import fingerprintIcon from "../../assets/icons/fingerprint.svg";
-import settingsIcon from "../../assets/icons/equalizer.svg"; // NEW
+import settingsIcon from "../../assets/icons/equalizer.svg";
 
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
@@ -36,7 +35,7 @@ export default function Home() {
       {/* FIXED TOP AVATAR */}
       <div
         id="top-avatar"
-        className={`home-avatar home-theme-${theme}`}
+        className={`home-avatar home-theme-${theme} hover-box`}
         onClick={() => navigate("/profile")}
       >
         {initials}
@@ -45,7 +44,7 @@ export default function Home() {
       {/* FIXED SETTINGS ICON */}
       <div
         id="settings-icon"
-        className={`home-theme-${theme}`}
+        className={`home-theme-${theme} hover-box`}
         onClick={() => navigate("/settings")}
         title="Settings"
       >
@@ -59,21 +58,29 @@ export default function Home() {
         <h1 id="welcome-text">{greetingText}</h1>
         <p className="sub-welcome">Ready to jump back in?</p>
 
-        {/* TRIAL COUNTDOWN MOVED HERE */}
-        <p id="trial-countdown" className="trial-middle">7 days left in your free trial</p>
+        {/* TRIAL COUNTDOWN */}
+        <p id="trial-countdown" className="trial-middle">
+          7 days left in your free trial
+        </p>
 
         <div className="home-boxes">
-          <div className="home-box" onClick={() => navigate("/dj")}>
+          <div className="home-box hover-box" onClick={() => navigate("/dj")}>
             <h2>Last DJ</h2>
             <p>Not set yet</p>
           </div>
 
-          <div className="home-box" onClick={() => navigate("/identify-summary")}>
+          <div
+            className="home-box hover-box"
+            onClick={() => navigate("/identify-summary")}
+          >
             <h2>Identify Summary</h2>
             <p>No track identified yet</p>
           </div>
 
-          <div className="home-box" onClick={() => navigate("/song-story")}>
+          <div
+            className="home-box hover-box"
+            onClick={() => navigate("/song-story")}
+          >
             <h2>Last Track Played</h2>
             <p>No track played yet</p>
           </div>
@@ -83,7 +90,7 @@ export default function Home() {
       {/* FIXED BOTTOM NAV */}
       <div id="bottom-nav" className={`home-theme-${theme}`}>
         <div
-          className={`nav-item ${activeNav === "home" ? "active" : ""}`}
+          className={`nav-item ${activeNav === "home" ? "active" : ""} hover-box`}
           onClick={() => {
             setActiveNav("home");
             navigate("/home");
@@ -95,7 +102,7 @@ export default function Home() {
         </div>
 
         <div
-          className={`nav-item ${activeNav === "dj" ? "active" : ""}`}
+          className={`nav-item ${activeNav === "dj" ? "active" : ""} hover-box`}
           onClick={() => {
             setActiveNav("dj");
             navigate("/dj");
@@ -107,7 +114,7 @@ export default function Home() {
         </div>
 
         <div
-          className={`nav-item ${activeNav === "library" ? "active" : ""}`}
+          className={`nav-item ${activeNav === "library" ? "active" : ""} hover-box`}
           onClick={() => {
             setActiveNav("library");
             navigate("/library");
@@ -119,7 +126,7 @@ export default function Home() {
         </div>
 
         <div
-          className={`nav-item ${activeNav === "identify" ? "active" : ""}`}
+          className={`nav-item ${activeNav === "identify" ? "active" : ""} hover-box`}
           onClick={() => {
             setActiveNav("identify");
             navigate("/identify");

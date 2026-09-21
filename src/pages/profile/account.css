@@ -1,7 +1,32 @@
-/* Screen layout */
+/* ----------------------------------------------------------
+   GLOBAL ACCOUNT PAGE LAYOUT
+---------------------------------------------------------- */
 .account-screen {
   padding: 20px;
   color: #fff;
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Back to Profile */
+.back-profile-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  color: #ff1a1a;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.back-profile-btn:hover {
+  opacity: 1;
 }
 
 /* Title */
@@ -10,6 +35,7 @@
   font-weight: 600;
   margin-bottom: 20px;
   color: #fff;
+  text-align: left;
 }
 
 /* Main card */
@@ -23,88 +49,65 @@
   padding: 20px;
 }
 
-/* Avatar container */
+/* ----------------------------------------------------------
+   AVATAR SECTION
+---------------------------------------------------------- */
 .account-avatar {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-/* IMAGE avatar (actual photo) */
-.avatar-img {
-  width: 90px;
-  height: 90px;
+/* Avatar circle */
+.avatar-circle {
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
+  background: #ff1a1a;
   border: 2px solid rgba(255, 26, 26, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Avatar photo */
+.avatar-circle img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
-#profile-avatar {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 26, 26, 0.35);
-  background: #FF1A1A;
-  color: #fff;
-
-  font-size: 20px;
-  font-weight: 600;
-
+/* Avatar text links */
+.avatar-links {
   display: flex;
-  align-items: center;
-  justify-content: center;
-
-  line-height: 90px;   /* EXACT height → perfect vertical centering */
-  text-align: center;
-  text-transform: uppercase;
+  flex-direction: column;
+  gap: 4px;
 }
 
-
-/* TEXT avatar (initials) */
-#top-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 26, 26, 0.35);
-  background: #FF1A1A;
-  color: #fff;
-
+.avatar-link {
+  background: none;
+  border: none;
+  color: #ff1a1a;
+  text-decoration: underline;
+  cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  /* CRITICAL FIXES */
-  line-height: 38px;        /* EXACT height of circle */
-  text-align: center;
-  vertical-align: middle;
-
-  text-transform: uppercase;
+  padding: 0;
+  transition: opacity 0.15s ease, transform 0.12s ease;
 }
 
-#profile-avatar {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 26, 26, 0.35);
-  background: #FF1A1A;
-  color: #fff;
-
-  font-size: 20px;
-  font-weight: 600;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  line-height: 90px;   /* EXACT height → perfect vertical centering */
-  text-align: center;
-  text-transform: uppercase;
+.avatar-link:hover {
+  opacity: 0.8;
+  transform: scale(0.97);
 }
 
-
-/* Field layout */
+/* ----------------------------------------------------------
+   FIELD ROWS — MATCH PROFILE SCREEN BEHAVIOUR
+---------------------------------------------------------- */
 .account-field {
   display: flex;
   flex-direction: column;
@@ -116,88 +119,88 @@
   color: #fff;
 }
 
-/* Input styling */
-.account-field input {
+/* Hover-box wrapper (global interaction language) */
+.hover-box {
+  border-radius: 12px;
+  border: 2px solid rgba(255, 26, 26, 0.35);
   padding: 12px;
-  border-radius: 8px;
+  transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+.hover-box:hover {
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  color: #ff1a1a;
+  transform: scale(0.99);
+}
+
+/* Inputs inside hover-box */
+.account-field input {
+  padding: 10px 12px;
+  border-radius: 12px;
   border: 2px solid rgba(255, 26, 26, 0.35);
   background: transparent;
   color: #fff;
   font-size: 16px;
+  outline: none;
+  transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
 
 .account-field input:focus {
-  border-color: #FF1A1A;
-  outline: none;
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
 }
 
-/* Save button */
-.account-save {
-  margin-top: 10px;
-  padding: 14px;
-  border-radius: 10px;
+/* ----------------------------------------------------------
+   PHONETIC ROW
+---------------------------------------------------------- */
+.phonetic-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.phonetic-input-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Play Sample button */
+.play-sample-button {
   background: transparent;
   border: 2px solid rgba(255, 26, 26, 0.35);
+  border-radius: 12px;
+  padding: 10px 12px;
   color: #fff;
-  font-size: 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 14px;
+  transition: border 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease, color 0.18s ease;
 }
 
-.account-save:hover {
-  border-color: #FF1A1A;
-  color: #FF1A1A;
-  box-shadow: 0px 6px 16px rgba(255, 26, 26, 0.4);
+.play-sample-button:hover {
+  border-color: #ff1a1a;
+  color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  transform: scale(0.99);
 }
 
-/* Fix Chrome autofill turning fields white */
-input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px #000 inset !important;
-  -webkit-text-fill-color: #fff !important;
-  border: 2px solid rgba(255, 26, 26, 0.35) !important;
-}
-/* Full Chrome autofill fix — keeps red border */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #000 inset !important;
-  -webkit-text-fill-color: #fff !important;
-  border: 2px solid #ff1a1a !important; /* PURE red */
-}
-/* Date Joined field (read-only look) */
-.account-field input[readonly] {
-  opacity: 0.6;
-  cursor: default;
-}
-.account-delete {
-  width: 100%;
-  padding: 12px;
-  margin-top: 20px;
-
-  background: #ff1a1a;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
-
-  cursor: pointer;
-}
-
-.account-delete:hover {
-  background: #d41414;
-}
-/* Password field wrapper */
+/* ----------------------------------------------------------
+   PASSWORD FIELD
+---------------------------------------------------------- */
 .password-wrapper {
   position: relative;
+  width: 100%;
   display: flex;
   align-items: center;
 }
 
-/* Eye icon */
+.password-wrapper input {
+  width: 100%;
+  padding-right: 44px;
+}
+
 .password-toggle {
   position: absolute;
   right: 12px;
@@ -206,76 +209,96 @@ input:-webkit-autofill:active {
   cursor: pointer;
   font-size: 20px;
   color: #fff;
-  opacity: 0.8;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
 }
 
 .password-toggle:hover {
   opacity: 1;
 }
 
-
-/* Password field wrapper must fill the full width */
-.password-wrapper {
-  position: relative;
-  width: 100%;
+/* ----------------------------------------------------------
+   READ-ONLY FIELD
+---------------------------------------------------------- */
+.read-only-row input {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.password-wrapper input {
-  width: 100%;
-  padding-right: 44px; /* space for the icon */
-}
-
-.password-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.password-toggle img {
-  width: 22px;
-  height: 22px;
-  filter: invert(1); /* makes the icon white on dark background */
-  opacity: 0.85;
-}
-
-.password-toggle img:hover {
-  opacity: 1;
-}
-/* Back to Profile button */
-.back-profile-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+/* ----------------------------------------------------------
+   SAVE BUTTON
+---------------------------------------------------------- */
+.account-save {
+  padding: 14px;
+  border-radius: 12px;
   background: transparent;
+  border: 2px solid rgba(255, 26, 26, 0.35);
   color: #fff;
-  border: none;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
-  opacity: 0.8;
+  transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.12s ease;
 }
 
-.back-profile-btn:hover {
-  opacity: 1;
+.account-save:hover {
+  border-color: #ff1a1a;
+  color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  transform: scale(0.99);
 }
 
-/* Red confirmation box */
+/* Save confirmation */
 .save-confirm-box {
-  background-color: #c40000;
+  background-color: #ff1a1a;
   color: #fff;
   padding: 12px;
-  margin-top: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
   font-weight: 600;
   animation: fadeIn 0.3s ease;
 }
 
-/* Delete button spacing */
+/* ----------------------------------------------------------
+   DELETE ACCOUNT BUTTON (NO GLOW)
+---------------------------------------------------------- */
 .account-delete {
-  margin-top: 24px;
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: #ff1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.account-delete:hover {
+  background: #d41414;
+}
+
+/* ----------------------------------------------------------
+   ANIMATIONS
+---------------------------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ----------------------------------------------------------
+   CHROME AUTOFILL FIX
+---------------------------------------------------------- */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #000 inset !important;
+  -webkit-text-fill-color: #fff !important;
+  border: 2px solid rgba(255, 26, 26, 0.35) !important;
+}
+
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #000 inset !important;
+  -webkit-text-fill-color: #fff !important;
+  border: 2px solid #ff1a1a !important;
 }
