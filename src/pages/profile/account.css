@@ -152,14 +152,18 @@
 }
 
 /* ----------------------------------------------------------
-   PHONETIC ROW
+   PHONETIC ROW — FIXED ALIGNMENT + SMALLER TEXT
 ---------------------------------------------------------- */
 .phonetic-row {
   display: flex;
   align-items: flex-end;
   gap: 10px;
+
+  /* Remove hover-box padding that caused right-shift */
+  padding: 0 !important;
 }
 
+/* Input wrapper stays normal */
 .phonetic-input-wrapper {
   flex: 1;
   display: flex;
@@ -167,12 +171,25 @@
   gap: 6px;
 }
 
-/* Smaller, left-aligned phonetic text */
+/* Make phonetic input match other fields + smaller text */
 .phonetic-input-wrapper input {
-  padding: 8px 10px !important;   /* balanced padding */
-  font-size: 10px !important;     /* half-size text */
-  text-align: left !important;    /* force left alignment */
+  padding: 8px 10px !important;
+  font-size: 10px !important;
+  text-align: left !important;
+
+  /* Apply hover-box behaviour directly to the input */
+  border-radius: 12px;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
+
+.phonetic-input-wrapper input:hover,
+.phonetic-input-wrapper input:focus {
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  color: #ff1a1a;
+}
+
 
 /* Play Sample button */
 .play-sample-button {
