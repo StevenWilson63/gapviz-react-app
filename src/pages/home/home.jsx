@@ -35,7 +35,7 @@ export default function Home() {
       {/* FIXED TOP AVATAR */}
       <div
         id="top-avatar"
-        className={`home-avatar home-theme-${theme} hover-box`}
+        className={`home-avatar home-theme-${theme}`}
         onClick={() => navigate("/profile")}
       >
         {initials}
@@ -44,7 +44,7 @@ export default function Home() {
       {/* FIXED SETTINGS ICON */}
       <div
         id="settings-icon"
-        className={`home-theme-${theme} hover-box`}
+        className={`home-theme-${theme}`}
         onClick={() => navigate("/settings")}
         title="Settings"
       >
@@ -90,7 +90,7 @@ export default function Home() {
       {/* FIXED BOTTOM NAV */}
       <div id="bottom-nav" className={`home-theme-${theme}`}>
         <div
-          className={`nav-item ${activeNav === "home" ? "active" : ""} hover-box`}
+          className={`nav-item ${activeNav === "home" ? "active" : ""}`}
           onClick={() => {
             setActiveNav("home");
             navigate("/home");
@@ -102,7 +102,7 @@ export default function Home() {
         </div>
 
         <div
-          className={`nav-item ${activeNav === "dj" ? "active" : ""} hover-box`}
+          className={`nav-item ${activeNav === "dj" ? "active" : ""}`}
           onClick={() => {
             setActiveNav("dj");
             navigate("/dj");
