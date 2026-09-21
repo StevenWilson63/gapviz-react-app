@@ -201,21 +201,22 @@ export default function Account() {
         </div>
 
         {/* Phonetic Name + Play Sample */}
-        <div className="account-field phonetic-row hover-box">
-          <div className="phonetic-input-wrapper">
-            <label>Phonetic Name</label>
-            <input
-              type="text"
-              placeholder="How the DJ should pronounce your name (e.g., Stee-ven)"
-              value={phonetic}
-              onChange={(e) => setPhonetic(e.target.value)}
-            />
-          </div>
+<div className="account-field phonetic-row">
+  <div className="phonetic-input-wrapper hover-box">
+    <label>Phonetic Name</label>
+    <input
+      type="text"
+      placeholder="How the DJ should pronounce your name (e.g., Stee-ven)"
+      value={phonetic}
+      onChange={(e) => setPhonetic(e.target.value)}
+    />
+  </div>
 
-          <button className="play-sample-button hover-box" onClick={playSample}>
-            ▶️ Play Sample
-          </button>
-        </div>
+  <button className="play-sample-button hover-box" onClick={playSample}>
+    ▶️ Play Sample
+  </button>
+</div>
+
 
         {/* Email */}
         <div className="account-field hover-box">
