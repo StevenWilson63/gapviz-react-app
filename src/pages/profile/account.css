@@ -167,6 +167,13 @@
   gap: 6px;
 }
 
+/* Smaller, left-aligned phonetic text */
+.phonetic-input-wrapper input {
+  padding: 8px 10px !important;   /* balanced padding */
+  font-size: 10px !important;     /* half-size text */
+  text-align: left !important;    /* force left alignment */
+}
+
 /* Play Sample button */
 .play-sample-button {
   background: transparent;
