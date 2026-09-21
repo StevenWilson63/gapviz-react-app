@@ -141,7 +141,7 @@
   border: 2px solid rgba(255, 26, 26, 0.35);
   background: transparent;
   color: #fff;
-  font-size: 16px;
+  font-size: 12px;
   outline: none;
   transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
