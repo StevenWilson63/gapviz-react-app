@@ -85,7 +85,7 @@ body {
    SCROLLABLE MAIN HOME SCREEN
 ---------------------------------------------------------- */
 #home-screen {
-  position: fixed;
+  position: absolute;
   top: 75px;
   bottom: 90px;
   left: 0;
