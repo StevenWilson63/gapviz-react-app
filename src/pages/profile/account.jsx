@@ -218,6 +218,7 @@ export default function Account() {
 </div>
 
 
+
         {/* Email */}
         <div className="account-field hover-box">
           <label>Email</label>
