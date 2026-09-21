@@ -178,7 +178,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
-  font-size: 10px;
+  font-size: 12px;
   text-align: left;
 
   background: transparent;   /* ← FIXES WHITE BOX */
