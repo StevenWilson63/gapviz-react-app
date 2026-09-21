@@ -11,6 +11,17 @@ body {
 }
 
 /* ----------------------------------------------------------
+   HOME WRAPPER (required for fixed header/footer)
+---------------------------------------------------------- */
+#home-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden; /* ← isolates scroll area */
+}
+
+
+/* ----------------------------------------------------------
    FIXED TOP-LEFT AVATAR
 ---------------------------------------------------------- */
 #top-avatar {

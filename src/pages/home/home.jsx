@@ -30,113 +30,113 @@ export default function Home() {
 
   const greetingText = `${greetingPrefix} ${greetingName}`;
 
-  return (
-    <>
-      {/* FIXED TOP AVATAR */}
+ return (
+  <div id="home-wrapper">
+    {/* FIXED TOP AVATAR */}
+    <div
+      id="top-avatar"
+      className={`home-avatar home-theme-${theme}`}
+      onClick={() => navigate("/profile")}
+    >
+      {initials}
+    </div>
+
+    {/* FIXED SETTINGS ICON */}
+    <div
+      id="settings-icon"
+      className={`home-theme-${theme}`}
+      onClick={() => navigate("/settings")}
+      title="Settings"
+    >
+      <img src={settingsIcon} alt="Settings" />
+    </div>
+
+    {/* SCROLLABLE MIDDLE SECTION */}
+    <div id="home-screen" className={`home-theme-${theme}`}>
+      <img id="home-logo" src={gapvizLogo} alt="Gapviz Logo" />
+
+      <h1 id="welcome-text">{greetingText}</h1>
+      <p className="sub-welcome">Ready to jump back in?</p>
+
+      {/* TRIAL COUNTDOWN */}
+      <p id="trial-countdown" className="trial-middle">
+        7 days left in your free trial
+      </p>
+
+      <div className="home-boxes">
+        <div className="home-box hover-box" onClick={() => navigate("/dj")}>
+          <h2>Last DJ</h2>
+          <p>Not set yet</p>
+        </div>
+
+        <div
+          className="home-box hover-box"
+          onClick={() => navigate("/identify-summary")}
+        >
+          <h2>Identify Summary</h2>
+          <p>No track identified yet</p>
+        </div>
+
+        <div
+          className="home-box hover-box"
+          onClick={() => navigate("/song-story")}
+        >
+          <h2>Last Track Played</h2>
+          <p>No track played yet</p>
+        </div>
+      </div>
+    </div>
+
+    {/* FIXED BOTTOM NAV */}
+    <div id="bottom-nav" className={`home-theme-${theme}`}>
       <div
-        id="top-avatar"
-        className={`home-avatar home-theme-${theme}`}
-        onClick={() => navigate("/profile")}
+        className={`nav-item ${activeNav === "home" ? "active" : ""}`}
+        onClick={() => {
+          setActiveNav("home");
+          navigate("/home");
+        }}
       >
-        {initials}
+        <img src={homeIcon} alt="Home" />
+        <span>Home</span>
+        <div className="nav-underline"></div>
       </div>
 
-      {/* FIXED SETTINGS ICON */}
       <div
-        id="settings-icon"
-        className={`home-theme-${theme}`}
-        onClick={() => navigate("/settings")}
-        title="Settings"
+        className={`nav-item ${activeNav === "dj" ? "active" : ""}`}
+        onClick={() => {
+          setActiveNav("dj");
+          navigate("/dj");
+        }}
       >
-        <img src={settingsIcon} alt="Settings" />
+        <img src={djIcon} alt="DJ" />
+        <span>DJ</span>
+        <div className="nav-underline"></div>
       </div>
 
-      {/* SCROLLABLE MIDDLE SECTION */}
-      <div id="home-screen" className={`home-theme-${theme}`}>
-        <img id="home-logo" src={gapvizLogo} alt="Gapviz Logo" />
-
-        <h1 id="welcome-text">{greetingText}</h1>
-        <p className="sub-welcome">Ready to jump back in?</p>
-
-        {/* TRIAL COUNTDOWN */}
-        <p id="trial-countdown" className="trial-middle">
-          7 days left in your free trial
-        </p>
-
-        <div className="home-boxes">
-          <div className="home-box hover-box" onClick={() => navigate("/dj")}>
-            <h2>Last DJ</h2>
-            <p>Not set yet</p>
-          </div>
-
-          <div
-            className="home-box hover-box"
-            onClick={() => navigate("/identify-summary")}
-          >
-            <h2>Identify Summary</h2>
-            <p>No track identified yet</p>
-          </div>
-
-          <div
-            className="home-box hover-box"
-            onClick={() => navigate("/song-story")}
-          >
-            <h2>Last Track Played</h2>
-            <p>No track played yet</p>
-          </div>
-        </div>
+      <div
+        className={`nav-item ${activeNav === "library" ? "active" : ""}`}
+        onClick={() => {
+          setActiveNav("library");
+          navigate("/library");
+        }}
+      >
+        <img src={libraryIcon} alt="Library" />
+        <span>Library</span>
+        <div className="nav-underline"></div>
       </div>
 
-      {/* FIXED BOTTOM NAV */}
-      <div id="bottom-nav" className={`home-theme-${theme}`}>
-        <div
-          className={`nav-item ${activeNav === "home" ? "active" : ""}`}
-          onClick={() => {
-            setActiveNav("home");
-            navigate("/home");
-          }}
-        >
-          <img src={homeIcon} alt="Home" />
-          <span>Home</span>
-          <div className="nav-underline"></div>
-        </div>
-
-        <div
-          className={`nav-item ${activeNav === "dj" ? "active" : ""}`}
-          onClick={() => {
-            setActiveNav("dj");
-            navigate("/dj");
-          }}
-        >
-          <img src={djIcon} alt="DJ" />
-          <span>DJ</span>
-          <div className="nav-underline"></div>
-        </div>
-
-        <div
-          className={`nav-item ${activeNav === "library" ? "active" : ""}`}
-          onClick={() => {
-            setActiveNav("library");
-            navigate("/library");
-          }}
-        >
-          <img src={libraryIcon} alt="Library" />
-          <span>Library</span>
-          <div className="nav-underline"></div>
-        </div>
-
-        <div
-          className={`nav-item ${activeNav === "identify" ? "active" : ""}`}
-          onClick={() => {
-            setActiveNav("identify");
-            navigate("/identify");
-          }}
-        >
-          <img src={fingerprintIcon} alt="Identify" />
-          <span>Identify</span>
-          <div className="nav-underline"></div>
-        </div>
+      <div
+        className={`nav-item ${activeNav === "identify" ? "active" : ""}`}
+        onClick={() => {
+          setActiveNav("identify");
+          navigate("/identify");
+        }}
+      >
+        <img src={fingerprintIcon} alt="Identify" />
+        <span>Identify</span>
+        <div className="nav-underline"></div>
       </div>
-    </>
-  );
+    </div>
+  </div>
+);
 }
