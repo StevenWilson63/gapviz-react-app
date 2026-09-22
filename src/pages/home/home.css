@@ -1,13 +1,18 @@
 /* ----------------------------------------------------------
    GLOBAL
 ---------------------------------------------------------- */
-body {
+html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden; /* prevent the document itself from ever scrolling */
   background-color: #000;
+}
+
+body {
   font-family: Arial, sans-serif;
   color: #fff;
-  overflow-x: hidden;
+  overscroll-behavior: none; /* stop iOS/Android bounce & pull-to-refresh at the page level */
 }
 
 /* ----------------------------------------------------------
@@ -16,17 +21,19 @@ body {
 #home-wrapper {
   position: relative;
   width: 100%;
-  height: 100vh;
-  overflow: hidden; /* ← isolates scroll area */
+  height: 100vh;         /* fallback for browsers without dvh support */
+  height: 100dvh;        /* real visible viewport height on mobile (accounts for address bar) */
+  overflow: hidden;      /* isolates scroll area */
 }
-
 
 /* ----------------------------------------------------------
    FIXED TOP-LEFT AVATAR
+   (absolute, not fixed — anchored to #home-wrapper which is
+   already viewport-sized; avoids iOS "fixed" jump/repaint bugs)
 ---------------------------------------------------------- */
 #top-avatar {
-  position: fixed;
-  top: 20px;
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0px));
   left: 20px;
   width: 38px;
   height: 38px;
@@ -56,8 +63,8 @@ body {
    FIXED TOP-RIGHT SETTINGS ICON
 ---------------------------------------------------------- */
 #settings-icon {
-  position: fixed;
-  top: 20px;
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top, 0px));
   right: 20px;
   width: 26px;
   height: 26px;
@@ -83,6 +90,7 @@ body {
 
 /* ----------------------------------------------------------
    SCROLLABLE MAIN HOME SCREEN
+   (the ONLY element that should ever scroll)
 ---------------------------------------------------------- */
 #home-screen {
   position: absolute;
@@ -90,8 +98,11 @@ body {
   bottom: 110px;   /* FIXED */
   left: 0;
   width: 100%;
-  overflow-y: scroll;
+  overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
+  overscroll-behavior-y: contain;     /* stop scroll chaining/bounce leaking to the page */
+  touch-action: pan-y;                /* only vertical panning inside this region */
 
   display: flex;
   flex-direction: column;
@@ -179,11 +190,13 @@ body {
    FIXED BOTTOM NAV
 ---------------------------------------------------------- */
 #bottom-nav {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 90px;
+  height: calc(90px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
   background-color: #000;
   display: flex;
   justify-content: space-around;
