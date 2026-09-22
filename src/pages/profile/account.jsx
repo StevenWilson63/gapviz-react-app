@@ -213,7 +213,7 @@ export default function Account() {
 
       <h1 className="account-title">Your Account</h1>
 
-      <form className="account-card" onSubmit={handleSave}>
+      <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
         <div className="account-avatar">
           <div className="avatar-circle">
             {avatarDisplay.type === "photo" && (
