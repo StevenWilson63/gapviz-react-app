@@ -249,6 +249,7 @@ export default function Account() {
             type="text"
             value={firstName}
             onChange={handleFirstNameChange}
+            autoComplete="off"
           />
           {firstNameError && <div className="error-text">{firstNameError}</div>}
         </div>
@@ -259,6 +260,7 @@ export default function Account() {
             type="text"
             value={surname}
             onChange={handleSurnameChange}
+            autoComplete="off"
           />
           {surnameError && <div className="error-text">{surnameError}</div>}
         </div>
@@ -269,6 +271,7 @@ export default function Account() {
             type="text"
             value={nickname}
             onChange={handleNicknameChange}
+            autoComplete="off"
           />
           {nicknameError && <div className="error-text">{nicknameError}</div>}
         </div>
@@ -280,6 +283,7 @@ export default function Account() {
               type="text"
               value={phonetic}
               onChange={handlePhoneticChange}
+              autoComplete="off"
             />
             {phoneticError && <div className="error-text">{phoneticError}</div>}
           </div>
