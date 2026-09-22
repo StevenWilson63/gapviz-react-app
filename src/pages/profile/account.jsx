@@ -226,11 +226,8 @@ export default function Account() {
        <div className="account-avatar">
   <div
     className="avatar-circle"
-    onClick={() => {
-      if (photo) {
-        document.getElementById("avatar-file-input").click();
-      }
-    }}
+    onClick={() => document.getElementById("avatar-file-input").click()}
+
   >
     {avatarDisplay.type === "photo" && (
       <img src={avatarDisplay.value} alt="Avatar" />
@@ -262,6 +259,7 @@ export default function Account() {
     </button>
   )}
 </div>
+git quick
 
 
 
