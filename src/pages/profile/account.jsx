@@ -18,14 +18,50 @@ export default function Account() {
   const [showPassword, setShowPassword] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
 
+  const [firstNameError, setFirstNameError] = useState("");
+  const [surnameError, setSurnameError] = useState("");
   const [nicknameError, setNicknameError] = useState("");
   const [phoneticError, setPhoneticError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const validateName = (value, maxLength) => {
     const allowed = /^[A-Za-z\s'-]+$/;
     if (value.length > maxLength) return false;
     if (!allowed.test(value)) return false;
     return true;
+  };
+
+  const validateEmail = (value) => {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return pattern.test(value);
+  };
+
+  const validatePassword = (value) => {
+    if (value.length < 8) return false;
+    const hasLetter = /[A-Za-z]/.test(value);
+    const hasNumber = /[0-9]/.test(value);
+    return hasLetter && hasNumber;
+  };
+
+  const handleFirstNameChange = (e) => {
+    const value = e.target.value;
+    if (validateName(value, 30)) {
+      setFirstName(value);
+      setFirstNameError("");
+    } else {
+      setFirstNameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+    }
+  };
+
+  const handleSurnameChange = (e) => {
+    const value = e.target.value;
+    if (validateName(value, 30)) {
+      setSurname(value);
+      setSurnameError("");
+    } else {
+      setSurnameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+    }
   };
 
   const handleNicknameChange = (e) => {
@@ -48,6 +84,28 @@ export default function Account() {
     }
   };
 
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    if (validateEmail(value)) {
+      setEmail(value);
+      setEmailError("");
+    } else {
+      setEmail(value);
+      setEmailError("Enter a valid email address.");
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    if (validatePassword(value)) {
+      setPassword(value);
+      setPasswordError("");
+    } else {
+      setPassword(value);
+      setPasswordError("Min 8 characters, must include letters and numbers.");
+    }
+  };
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
     setFirstName(stored.firstName || "");
@@ -60,8 +118,23 @@ export default function Account() {
     setPhoto(stored.photo || null);
   }, []);
 
-  function handleSave() {
-    if (nicknameError || phoneticError) return;
+  const allValid =
+    !firstNameError &&
+    !surnameError &&
+    !nicknameError &&
+    !phoneticError &&
+    !emailError &&
+    !passwordError &&
+    firstName &&
+    surname &&
+    nickname &&
+    phonetic &&
+    email &&
+    password;
+
+  function handleSave(e) {
+    e.preventDefault();
+    if (!allValid) return;
 
     const user = {
       firstName,
@@ -138,7 +211,7 @@ export default function Account() {
 
       <h1 className="account-title">Your Account</h1>
 
-      <div className="account-card">
+      <form className="account-card" onSubmit={handleSave}>
         <div className="account-avatar">
           <div className="avatar-circle">
             {avatarDisplay.type === "photo" && (
@@ -161,7 +234,7 @@ export default function Account() {
             </label>
 
             {photo && (
-              <button className="avatar-link" onClick={handleRemovePhoto}>
+              <button className="avatar-link" type="button" onClick={handleRemovePhoto}>
                 Remove Photo
               </button>
             )}
@@ -172,33 +245,30 @@ export default function Account() {
           <label>First Name</label>
           <input
             type="text"
-            placeholder="Your first name"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={handleFirstNameChange}
           />
+          {firstNameError && <div className="error-text">{firstNameError}</div>}
         </div>
 
         <div className="account-field hover-box">
           <label>Surname</label>
           <input
             type="text"
-            placeholder="Your last name"
             value={surname}
-            onChange={(e) => setSurname(e.target.value)}
+            onChange={handleSurnameChange}
           />
+          {surnameError && <div className="error-text">{surnameError}</div>}
         </div>
 
         <div className="account-field hover-box">
           <label>Nickname</label>
           <input
             type="text"
-            placeholder="What the DJ will call you"
             value={nickname}
             onChange={handleNicknameChange}
           />
-          {nicknameError && (
-            <div className="error-text">{nicknameError}</div>
-          )}
+          {nicknameError && <div className="error-text">{nicknameError}</div>}
         </div>
 
         <div className="phonetic-row">
@@ -206,16 +276,13 @@ export default function Account() {
             <label>Phonetic Name</label>
             <input
               type="text"
-              placeholder="How the DJ should pronounce your name"
               value={phonetic}
               onChange={handlePhoneticChange}
             />
-            {phoneticError && (
-              <div className="error-text">{phoneticError}</div>
-            )}
+            {phoneticError && <div className="error-text">{phoneticError}</div>}
           </div>
 
-          <button className="play-sample-button hover-box" onClick={playSample}>
+          <button className="play-sample-button hover-box" type="button" onClick={playSample}>
             ▶️ Play Sample
           </button>
         </div>
@@ -224,10 +291,10 @@ export default function Account() {
           <label>Email</label>
           <input
             type="text"
-            placeholder="Your email address"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
           />
+          {emailError && <div className="error-text">{emailError}</div>}
         </div>
 
         <div className="account-field password-field hover-box">
@@ -236,9 +303,9 @@ export default function Account() {
           <div className="password-wrapper">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
+              autoComplete="new-password"
             />
 
             <span
@@ -248,6 +315,8 @@ export default function Account() {
               {showPassword ? "🙈" : "👁️"}
             </span>
           </div>
+
+          {passwordError && <div className="error-text">{passwordError}</div>}
         </div>
 
         <div className="account-field hover-box read-only-row">
@@ -255,7 +324,11 @@ export default function Account() {
           <input type="text" value={dateJoined} readOnly />
         </div>
 
-        <button className="account-save hover-box" onClick={handleSave}>
+        <button
+          className={`account-save hover-box ${!allValid ? "disabled-save" : ""}`}
+          type="submit"
+          disabled={!allValid}
+        >
           Save Changes
         </button>
 
@@ -263,10 +336,10 @@ export default function Account() {
           <div className="save-confirm-box">✓ Changes Saved</div>
         )}
 
-        <button className="account-delete" onClick={handleDeleteAccount}>
+        <button className="account-delete" type="button" onClick={handleDeleteAccount}>
           Delete Account
         </button>
-      </div>
+      </form>
     </div>
   );
 }
