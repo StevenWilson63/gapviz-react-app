@@ -227,7 +227,6 @@ export default function Account() {
   <div
     className="avatar-circle"
     onClick={() => document.getElementById("avatar-file-input").click()}
-
   >
     {avatarDisplay.type === "photo" && (
       <img src={avatarDisplay.value} alt="Avatar" />
@@ -259,8 +258,6 @@ export default function Account() {
     </button>
   )}
 </div>
-
-
 
 
         <div className="account-field hover-box">
