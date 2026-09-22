@@ -47,14 +47,15 @@ export default function Account() {
   };
 
   const handleFirstNameChange = (e) => {
-    const value = e.target.value;
-    if (validateName(value, 30)) {
-      setFirstName(value);
-      setFirstNameError("");
-    } else {
-      setFirstNameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
-    }
-  };
+  const value = e.target.value;
+  setFirstName(value); // always update — never block the input itself
+
+  if (value === "" || validateName(value, 30)) {
+    setFirstNameError("");
+  } else {
+    setFirstNameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+  }
+};
 
   const handleSurnameChange = (e) => {
     const value = e.target.value;
