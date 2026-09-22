@@ -292,7 +292,7 @@ export default function Account() {
         <div className="account-field hover-box">
           <label>Email</label>
           <input
-            type="text"
+            type="email"
             value={email}
             onChange={handleEmailChange}
           />
