@@ -276,30 +276,31 @@ export default function Account() {
 
   {/* Avatar action menu */}
   {showAvatarMenu && (
-    <div className="avatar-menu">
-      <button
-        onClick={() => {
-          document.getElementById("avatar-file-input").click();
-          setShowAvatarMenu(false);
-        }}
-      >
-        Change Photo
-      </button>
+  <div className="avatar-menu">
+    <button
+      onClick={() => {
+        document.getElementById("avatar-file-input").click();
+        setShowAvatarMenu(false);
+      }}
+    >
+      Change Photo
+    </button>
 
-      <button
-        onClick={() => {
-          handleRemovePhoto();
-          setShowAvatarMenu(false);
-        }}
-      >
-        Remove Photo
-      </button>
+    <button
+      onClick={() => {
+        setShowAvatarMenu(false);   // CLOSE MENU FIRST
+        handleRemovePhoto();        // THEN REMOVE PHOTO
+      }}
+    >
+      Remove Photo
+    </button>
 
-      <button onClick={() => setShowAvatarMenu(false)}>
-        Cancel
-      </button>
-    </div>
-  )}
+    <button onClick={() => setShowAvatarMenu(false)}>
+      Cancel
+    </button>
+  </div>
+)}
+
 
 </div>
 
