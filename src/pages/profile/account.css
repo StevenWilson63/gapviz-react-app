@@ -282,6 +282,10 @@ input:-webkit-autofill {
   -webkit-text-fill-color: #fff !important;
   border: 2px solid rgba(255, 26, 26, 0.35) !important;
 }
+input:-webkit-autofill:not(:focus) {
+  -webkit-text-fill-color: #fff !important;
+}
+
 
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
