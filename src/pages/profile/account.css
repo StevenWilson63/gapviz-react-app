@@ -141,7 +141,7 @@
   border: 2px solid rgba(255, 26, 26, 0.35);
   background: transparent;
   color: #fff;
-  font-size: 12px;
+  font-size: 16px; /* must be >=16px — iOS Safari auto-zooms the whole page on focus for anything smaller, and won't zoom back out on its own */
   outline: none;
   transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
 }
@@ -178,7 +178,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: 16px; /* must be >=16px — iOS Safari auto-zooms the whole page on focus for anything smaller, and won't zoom back out on its own */
   text-align: left;
 
   background: transparent;   /* ← FIXES WHITE BOX */
