@@ -219,20 +219,33 @@ export default function Account() {
 
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
         <div className="account-avatar">
-  <div
-    className="avatar-circle"
-    onClick={openAvatarEditor}
-  >
-    {avatarDisplay.type === "photo" && (
-      <img src={avatarDisplay.value} alt="Avatar" />
-    )}
+          <div className="avatar-circle">
+            {avatarDisplay.type === "photo" && (
+              <img src={avatarDisplay.value} alt="Avatar" />
+            )}
+            {avatarDisplay.type === "initials" && (
+              <span>{avatarDisplay.value}</span>
+            )}
+          </div>
 
-    {avatarDisplay.type === "initials" && (
-      <span>{avatarDisplay.value}</span>
-    )}
-  </div>
-</div>
+          <div className="avatar-links">
+            <label className="avatar-link">
+              Upload or Change Photo
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={{ display: "none" }}
+              />
+            </label>
 
+            {photo && (
+              <button className="avatar-link" type="button" onClick={handleRemovePhoto}>
+                Remove Photo
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="account-field hover-box">
           <label>First Name</label>
