@@ -223,11 +223,14 @@ export default function Account() {
       <h1 className="account-title">Your Account</h1>
 
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
-        <div className="account-avatar">
+       <div className="account-avatar">
   <div
     className="avatar-circle"
-       onClick={() => document.getElementById("avatar-file-input").click()}
-
+    onClick={() => {
+      if (photo) {
+        document.getElementById("avatar-file-input").click();
+      }
+    }}
   >
     {avatarDisplay.type === "photo" && (
       <img src={avatarDisplay.value} alt="Avatar" />
@@ -237,7 +240,8 @@ export default function Account() {
       <span>{avatarDisplay.value}</span>
     )}
   </div>
-{/* Hidden file input */}
+
+  {/* Hidden file input */}
   <input
     id="avatar-file-input"
     type="file"
@@ -258,6 +262,7 @@ export default function Account() {
     </button>
   )}
 </div>
+
 
 
         <div className="account-field hover-box">
