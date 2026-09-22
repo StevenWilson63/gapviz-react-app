@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import "./account.css";
 import { useNavigate } from "react-router-dom";
 import { getAvatarDisplay } from "../../utils/avatarLogic";
+import OpenEye from "../../assets/icons/open-eye.svg";
+import ClosedEye from "../../assets/icons/closed-eye.svg";
+
 
 export default function Account() {
   const navigate = useNavigate();
@@ -298,26 +301,27 @@ export default function Account() {
         </div>
 
         <div className="account-field password-field hover-box">
-          <label>Password</label>
+  <label>Password</label>
 
-          <div className="password-wrapper">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={handlePasswordChange}
-              autoComplete="new-password"
-            />
+  <div className="password-wrapper">
+    <input
+      type={showPassword ? "text" : "password"}
+      value={password}
+      onChange={handlePasswordChange}
+      autoComplete="new-password"
+    />
 
-            <span
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? "🙈" : "👁️"}
-            </span>
-          </div>
+    <img
+      src={showPassword ? ClosedEye : OpenEye}
+      alt="Toggle visibility"
+      className="password-toggle-icon"
+      onClick={() => setShowPassword(!showPassword)}
+    />
+  </div>
 
-          {passwordError && <div className="error-text">{passwordError}</div>}
-        </div>
+  {passwordError && <div className="error-text">{passwordError}</div>}
+</div>
+
 
         <div className="account-field hover-box read-only-row">
           <label>Date Joined</label>
