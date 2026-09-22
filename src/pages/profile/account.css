@@ -297,3 +297,28 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #fff !important;
   border: 2px solid #ff1a1a !important;
 }
+.account-delete {
+  width: 100%;
+  padding: 12px;
+  margin-top: 24px;
+
+  background: #ff1a1a !important;
+  color: #fff !important;
+
+  border: none !important;
+  border-radius: 12px;
+
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.12s ease;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+.account-delete:hover {
+  background: #d41414 !important;
+  transform: scale(0.99);
+}
