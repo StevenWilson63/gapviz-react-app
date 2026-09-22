@@ -290,14 +290,16 @@ export default function Account() {
         </div>
 
         <div className="account-field hover-box">
-          <label>Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={handleEmailChange}
-          />
-          {emailError && <div className="error-text">{emailError}</div>}
-        </div>
+  <label>Email</label>
+  <input
+    type="email"
+    value={email}
+    onChange={handleEmailChange}
+    autoComplete="email"
+  />
+  {emailError && <div className="error-text">{emailError}</div>}
+</div>
+
 
        <div className="account-field password-field hover-box">
   <label>Password</label>
