@@ -226,7 +226,8 @@ export default function Account() {
         <div className="account-avatar">
   <div
     className="avatar-circle"
-    onClick={openAvatarEditor}
+       onClick={() => document.getElementById("avatar-file-input").click()}
+
   >
     {avatarDisplay.type === "photo" && (
       <img src={avatarDisplay.value} alt="Avatar" />
@@ -236,6 +237,26 @@ export default function Account() {
       <span>{avatarDisplay.value}</span>
     )}
   </div>
+{/* Hidden file input */}
+  <input
+    id="avatar-file-input"
+    type="file"
+    accept="image/*"
+    onChange={handlePhotoChange}
+    style={{ display: "none" }}
+  />
+
+  {/* Remove photo button */}
+  {photo && (
+    <button
+      className="avatar-link"
+      type="button"
+      onClick={handleRemovePhoto}
+      style={{ marginTop: "8px" }}
+    >
+      Remove Photo
+    </button>
+  )}
 </div>
 
 
