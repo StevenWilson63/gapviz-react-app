@@ -180,26 +180,40 @@ export default function Account() {
     setPhoto(null);
   }
 
-  function handlePhotoChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+ function handlePhotoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhoto(reader.result);
-      const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-      stored.photo = reader.result;
-      localStorage.setItem("gapvizUser", JSON.stringify(stored));
-    };
-    reader.readAsDataURL(file);
-  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    setPhoto(reader.result);
+
+    setAvatarDisplay({
+      type: "photo",
+      value: reader.result
+    });
+
+    const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
+    stored.photo = reader.result;
+    localStorage.setItem("gapvizUser", JSON.stringify(stored));
+  };
+  reader.readAsDataURL(file);
+}
+
 
   function handleRemovePhoto() {
-    setPhoto(null);
-    const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-    delete stored.photo;
-    localStorage.setItem("gapvizUser", JSON.stringify(stored));
-  }
+  setPhoto(null);
+
+  setAvatarDisplay({
+    type: "initials",
+    value: nickname ? nickname[0] : firstName[0]
+  });
+
+  const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
+  delete stored.photo;
+  localStorage.setItem("gapvizUser", JSON.stringify(stored));
+}
+
 
   function playSample() {
     const text = phonetic || nickname || firstName || "Guest";
