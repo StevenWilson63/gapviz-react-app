@@ -58,34 +58,37 @@ export default function Account() {
 };
 
   const handleSurnameChange = (e) => {
-    const value = e.target.value;
-    if (validateName(value, 30)) {
-      setSurname(value);
-      setSurnameError("");
-    } else {
-      setSurnameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
-    }
-  };
+  const value = e.target.value;
+  setSurname(value);
+
+  if (value === "" || validateName(value, 30)) {
+    setSurnameError("");
+  } else {
+    setSurnameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+  }
+};
 
   const handleNicknameChange = (e) => {
-    const value = e.target.value;
-    if (validateName(value, 20)) {
-      setNickname(value);
-      setNicknameError("");
-    } else {
-      setNicknameError("Only letters, spaces, hyphens, apostrophes. Max 20 characters.");
-    }
-  };
+  const value = e.target.value;
+  setNickname(value);
+
+  if (value === "" || validateName(value, 20)) {
+    setNicknameError("");
+  } else {
+    setNicknameError("Only letters, spaces, hyphens, apostrophes. Max 20 characters.");
+  }
+};
 
   const handlePhoneticChange = (e) => {
-    const value = e.target.value;
-    if (validateName(value, 30)) {
-      setPhonetic(value);
-      setPhoneticError("");
-    } else {
-      setPhoneticError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
-    }
-  };
+  const value = e.target.value;
+  setPhonetic(value);
+
+  if (value === "" || validateName(value, 30)) {
+    setPhoneticError("");
+  } else {
+    setPhoneticError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+  }
+};
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
