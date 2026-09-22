@@ -19,6 +19,8 @@ export default function Account() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+
 
   const [firstNameError, setFirstNameError] = useState("");
   const [surnameError, setSurnameError] = useState("");
@@ -201,7 +203,8 @@ export default function Account() {
 }
 
 
-  function handleRemovePhoto() {
+
+ function handleRemovePhoto() {
   setPhoto(null);
 
   setAvatarDisplay({
@@ -213,6 +216,7 @@ export default function Account() {
   delete stored.photo;
   localStorage.setItem("gapvizUser", JSON.stringify(stored));
 }
+
 
 
   function playSample() {
@@ -238,9 +242,19 @@ export default function Account() {
 
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
        <div className="account-avatar">
+
+  {/* Avatar circle */}
   <div
     className="avatar-circle"
-    onClick={() => document.getElementById("avatar-file-input").click()}
+    onClick={() => {
+      if (!photo) {
+        // Initials only → open photo picker immediately
+        document.getElementById("avatar-file-input").click();
+      } else {
+        // Photo exists → show action menu
+        setShowAvatarMenu(true);
+      }
+    }}
   >
     {avatarDisplay.type === "photo" && (
       <img src={avatarDisplay.value} alt="Avatar" />
@@ -260,18 +274,35 @@ export default function Account() {
     style={{ display: "none" }}
   />
 
-  {/* Remove photo button */}
-  {photo && (
-    <button
-      className="avatar-link"
-      type="button"
-      onClick={handleRemovePhoto}
-      style={{ marginTop: "8px" }}
-    >
-      Remove Photo
-    </button>
+  {/* Avatar action menu */}
+  {showAvatarMenu && (
+    <div className="avatar-menu">
+      <button
+        onClick={() => {
+          document.getElementById("avatar-file-input").click();
+          setShowAvatarMenu(false);
+        }}
+      >
+        Change Photo
+      </button>
+
+      <button
+        onClick={() => {
+          handleRemovePhoto();
+          setShowAvatarMenu(false);
+        }}
+      >
+        Remove Photo
+      </button>
+
+      <button onClick={() => setShowAvatarMenu(false)}>
+        Cancel
+      </button>
+    </div>
   )}
+
 </div>
+
 
 
         <div className="account-field hover-box">
