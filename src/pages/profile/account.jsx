@@ -6,9 +6,6 @@ import { getAvatarDisplay } from "../../utils/avatarLogic";
 export default function Account() {
   const navigate = useNavigate();
 
-  // -----------------------------
-  // State
-  // -----------------------------
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [nickname, setNickname] = useState("");
@@ -21,12 +18,38 @@ export default function Account() {
   const [showPassword, setShowPassword] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
 
-  // -----------------------------
-  // Load saved data
-  // -----------------------------
+  const [nicknameError, setNicknameError] = useState("");
+  const [phoneticError, setPhoneticError] = useState("");
+
+  const validateName = (value, maxLength) => {
+    const allowed = /^[A-Za-z\s'-]+$/;
+    if (value.length > maxLength) return false;
+    if (!allowed.test(value)) return false;
+    return true;
+  };
+
+  const handleNicknameChange = (e) => {
+    const value = e.target.value;
+    if (validateName(value, 20)) {
+      setNickname(value);
+      setNicknameError("");
+    } else {
+      setNicknameError("Only letters, spaces, hyphens, apostrophes. Max 20 characters.");
+    }
+  };
+
+  const handlePhoneticChange = (e) => {
+    const value = e.target.value;
+    if (validateName(value, 30)) {
+      setPhonetic(value);
+      setPhoneticError("");
+    } else {
+      setPhoneticError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+    }
+  };
+
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-
     setFirstName(stored.firstName || "");
     setSurname(stored.surname || "");
     setNickname(stored.nickname || "");
@@ -37,10 +60,9 @@ export default function Account() {
     setPhoto(stored.photo || null);
   }, []);
 
-  // -----------------------------
-  // Save handler
-  // -----------------------------
   function handleSave() {
+    if (nicknameError || phoneticError) return;
+
     const user = {
       firstName,
       surname,
@@ -58,9 +80,6 @@ export default function Account() {
     setTimeout(() => setSavedMessage(false), 2000);
   }
 
-  // -----------------------------
-  // Delete handler
-  // -----------------------------
   function handleDeleteAccount() {
     const confirmed = window.confirm("Are you sure you want to delete your account?");
     if (!confirmed) return;
@@ -77,9 +96,6 @@ export default function Account() {
     setPhoto(null);
   }
 
-  // -----------------------------
-  // Avatar photo upload
-  // -----------------------------
   function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -87,7 +103,6 @@ export default function Account() {
     const reader = new FileReader();
     reader.onload = () => {
       setPhoto(reader.result);
-
       const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
       stored.photo = reader.result;
       localStorage.setItem("gapvizUser", JSON.stringify(stored));
@@ -97,24 +112,17 @@ export default function Account() {
 
   function handleRemovePhoto() {
     setPhoto(null);
-
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
     delete stored.photo;
     localStorage.setItem("gapvizUser", JSON.stringify(stored));
   }
 
-  // -----------------------------
-  // Play Sample (phonetic)
-  // -----------------------------
   function playSample() {
     const text = phonetic || nickname || firstName || "Guest";
     const utter = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utter);
   }
 
-  // -----------------------------
-  // Avatar display logic
-  // -----------------------------
   const avatarDisplay = getAvatarDisplay({
     photo,
     nickname,
@@ -122,13 +130,8 @@ export default function Account() {
     surname,
   });
 
-  // -----------------------------
-  // Render
-  // -----------------------------
   return (
     <div className="account-screen">
-
-      {/* Back to Profile */}
       <button className="back-profile-btn" onClick={() => navigate("/profile")}>
         ← Back to Profile
       </button>
@@ -136,8 +139,6 @@ export default function Account() {
       <h1 className="account-title">Your Account</h1>
 
       <div className="account-card">
-
-        {/* Avatar */}
         <div className="account-avatar">
           <div className="avatar-circle">
             {avatarDisplay.type === "photo" && (
@@ -167,7 +168,6 @@ export default function Account() {
           </div>
         </div>
 
-        {/* First Name */}
         <div className="account-field hover-box">
           <label>First Name</label>
           <input
@@ -178,7 +178,6 @@ export default function Account() {
           />
         </div>
 
-        {/* Surname */}
         <div className="account-field hover-box">
           <label>Surname</label>
           <input
@@ -189,38 +188,38 @@ export default function Account() {
           />
         </div>
 
-        {/* Nickname */}
         <div className="account-field hover-box">
           <label>Nickname</label>
           <input
             type="text"
-            placeholder="What the DJ will call you and what appears on the greeting screen"
+            placeholder="What the DJ will call you"
             value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+            onChange={handleNicknameChange}
           />
+          {nicknameError && (
+            <div className="error-text">{nicknameError}</div>
+          )}
         </div>
 
-        {/* Phonetic Name + Play Sample */}
-<div className="phonetic-row">
-  <div className="phonetic-input-wrapper hover-box">
-    <label>Phonetic Name</label>
-    <input
-      type="text"
-      placeholder="How the DJ should pronounce your name (e.g., Stee-ven)"
-      value={phonetic}
-      onChange={(e) => setPhonetic(e.target.value)}
-    />
-  </div>
+        <div className="phonetic-row">
+          <div className="phonetic-input-wrapper hover-box">
+            <label>Phonetic Name</label>
+            <input
+              type="text"
+              placeholder="How the DJ should pronounce your name"
+              value={phonetic}
+              onChange={handlePhoneticChange}
+            />
+            {phoneticError && (
+              <div className="error-text">{phoneticError}</div>
+            )}
+          </div>
 
-  <button className="play-sample-button hover-box" onClick={playSample}>
-    ▶️ Play Sample
-  </button>
-</div>
+          <button className="play-sample-button hover-box" onClick={playSample}>
+            ▶️ Play Sample
+          </button>
+        </div>
 
-
-
-
-        {/* Email */}
         <div className="account-field hover-box">
           <label>Email</label>
           <input
@@ -231,7 +230,6 @@ export default function Account() {
           />
         </div>
 
-        {/* Password */}
         <div className="account-field password-field hover-box">
           <label>Password</label>
 
@@ -252,13 +250,11 @@ export default function Account() {
           </div>
         </div>
 
-        {/* Date Joined */}
         <div className="account-field hover-box read-only-row">
           <label>Date Joined</label>
           <input type="text" value={dateJoined} readOnly />
         </div>
 
-        {/* Save */}
         <button className="account-save hover-box" onClick={handleSave}>
           Save Changes
         </button>
@@ -267,11 +263,9 @@ export default function Account() {
           <div className="save-confirm-box">✓ Changes Saved</div>
         )}
 
-        {/* Delete */}
         <button className="account-delete" onClick={handleDeleteAccount}>
           Delete Account
         </button>
-
       </div>
     </div>
   );
