@@ -308,10 +308,7 @@ export default function Account() {
   </div>
 )}
 
-
-
 </div>
-
 
 
         <div className="account-field hover-box">
