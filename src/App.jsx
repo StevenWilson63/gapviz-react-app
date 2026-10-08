@@ -6,8 +6,9 @@ import { UserProvider } from "./context/UserContext";
 import Home from "./pages/home/home";
 import Profile from "./pages/profile/profile";
 
-// NEW: import the real Account page
+// Profile sub-pages
 import Account from "./pages/profile/account";
+import Subscription from "./pages/profile/Subscription";
 
 export default function App() {
   return (
@@ -24,7 +25,7 @@ export default function App() {
 
           {/* Profile sub-pages */}
           <Route path="/profile/account" element={<Account />} />
-          <Route path="/profile/subscription" element={<div>Subscription Page</div>} />
+          <Route path="/profile/subscription" element={<Subscription />} />
           <Route path="/profile/dj" element={<div>DJ Settings Page</div>} />
           <Route path="/profile/app" element={<div>App Settings Page</div>} />
           <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
