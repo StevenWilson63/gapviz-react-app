@@ -20,12 +20,6 @@ export default function Subscription() {
 
   const currency = currencyData[userRegion] || currencyData.GB;
 
-  // Renewal date logic based on current plan
-  const getRenewalDate = () => {
-    if (currentPlan === "free") return "Permanent Free Access";
-    return "12 Nov 2026";
-  };
-
   // Lemon Squeezy Checkout Handler
   const handleLemonSqueezyCheckout = (tierName) => {
     const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}`;
@@ -44,7 +38,7 @@ export default function Subscription() {
         Manage your membership tier, regional billing currency, and commentary access.
       </p>
 
-      {/* Solid Red Current Membership Plan Banner with Renewal Date */}
+      {/* Solid Red Current Membership Plan Banner */}
       <div className={styles["status-banner-solid"]}>
         <div>
           <span className={styles["status-label"]}>Current Membership Plan</span>
@@ -67,10 +61,10 @@ export default function Subscription() {
           </div>
         </div>
 
-        {/* Renewal Date right inside the solid red box */}
+        {/* Renewal Date aligned strictly to the far right */}
         <div className={styles["status-renewal-box"]}>
           <span className={styles["renewal-label"]}>Next Renewal Date</span>
-          <span className={styles["renewal-date"]}>{getRenewalDate()}</span>
+          <span className={styles["renewal-date"]}>12 Nov 2026</span>
         </div>
       </div>
 
@@ -87,7 +81,7 @@ export default function Subscription() {
             <span className={styles.price}>{currency.symbol}0</span>
             <span className={styles.period}>/ month</span>
           </div>
-          <div className={styles["renewal-info"]}>No billing required</div>
+          <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
               <span className={styles["check-icon"]}>✓</span> Continuous uninterrupted music
@@ -125,7 +119,7 @@ export default function Subscription() {
             <span className={styles.period}>/ month</span>
           </div>
           <div className={styles["renewal-info"]}>
-            Billed monthly via Lemon Squeezy
+            Renewal date: 12 Nov 2026
           </div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
@@ -166,7 +160,7 @@ export default function Subscription() {
             <span className={styles.period}>/ month</span>
           </div>
           <div className={styles["renewal-info"]}>
-            Billed monthly via Lemon Squeezy
+            Renewal date: 12 Nov 2026
           </div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>

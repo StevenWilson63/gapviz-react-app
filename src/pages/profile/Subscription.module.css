@@ -41,7 +41,7 @@
   text-align: left;
 }
 
-/* Base Red Border + Glow Hover Box matching Account screen */
+/* Base Red Border + Glow Hover Box for Tiers */
 .hover-box {
   border-radius: 12px;
   border: 2px solid rgba(255, 26, 26, 0.35);
@@ -55,49 +55,72 @@
   transform: scale(0.99);
 }
 
-/* Active Membership Banner with red border & hover glow */
-.status-banner {
-  padding: 16px 20px;
+/* Solid Red Current Membership Plan Banner */
+.status-banner-solid {
+  background: #ff1a1a;
+  border: 2px solid #ff1a1a;
+  border-radius: 12px;
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28px;
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 26, 26, 0.35);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .status-label {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #a1a1aa;
+  color: rgba(255, 255, 255, 0.85);
   display: block;
   margin-bottom: 4px;
+  font-weight: 600;
 }
 
 .status-value {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.badge-free {
-  background-color: #27272a;
-  color: #d4d4d8;
+.badge-white {
+  background-color: #ffffff;
+  color: #ff1a1a;
   font-size: 11px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 9999px;
   text-transform: uppercase;
+  font-weight: 700;
 }
 
-.badge-active {
-  background-color: #ff1a1a;
+/* Positioned strictly on the far right */
+.status-renewal-box {
+  margin-left: auto;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.renewal-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.renewal-date {
+  font-size: 16px;
+  font-weight: 700;
   color: #ffffff;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  text-transform: uppercase;
 }
 
 /* Subscription Grid Layout */
@@ -108,7 +131,7 @@
   align-items: stretch;
 }
 
-/* Tier Cards using Account box styling */
+/* Tier Cards */
 .tier-card {
   display: flex;
   flex-direction: column;
@@ -116,7 +139,6 @@
   position: relative;
 }
 
-/* Highlighted Plus Tier card */
 .tier-card-featured {
   background: rgba(255, 26, 26, 0.03);
   border: 2px solid #ff1a1a !important;
@@ -204,7 +226,6 @@
   flex-shrink: 0;
 }
 
-/* Action Buttons */
 .tier-action-btn {
   width: 100%;
   padding: 12px;
@@ -253,9 +274,13 @@
 }
 
 @media (max-width: 768px) {
-  .status-banner {
+  .status-banner-solid {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+  .status-renewal-box {
+    margin-left: 0;
+    text-align: left;
   }
 }
