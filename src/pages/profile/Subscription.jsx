@@ -88,43 +88,43 @@ export default function Subscription() {
       <div className={styles["subscription-grid"]}>
         
         {/* Tier 1: Free */}
-        <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
-          <h2 className={styles["tier-name"]}>Free</h2>
-          <p className={styles["tier-desc"]}>
-            Essential music streaming with daily commentary limits.
-          </p>
-          <div className={styles["price-container-stack"]}>
-            <div className={styles["price-primary"]}>
-              <span className={styles["yearly-amount"]}>{pricingData.free.yearly}</span>
-              <span className={styles["yearly-period"]}>/ year</span>
-            </div>
-            <span className={styles["monthly-subtext"]}>or {pricingData.free.monthly} / month</span>
-          </div>
-          <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
-          <ul className={styles["feature-list"]}>
-            <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> 5 text commentaries per day only
-            </li>
-            <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Basic music commentary
-            </li>
-            <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> 1 DJ Persona
-            </li>
-          </ul>
-          {currentPlan === "free" ? (
-            <button className={styles["tier-current-btn"]} disabled>
-              Current Plan
-            </button>
-          ) : (
-            <button 
-              className={styles["tier-action-btn"]} 
-              onClick={() => setCurrentPlan("free")}
-            >
-              Downgrade
-            </button>
-          )}
-        </div>
+<div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
+  <h2 className={styles["tier-name"]}>Free</h2>
+  <p className={styles["tier-desc"]}>
+    Basic DJ commentary with daily limits.
+  </p>
+  <div className={styles["price-container-stack"]}>
+    <div className={styles["price-primary"]}>
+      <span className={styles["yearly-amount"]}>{pricingData.free.yearly}</span>
+      <span className={styles["yearly-period"]}>/ year</span>
+    </div>
+    <span className={styles["monthly-subtext"]}>or {pricingData.free.monthly} / month</span>
+  </div>
+  <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
+  <ul className={styles["feature-list"]}>
+    <li className={styles["feature-item"]}>
+      <span className={styles["check-icon"]}>✓</span> 5 text commentaries per day only
+    </li>
+    <li className={styles["feature-item"]}>
+      <span className={styles["check-icon"]}>✓</span> Basic music commentary
+    </li>
+    <li className={styles["feature-item"]}>
+      <span className={styles["check-icon"]}>✓</span> 1 DJ Persona
+    </li>
+  </ul>
+  {currentPlan === "free" ? (
+    <button className={styles["tier-current-btn"]} disabled>
+      Current Plan
+    </button>
+  ) : (
+    <button 
+      className={styles["tier-action-btn"]} 
+      onClick={() => setCurrentPlan("free")}
+    >
+      Downgrade
+    </button>
+  )}
+</div>
 
         {/* Tier 2: Plus */}
         <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
