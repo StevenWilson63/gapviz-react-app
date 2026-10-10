@@ -8,7 +8,7 @@ export default function Subscription() {
   // Current active plan state ('free', 'plus', or 'premium')
   const [currentPlan, setCurrentPlan] = useState("free");
 
-  // Read region selected at login (defaults to GB/£ if not set)
+  // Read region selected at login (defaults to GB/£)
   const [userRegion] = useState(() => localStorage.getItem("gapviz_region") || "GB");
 
   // Regional pricing mapping
@@ -38,8 +38,8 @@ export default function Subscription() {
         Manage your membership tier, regional billing currency, and commentary access.
       </p>
 
-      {/* Active Membership Banner */}
-      <div className={styles["status-banner"]}>
+      {/* Active Membership Banner with red border & hover glow */}
+      <div className={`${styles["status-banner"]} ${styles["hover-box"]}`}>
         <div>
           <span className={styles["status-label"]}>Current Membership Plan</span>
           <div className={styles["status-value"]}>
