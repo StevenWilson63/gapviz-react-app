@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Subscription.css";
+import styles from "./Subscription.module.css";
 
 export default function Subscription() {
   const navigate = useNavigate();
@@ -22,41 +22,40 @@ export default function Subscription() {
 
   // Lemon Squeezy Checkout Handler
   const handleLemonSqueezyCheckout = (tierName) => {
-    // Placeholder URL until Lemon Squeezy account setup is complete
     const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}`;
     window.open(checkoutUrl, "_blank");
   };
 
   return (
-    <div className="subscription-screen">
+    <div className={styles["subscription-screen"]}>
       {/* Back to Profile Button matching Account page */}
-      <button className="back-profile-btn" onClick={() => navigate("/profile")}>
+      <button className={styles["back-profile-btn"]} onClick={() => navigate("/profile")}>
         ← Back to Profile
       </button>
 
-      <h1 className="subscription-title">Subscription</h1>
-      <p className="subscription-subtitle">
+      <h1 className={styles["subscription-title"]}>Subscription</h1>
+      <p className={styles["subscription-subtitle"]}>
         Manage your membership tier, regional billing currency, and commentary access.
       </p>
 
       {/* Active Membership Banner */}
-      <div className="status-banner">
+      <div className={styles["status-banner"]}>
         <div>
-          <span className="status-label">Current Membership Plan</span>
-          <div className="status-value">
+          <span className={styles["status-label"]}>Current Membership Plan</span>
+          <div className={styles["status-value"]}>
             {currentPlan === "free" && (
               <>
-                Gapviz Free <span className="badge-free">Active</span>
+                Gapviz Free <span className={styles["badge-free"]}>Active</span>
               </>
             )}
             {currentPlan === "plus" && (
               <>
-                Gapviz Plus <span className="badge-active">Active</span>
+                Gapviz Plus <span className={styles["badge-active"]}>Active</span>
               </>
             )}
             {currentPlan === "premium" && (
               <>
-                Gapviz Premium <span className="badge-active">Active</span>
+                Gapviz Premium <span className={styles["badge-active"]}>Active</span>
               </>
             )}
           </div>
@@ -64,37 +63,37 @@ export default function Subscription() {
       </div>
 
       {/* Tier Selection Grid */}
-      <div className="subscription-grid">
+      <div className={styles["subscription-grid"]}>
         
         {/* Tier 1: Free */}
-        <div className="tier-card hover-box">
-          <h2 className="tier-name">Free</h2>
-          <p className="tier-desc">
+        <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
+          <h2 className={styles["tier-name"]}>Free</h2>
+          <p className={styles["tier-desc"]}>
             Essential music streaming with general knowledge commentary.
           </p>
-          <div className="price-container">
-            <span className="price">{currency.symbol}0</span>
-            <span className="period">/ month</span>
+          <div className={styles["price-container"]}>
+            <span className={styles.price}>{currency.symbol}0</span>
+            <span className={styles.period}>/ month</span>
           </div>
-          <div className="renewal-info">Permanent free tier</div>
-          <ul className="feature-list">
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Continuous uninterrupted music
+          <div className={styles["renewal-info"]}>Permanent free tier</div>
+          <ul className={styles["feature-list"]}>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Continuous uninterrupted music
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Standard music history commentary
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Standard music history commentary
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Basic multilingual voices
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Basic multilingual voices
             </li>
           </ul>
           {currentPlan === "free" ? (
-            <button className="tier-current-btn" disabled>
+            <button className={styles["tier-current-btn"]} disabled>
               Current Plan
             </button>
           ) : (
             <button 
-              className="tier-action-btn" 
+              className={styles["tier-action-btn"]} 
               onClick={() => setCurrentPlan("free")}
             >
               Downgrade
@@ -103,40 +102,40 @@ export default function Subscription() {
         </div>
 
         {/* Tier 2: Plus (Featured) */}
-        <div className="tier-card tier-card-featured hover-box">
-          <span className="popular-tag">Most Popular</span>
-          <h2 className="tier-name">Plus</h2>
-          <p className="tier-desc">
+        <div className={`${styles["tier-card"]} ${styles["tier-card-featured"]} ${styles["hover-box"]}`}>
+          <span className={styles["popular-tag"]}>Most Popular</span>
+          <h2 className={styles["tier-name"]}>Plus</h2>
+          <p className={styles["tier-desc"]}>
             Deep-dive trivia, custom commentary frequency, and expanded language options.
           </p>
-          <div className="price-container">
-            <span className="price">{currency.symbol}{currency.plus}</span>
-            <span className="period">/ month</span>
+          <div className={styles["price-container"]}>
+            <span className={styles.price}>{currency.symbol}{currency.plus}</span>
+            <span className={styles.period}>/ month</span>
           </div>
-          <div className="renewal-info">
+          <div className={styles["renewal-info"]}>
             {currentPlan === "plus" ? "Renews on Nov 12, 2026" : "Billed monthly via Lemon Squeezy"}
           </div>
-          <ul className="feature-list">
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Everything in Free
+          <ul className={styles["feature-list"]}>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Everything in Free
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Detailed artist trivia & cultural context
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Detailed artist trivia & cultural context
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Full Voicedeck multilingual narration
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Full Voicedeck multilingual narration
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Customizable commentary frequency
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Customizable commentary frequency
             </li>
           </ul>
           {currentPlan === "plus" ? (
-            <button className="tier-current-btn" disabled>
+            <button className={styles["tier-current-btn"]} disabled>
               Current Plan
             </button>
           ) : (
             <button 
-              className="tier-action-btn tier-action-btn-featured" 
+              className={`${styles["tier-action-btn"]} ${styles["tier-action-btn-featured"]}`} 
               onClick={() => handleLemonSqueezyCheckout("Plus")}
             >
               Upgrade to Plus
@@ -145,39 +144,39 @@ export default function Subscription() {
         </div>
 
         {/* Tier 3: Premium */}
-        <div className="tier-card hover-box">
-          <h2 className="tier-name">Premium</h2>
-          <p className="tier-desc">
+        <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
+          <h2 className={styles["tier-name"]}>Premium</h2>
+          <p className={styles["tier-desc"]}>
             Advanced tools for power listeners, station curators, and professional narration creators.
           </p>
-          <div className="price-container">
-            <span className="price">{currency.symbol}{currency.premium}</span>
-            <span className="period">/ month</span>
+          <div className={styles["price-container"]}>
+            <span className={styles.price}>{currency.symbol}{currency.premium}</span>
+            <span className={styles.period}>/ month</span>
           </div>
-          <div className="renewal-info">
+          <div className={styles["renewal-info"]}>
             {currentPlan === "premium" ? "Renews on Nov 12, 2026" : "Billed monthly via Lemon Squeezy"}
           </div>
-          <ul className="feature-list">
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Everything in Plus
+          <ul className={styles["feature-list"]}>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Everything in Plus
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Gapviz Studio & Voicedeck integration
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Gapviz Studio & Voicedeck integration
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> Custom narration scheduling
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Custom narration scheduling
             </li>
-            <li className="feature-item">
-              <span className="check-icon">✓</span> High-definition audio playback
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> High-definition audio playback
             </li>
           </ul>
           {currentPlan === "premium" ? (
-            <button className="tier-current-btn" disabled>
+            <button className={styles["tier-current-btn"]} disabled>
               Current Plan
             </button>
           ) : (
             <button 
-              className="tier-action-btn" 
+              className={styles["tier-action-btn"]} 
               onClick={() => handleLemonSqueezyCheckout("Premium")}
             >
               Upgrade to Premium
