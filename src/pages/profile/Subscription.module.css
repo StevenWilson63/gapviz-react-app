@@ -1,250 +1,248 @@
-.container {
-  max-width: 1100px;
+.subscription-screen {
+  padding: 20px;
+  color: #fff;
+  position: relative;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.header {
-  margin-bottom: 2.5rem;
+.back-profile-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  color: #ff1a1a;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+  z-index: 10;
+}
+
+.back-profile-btn:hover {
+  opacity: 1;
+}
+
+.subscription-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #fff;
   text-align: left;
 }
 
-.title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 0 0 0.5rem 0;
-  color: #ffffff;
-}
-
-.subtitle {
+.subscription-subtitle {
   color: #a1a1aa;
-  font-size: 1rem;
-  margin: 0;
+  font-size: 14px;
+  margin-bottom: 24px;
+  text-align: left;
 }
 
-/* Active Membership Status Banner */
-.statusBanner {
-  background-color: #121212;
-  border: 1px solid #27272a;
+/* Active Membership Banner */
+.status-banner {
+  background: transparent;
+  border: 2px solid rgba(255, 26, 26, 0.35);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  margin-bottom: 28px;
 }
 
-.statusInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.statusLabel {
-  font-size: 0.85rem;
+.status-label {
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #a1a1aa;
+  display: block;
+  margin-bottom: 4px;
 }
 
-.statusValue {
-  font-size: 1.25rem;
+.status-value {
+  font-size: 18px;
   font-weight: 700;
-  color: #ffffff;
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
 }
 
-.badgeFree {
+.badge-free {
   background-color: #27272a;
   color: #d4d4d8;
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: 9999px;
-  font-weight: 600;
   text-transform: uppercase;
 }
 
-.badgePro {
-  background-color: #e50914;
+.badge-active {
+  background-color: #ff1a1a;
   color: #ffffff;
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: 9999px;
-  font-weight: 600;
   text-transform: uppercase;
 }
 
-/* Tier Selection Grid */
-.grid {
+/* Subscription Grid Layout */
+.subscription-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
   align-items: stretch;
 }
 
-.card {
-  background-color: #121212;
-  border: 1px solid #27272a;
-  border-radius: 16px;
-  padding: 2rem;
+/* Tier Card using your exact hover-box style */
+.tier-card {
   display: flex;
   flex-direction: column;
+  background: transparent;
+  border-radius: 12px;
+  padding: 24px;
   position: relative;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:hover {
-  border-color: #3f3f46;
-  transform: translateY(-2px);
+.tier-card-featured {
+  background: rgba(255, 26, 26, 0.03);
+  border: 2px solid #ff1a1a !important;
+  box-shadow: 0 0 15px rgba(255, 26, 26, 0.15);
 }
 
-.cardFeatured {
-  background-color: #161618;
-  border: 2px solid #e50914;
-  border-radius: 16px;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 8px 30px rgba(229, 9, 20, 0.15);
-}
-
-.cardFeatured:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(229, 9, 20, 0.25);
-}
-
-.popularTag {
+.popular-tag {
   position: absolute;
-  top: -14px;
-  right: 24px;
-  background-color: #e50914;
+  top: -12px;
+  right: 20px;
+  background-color: #ff1a1a;
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.25rem 0.75rem;
+  padding: 3px 10px;
   border-radius: 9999px;
 }
 
-.planName {
-  font-size: 1.5rem;
+.tier-name {
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: #ffffff;
+  margin: 0 0 6px 0;
+  color: #fff;
 }
 
-.planDesc {
+.tier-desc {
   color: #a1a1aa;
-  font-size: 0.9rem;
-  margin: 0 0 1.5rem 0;
-  min-height: 2.7rem;
+  font-size: 13px;
+  margin: 0 0 16px 0;
+  min-height: 38px;
 }
 
-.priceContainer {
+.price-container {
   display: flex;
   align-items: baseline;
-  gap: 0.25rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #27272a;
+  gap: 4px;
+  margin-bottom: 4px;
 }
 
 .price {
-  font-size: 2.5rem;
+  font-size: 32px;
   font-weight: 800;
-  color: #ffffff;
+  color: #fff;
 }
 
 .period {
   color: #a1a1aa;
-  font-size: 0.9rem;
+  font-size: 13px;
 }
 
-.featureList {
+.renewal-info {
+  font-size: 12px;
+  color: #71717a;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 2rem 0;
+  margin: 0 0 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 10px;
   flex-grow: 1;
 }
 
-.featureItem {
+.feature-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
+  gap: 8px;
+  font-size: 13px;
   color: #e4e4e7;
 }
 
-.iconCheck {
-  width: 18px;
-  height: 18px;
-  color: #e50914;
+.check-icon {
+  color: #ff1a1a;
+  font-weight: bold;
   flex-shrink: 0;
 }
 
-.btnPrimary {
+/* Buttons matching your account action buttons */
+.tier-action-btn {
   width: 100%;
-  background-color: #e50914;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  font-size: 1rem;
+  padding: 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  color: #fff;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  text-align: center;
 }
 
-.btnPrimary:hover {
-  background-color: #f6121d;
+.tier-action-btn:hover {
+  border-color: #ff1a1a;
+  color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  transform: scale(0.99);
 }
 
-.btnSecondary {
+.tier-action-btn-featured {
+  background: #ff1a1a !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.tier-action-btn-featured:hover {
+  background: #d41414 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  transform: scale(0.99);
+}
+
+.tier-current-btn {
   width: 100%;
-  background-color: transparent;
-  color: #ffffff;
-  border: 1px solid #3f3f46;
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-.btnSecondary:hover {
-  border-color: #71717a;
-  background-color: #18181b;
-}
-
-.btnCurrent {
-  width: 100%;
-  background-color: #27272a;
-  color: #a1a1aa;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  font-size: 1rem;
+  padding: 12px;
+  border-radius: 12px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  color: #71717a;
+  font-size: 15px;
   font-weight: 600;
   cursor: default;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
-  .statusBanner {
+  .status-banner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: 12px;
   }
 }
