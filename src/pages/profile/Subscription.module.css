@@ -34,52 +34,11 @@
   text-align: left;
 }
 
-.tagline {
-  color: #ff1a1a;
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 6px;
-  text-align: left;
-  letter-spacing: 0.02em;
-}
-
 .subscription-subtitle {
   color: #a1a1aa;
   font-size: 14px;
   margin-bottom: 24px;
   text-align: left;
-}
-
-/* Billing Toggle Bar */
-.billing-toggle-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.billing-toggle-btn {
-  background: transparent;
-  border: 2px solid rgba(255, 26, 26, 0.35);
-  color: #a1a1aa;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.billing-toggle-btn:hover {
-  border-color: #ff1a1a;
-  color: #fff;
-}
-
-.billing-toggle-active {
-  background: #ff1a1a !important;
-  border-color: #ff1a1a !important;
-  color: #fff !important;
 }
 
 /* Solid Red Current Membership Plan Banner */
@@ -212,26 +171,48 @@
 .tier-desc {
   color: #a1a1aa;
   font-size: 13px;
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
   min-height: 38px;
 }
 
-.price-container {
+.premium-tagline {
+  color: #ff1a1a;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  letter-spacing: 0.02em;
+}
+
+/* Prominent Yearly Pricing Emphasis */
+.price-container-stack {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.price-primary {
   display: flex;
   align-items: baseline;
   gap: 4px;
-  margin-bottom: 4px;
 }
 
-.price {
-  font-size: 32px;
+.yearly-amount {
+  font-size: 36px;
   font-weight: 800;
-  color: #fff;
+  color: #ffffff;
 }
 
-.period {
-  color: #a1a1aa;
+.yearly-period {
+  color: #ff1a1a;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.monthly-subtext {
   font-size: 13px;
+  color: #a1a1aa;
+  margin-top: 2px;
 }
 
 .renewal-info {

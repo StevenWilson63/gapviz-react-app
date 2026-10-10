@@ -8,9 +8,6 @@ export default function Subscription() {
   // Current active plan state ('free', 'plus', or 'premium')
   const [currentPlan, setCurrentPlan] = useState("free");
 
-  // Billing interval toggle ('monthly' or 'yearly')
-  const [billingCycle, setBillingCycle] = useState("monthly");
-
   // Read region selected at login (defaults to GB/£)
   const [userRegion] = useState(() => localStorage.getItem("gapviz_region") || "GB");
 
@@ -23,28 +20,25 @@ export default function Subscription() {
 
   const symbol = currencySymbols[userRegion] || currencySymbols.GB;
 
-  // Regional pricing data
+  // Regional pricing data (Annual emphasized first)
   const pricingData = {
     free: {
-      monthly: `${symbol}0`,
       yearly: `${symbol}0`,
-      period: "/ month"
+      monthly: `${symbol}0`
     },
     plus: {
-      monthly: `${symbol}2.99`,
       yearly: `${symbol}25`,
-      period: billingCycle === "monthly" ? "/ month" : "/ year"
+      monthly: `${symbol}2.99`
     },
     premium: {
-      monthly: `${symbol}4.99`,
       yearly: `${symbol}48`,
-      period: billingCycle === "monthly" ? "/ month" : "/ year"
+      monthly: `${symbol}4.99`
     }
   };
 
   // Lemon Squeezy Checkout Handler
   const handleLemonSqueezyCheckout = (tierName) => {
-    const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}-${billingCycle}`;
+    const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}`;
     window.open(checkoutUrl, "_blank");
   };
 
@@ -56,28 +50,9 @@ export default function Subscription() {
       </button>
 
       <h1 className={styles["subscription-title"]}>Subscription</h1>
-      <p className={styles["tagline"]}>
-        The ultimate Gapviz experience — "Your music. Your DJ. Your way."
-      </p>
       <p className={styles["subscription-subtitle"]}>
         Manage your membership tier, regional billing currency, and commentary access.
       </p>
-
-      {/* Monthly / Annual Billing Toggle */}
-      <div className={styles["billing-toggle-container"]}>
-        <button 
-          className={`${styles["billing-toggle-btn"]} ${billingCycle === "monthly" ? styles["billing-toggle-active"] : ""}`}
-          onClick={() => setBillingCycle("monthly")}
-        >
-          Monthly Billing
-        </button>
-        <button 
-          className={`${styles["billing-toggle-btn"]} ${billingCycle === "yearly" ? styles["billing-toggle-active"] : ""}`}
-          onClick={() => setBillingCycle("yearly")}
-        >
-          Annual Billing (Save)
-        </button>
-      </div>
 
       {/* Solid Red Current Membership Plan Banner */}
       <div className={styles["status-banner-solid"]}>
@@ -118,9 +93,12 @@ export default function Subscription() {
           <p className={styles["tier-desc"]}>
             Essential music streaming with daily commentary limits.
           </p>
-          <div className={styles["price-container"]}>
-            <span className={styles.price}>{pricingData.free[billingCycle]}</span>
-            <span className={styles.period}>{pricingData.free.period}</span>
+          <div className={styles["price-container-stack"]}>
+            <div className={styles["price-primary"]}>
+              <span className={styles["yearly-amount"]}>{pricingData.free.yearly}</span>
+              <span className={styles["yearly-period"]}>/ year</span>
+            </div>
+            <span className={styles["monthly-subtext"]}>or {pricingData.free.monthly} / month</span>
           </div>
           <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
@@ -154,9 +132,12 @@ export default function Subscription() {
           <p className={styles["tier-desc"]}>
             Unlimited text commentary with expanded DJ options.
           </p>
-          <div className={styles["price-container"]}>
-            <span className={styles.price}>{pricingData.plus[billingCycle]}</span>
-            <span className={styles.period}>{pricingData.plus.period}</span>
+          <div className={styles["price-container-stack"]}>
+            <div className={styles["price-primary"]}>
+              <span className={styles["yearly-amount"]}>{pricingData.plus.yearly}</span>
+              <span className={styles["yearly-period"]}>/ year</span>
+            </div>
+            <span className={styles["monthly-subtext"]}>or {pricingData.plus.monthly} / month</span>
           </div>
           <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
@@ -191,9 +172,15 @@ export default function Subscription() {
           <p className={styles["tier-desc"]}>
             Full custom DJ studio with total control over commentary and voices.
           </p>
-          <div className={styles["price-container"]}>
-            <span className={styles.price}>{pricingData.premium[billingCycle]}</span>
-            <span className={styles.period}>{pricingData.premium.period}</span>
+          <p className={styles["premium-tagline"]}>
+            "Your music. Your DJ. Your way."
+          </p>
+          <div className={styles["price-container-stack"]}>
+            <div className={styles["price-primary"]}>
+              <span className={styles["yearly-amount"]}>{pricingData.premium.yearly}</span>
+              <span className={styles["yearly-period"]}>/ year</span>
+            </div>
+            <span className={styles["monthly-subtext"]}>or {pricingData.premium.monthly} / month</span>
           </div>
           <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
@@ -219,7 +206,10 @@ export default function Subscription() {
               <span className={styles["check-icon"]}>✓</span> Access deeper music insights and stories
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Access Album mode (The most detailed facts and commentary available)
+              <span className={styles["check-icon"]}>✓</span> Access Album mode
+            </li>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> The most detailed facts and commentary available
             </li>
           </ul>
           {currentPlan === "premium" ? (
