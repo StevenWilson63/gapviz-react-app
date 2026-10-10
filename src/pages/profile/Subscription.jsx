@@ -8,21 +8,43 @@ export default function Subscription() {
   // Current active plan state ('free', 'plus', or 'premium')
   const [currentPlan, setCurrentPlan] = useState("free");
 
+  // Billing interval toggle ('monthly' or 'yearly')
+  const [billingCycle, setBillingCycle] = useState("monthly");
+
   // Read region selected at login (defaults to GB/£)
   const [userRegion] = useState(() => localStorage.getItem("gapviz_region") || "GB");
 
-  // Regional pricing mapping
-  const currencyData = {
-    GB: { symbol: "£", plus: "4.99", premium: "12.99" },
-    US: { symbol: "$", plus: "5.99", premium: "14.99" },
-    EU: { symbol: "€", plus: "5.99", premium: "13.99" }
+  // Regional currency symbols
+  const currencySymbols = {
+    GB: "£",
+    US: "$",
+    EU: "€"
   };
 
-  const currency = currencyData[userRegion] || currencyData.GB;
+  const symbol = currencySymbols[userRegion] || currencySymbols.GB;
+
+  // Regional pricing data
+  const pricingData = {
+    free: {
+      monthly: `${symbol}0`,
+      yearly: `${symbol}0`,
+      period: "/ month"
+    },
+    plus: {
+      monthly: `${symbol}2.99`,
+      yearly: `${symbol}25`,
+      period: billingCycle === "monthly" ? "/ month" : "/ year"
+    },
+    premium: {
+      monthly: `${symbol}4.99`,
+      yearly: `${symbol}48`,
+      period: billingCycle === "monthly" ? "/ month" : "/ year"
+    }
+  };
 
   // Lemon Squeezy Checkout Handler
   const handleLemonSqueezyCheckout = (tierName) => {
-    const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}`;
+    const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}-${billingCycle}`;
     window.open(checkoutUrl, "_blank");
   };
 
@@ -34,9 +56,28 @@ export default function Subscription() {
       </button>
 
       <h1 className={styles["subscription-title"]}>Subscription</h1>
+      <p className={styles["tagline"]}>
+        The ultimate Gapviz experience — "Your music. Your DJ. Your way."
+      </p>
       <p className={styles["subscription-subtitle"]}>
         Manage your membership tier, regional billing currency, and commentary access.
       </p>
+
+      {/* Monthly / Annual Billing Toggle */}
+      <div className={styles["billing-toggle-container"]}>
+        <button 
+          className={`${styles["billing-toggle-btn"]} ${billingCycle === "monthly" ? styles["billing-toggle-active"] : ""}`}
+          onClick={() => setBillingCycle("monthly")}
+        >
+          Monthly Billing
+        </button>
+        <button 
+          className={`${styles["billing-toggle-btn"]} ${billingCycle === "yearly" ? styles["billing-toggle-active"] : ""}`}
+          onClick={() => setBillingCycle("yearly")}
+        >
+          Annual Billing (Save)
+        </button>
+      </div>
 
       {/* Solid Red Current Membership Plan Banner */}
       <div className={styles["status-banner-solid"]}>
@@ -61,7 +102,7 @@ export default function Subscription() {
           </div>
         </div>
 
-        {/* Renewal Date aligned strictly to the far right */}
+        {/* Renewal Date aligned to far right */}
         <div className={styles["status-renewal-box"]}>
           <span className={styles["renewal-label"]}>Next Renewal Date</span>
           <span className={styles["renewal-date"]}>12 Nov 2026</span>
@@ -75,22 +116,22 @@ export default function Subscription() {
         <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
           <h2 className={styles["tier-name"]}>Free</h2>
           <p className={styles["tier-desc"]}>
-            Essential music streaming with general knowledge commentary.
+            Essential music streaming with daily commentary limits.
           </p>
           <div className={styles["price-container"]}>
-            <span className={styles.price}>{currency.symbol}0</span>
-            <span className={styles.period}>/ month</span>
+            <span className={styles.price}>{pricingData.free[billingCycle]}</span>
+            <span className={styles.period}>{pricingData.free.period}</span>
           </div>
           <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Continuous uninterrupted music
+              <span className={styles["check-icon"]}>✓</span> 5 text commentaries per day only
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Standard music history commentary
+              <span className={styles["check-icon"]}>✓</span> Basic music commentary
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Basic multilingual voices
+              <span className={styles["check-icon"]}>✓</span> 1 DJ Persona
             </li>
           </ul>
           {currentPlan === "free" ? (
@@ -107,32 +148,26 @@ export default function Subscription() {
           )}
         </div>
 
-        {/* Tier 2: Plus (Featured) */}
-        <div className={`${styles["tier-card"]} ${styles["tier-card-featured"]} ${styles["hover-box"]}`}>
-          <span className={styles["popular-tag"]}>Most Popular</span>
+        {/* Tier 2: Plus */}
+        <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
           <h2 className={styles["tier-name"]}>Plus</h2>
           <p className={styles["tier-desc"]}>
-            Deep-dive trivia, custom commentary frequency, and expanded language options.
+            Unlimited text commentary with expanded DJ options.
           </p>
           <div className={styles["price-container"]}>
-            <span className={styles.price}>{currency.symbol}{currency.plus}</span>
-            <span className={styles.period}>/ month</span>
+            <span className={styles.price}>{pricingData.plus[billingCycle]}</span>
+            <span className={styles.period}>{pricingData.plus.period}</span>
           </div>
-          <div className={styles["renewal-info"]}>
-            Renewal date: 12 Nov 2026
-          </div>
+          <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Everything in Free
+              <span className={styles["check-icon"]}>✓</span> Unlimited text only commentary
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Detailed artist trivia & cultural context
+              <span className={styles["check-icon"]}>✓</span> Multi DJ Personas
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Full Voicedeck multilingual narration
-            </li>
-            <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Customizable commentary frequency
+              <span className={styles["check-icon"]}>✓</span> Enhanced music facts
             </li>
           </ul>
           {currentPlan === "plus" ? (
@@ -141,7 +176,7 @@ export default function Subscription() {
             </button>
           ) : (
             <button 
-              className={`${styles["tier-action-btn"]} ${styles["tier-action-btn-featured"]}`} 
+              className={styles["tier-action-btn"]} 
               onClick={() => handleLemonSqueezyCheckout("Plus")}
             >
               Upgrade to Plus
@@ -149,31 +184,42 @@ export default function Subscription() {
           )}
         </div>
 
-        {/* Tier 3: Premium */}
-        <div className={`${styles["tier-card"]} ${styles["hover-box"]}`}>
+        {/* Tier 3: Premium (Featured) */}
+        <div className={`${styles["tier-card"]} ${styles["tier-card-featured"]} ${styles["hover-box"]}`}>
+          <span className={styles["popular-tag"]}>Ultimate Experience</span>
           <h2 className={styles["tier-name"]}>Premium</h2>
           <p className={styles["tier-desc"]}>
-            Advanced tools for power listeners, station curators, and professional narration creators.
+            Full custom DJ studio with total control over commentary and voices.
           </p>
           <div className={styles["price-container"]}>
-            <span className={styles.price}>{currency.symbol}{currency.premium}</span>
-            <span className={styles.period}>/ month</span>
+            <span className={styles.price}>{pricingData.premium[billingCycle]}</span>
+            <span className={styles.period}>{pricingData.premium.period}</span>
           </div>
-          <div className={styles["renewal-info"]}>
-            Renewal date: 12 Nov 2026
-          </div>
+          <div className={styles["renewal-info"]}>Renewal date: 12 Nov 2026</div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Everything in Plus
+              <span className={styles["check-icon"]}>✓</span> Access to all DJ personas
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Gapviz Studio & Voicedeck integration
+              <span className={styles["check-icon"]}>✓</span> Access to all DJ voices
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> Custom narration scheduling
+              <span className={styles["check-icon"]}>✓</span> Create fully custom DJs
             </li>
             <li className={styles["feature-item"]}>
-              <span className={styles["check-icon"]}>✓</span> High-definition audio playback
+              <span className={styles["check-icon"]}>✓</span> Control commentary length
+            </li>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Control DJ style and personality
+            </li>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Control DJ delivery and tone
+            </li>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Access deeper music insights and stories
+            </li>
+            <li className={styles["feature-item"]}>
+              <span className={styles["check-icon"]}>✓</span> Access Album mode (The most detailed facts and commentary available)
             </li>
           </ul>
           {currentPlan === "premium" ? (
@@ -182,7 +228,7 @@ export default function Subscription() {
             </button>
           ) : (
             <button 
-              className={styles["tier-action-btn"]} 
+              className={`${styles["tier-action-btn"]} ${styles["tier-action-btn-featured"]}`} 
               onClick={() => handleLemonSqueezyCheckout("Premium")}
             >
               Upgrade to Premium
