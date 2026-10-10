@@ -20,6 +20,12 @@ export default function Subscription() {
 
   const currency = currencyData[userRegion] || currencyData.GB;
 
+  // Renewal date logic based on current plan
+  const getRenewalDate = () => {
+    if (currentPlan === "free") return "Permanent Free Access";
+    return "12 Nov 2026";
+  };
+
   // Lemon Squeezy Checkout Handler
   const handleLemonSqueezyCheckout = (tierName) => {
     const checkoutUrl = `https://app.lemonsqueezy.com/buy/placeholder-${tierName.toLowerCase()}`;
@@ -28,7 +34,7 @@ export default function Subscription() {
 
   return (
     <div className={styles["subscription-screen"]}>
-      {/* Back to Profile Button matching Account page */}
+      {/* Back to Profile Button */}
       <button className={styles["back-profile-btn"]} onClick={() => navigate("/profile")}>
         ← Back to Profile
       </button>
@@ -38,27 +44,33 @@ export default function Subscription() {
         Manage your membership tier, regional billing currency, and commentary access.
       </p>
 
-      {/* Active Membership Banner with red border & hover glow */}
-      <div className={`${styles["status-banner"]} ${styles["hover-box"]}`}>
+      {/* Solid Red Current Membership Plan Banner with Renewal Date */}
+      <div className={styles["status-banner-solid"]}>
         <div>
           <span className={styles["status-label"]}>Current Membership Plan</span>
           <div className={styles["status-value"]}>
             {currentPlan === "free" && (
               <>
-                Gapviz Free <span className={styles["badge-free"]}>Active</span>
+                Gapviz Free <span className={styles["badge-white"]}>Active</span>
               </>
             )}
             {currentPlan === "plus" && (
               <>
-                Gapviz Plus <span className={styles["badge-active"]}>Active</span>
+                Gapviz Plus <span className={styles["badge-white"]}>Active</span>
               </>
             )}
             {currentPlan === "premium" && (
               <>
-                Gapviz Premium <span className={styles["badge-active"]}>Active</span>
+                Gapviz Premium <span className={styles["badge-white"]}>Active</span>
               </>
             )}
           </div>
+        </div>
+
+        {/* Renewal Date right inside the solid red box */}
+        <div className={styles["status-renewal-box"]}>
+          <span className={styles["renewal-label"]}>Next Renewal Date</span>
+          <span className={styles["renewal-date"]}>{getRenewalDate()}</span>
         </div>
       </div>
 
@@ -75,7 +87,7 @@ export default function Subscription() {
             <span className={styles.price}>{currency.symbol}0</span>
             <span className={styles.period}>/ month</span>
           </div>
-          <div className={styles["renewal-info"]}>Permanent free tier</div>
+          <div className={styles["renewal-info"]}>No billing required</div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
               <span className={styles["check-icon"]}>✓</span> Continuous uninterrupted music
@@ -113,7 +125,7 @@ export default function Subscription() {
             <span className={styles.period}>/ month</span>
           </div>
           <div className={styles["renewal-info"]}>
-            {currentPlan === "plus" ? "Renews on Nov 12, 2026" : "Billed monthly via Lemon Squeezy"}
+            Billed monthly via Lemon Squeezy
           </div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
@@ -154,7 +166,7 @@ export default function Subscription() {
             <span className={styles.period}>/ month</span>
           </div>
           <div className={styles["renewal-info"]}>
-            {currentPlan === "premium" ? "Renews on Nov 12, 2026" : "Billed monthly via Lemon Squeezy"}
+            Billed monthly via Lemon Squeezy
           </div>
           <ul className={styles["feature-list"]}>
             <li className={styles["feature-item"]}>
