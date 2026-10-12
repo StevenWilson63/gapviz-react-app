@@ -3,14 +3,15 @@ import "./account.css";
 import { useNavigate } from "react-router-dom";
 import { getAvatarDisplay } from "../../utils/avatarLogic";
 import { EyeOpenIcon, EyeClosedIcon } from "../../assets/icons/EyeIcons";
-
+import { useUser } from "../../context/UserContext";
 
 export default function Account() {
   const navigate = useNavigate();
+  const { setFullName, setNickname } = useUser();
 
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNicknameState] = useState("");
   const [phonetic, setPhonetic] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +21,6 @@ export default function Account() {
   const [showPassword, setShowPassword] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
-
 
   const [firstNameError, setFirstNameError] = useState("");
   const [surnameError, setSurnameError] = useState("");
@@ -49,48 +49,44 @@ export default function Account() {
   };
 
   const handleFirstNameChange = (e) => {
-  const value = e.target.value;
-  setFirstName(value); // always update — never block the input itself
-
-  if (value === "" || validateName(value, 30)) {
-    setFirstNameError("");
-  } else {
-    setFirstNameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
-  }
-};
+    const value = e.target.value;
+    setFirstName(value);
+    if (value === "" || validateName(value, 30)) {
+      setFirstNameError("");
+    } else {
+      setFirstNameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+    }
+  };
 
   const handleSurnameChange = (e) => {
-  const value = e.target.value;
-  setSurname(value);
-
-  if (value === "" || validateName(value, 30)) {
-    setSurnameError("");
-  } else {
-    setSurnameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
-  }
-};
+    const value = e.target.value;
+    setSurname(value);
+    if (value === "" || validateName(value, 30)) {
+      setSurnameError("");
+    } else {
+      setSurnameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+    }
+  };
 
   const handleNicknameChange = (e) => {
-  const value = e.target.value;
-  setNickname(value);
-
-  if (value === "" || validateName(value, 20)) {
-    setNicknameError("");
-  } else {
-    setNicknameError("Only letters, spaces, hyphens, apostrophes. Max 20 characters.");
-  }
-};
+    const value = e.target.value;
+    setNicknameState(value);
+    if (value === "" || validateName(value, 20)) {
+      setNicknameError("");
+    } else {
+      setNicknameError("Only letters, spaces, hyphens, apostrophes. Max 20 characters.");
+    }
+  };
 
   const handlePhoneticChange = (e) => {
-  const value = e.target.value;
-  setPhonetic(value);
-
-  if (value === "" || validateName(value, 30)) {
-    setPhoneticError("");
-  } else {
-    setPhoneticError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
-  }
-};
+    const value = e.target.value;
+    setPhonetic(value);
+    if (value === "" || validateName(value, 30)) {
+      setPhoneticError("");
+    } else {
+      setPhoneticError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+    }
+  };
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
@@ -114,16 +110,11 @@ export default function Account() {
     }
   };
 
-  const openAvatarEditor = () => {
-  // Navigate to your avatar editor screen
-  navigate("/profile/avatar");
-};
-
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
     setFirstName(stored.firstName || "");
     setSurname(stored.surname || "");
-    setNickname(stored.nickname || "");
+    setNicknameState(stored.nickname || "");
     setPhonetic(stored.phonetic || "");
     setEmail(stored.email || "");
     setPassword(stored.password || "");
@@ -160,7 +151,17 @@ export default function Account() {
       photo,
     };
 
+    // Save locally for the account page
     localStorage.setItem("gapvizUser", JSON.stringify(user));
+
+    // Save for UserContext / Home screen initials
+    const combinedFullName = `${firstName} ${surname}`.trim();
+    localStorage.setItem("gv_fullName", combinedFullName);
+    localStorage.setItem("gv_nickname", nickname);
+
+    // Update Context live state
+    setFullName(combinedFullName);
+    setNickname(nickname);
 
     setSavedMessage(true);
     setTimeout(() => setSavedMessage(false), 2000);
@@ -171,10 +172,14 @@ export default function Account() {
     if (!confirmed) return;
 
     localStorage.removeItem("gapvizUser");
+    localStorage.removeItem("gv_fullName");
+    localStorage.removeItem("gv_nickname");
+    setFullName("");
+    setNickname("");
 
     setFirstName("");
     setSurname("");
-    setNickname("");
+    setNicknameState("");
     setPhonetic("");
     setEmail("");
     setPassword("");
@@ -182,42 +187,33 @@ export default function Account() {
     setPhoto(null);
   }
 
- function handlePhotoChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  function handlePhotoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    setPhoto(reader.result);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhoto(reader.result);
 
-    setAvatarDisplay({
-      type: "photo",
-      value: reader.result
-    });
+      setAvatarDisplay({
+        type: "photo",
+        value: reader.result
+      });
+
+      const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
+      stored.photo = reader.result;
+      localStorage.setItem("gapvizUser", JSON.stringify(stored));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleRemovePhoto() {
+    setPhoto(null);
 
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-    stored.photo = reader.result;
+    delete stored.photo;
     localStorage.setItem("gapvizUser", JSON.stringify(stored));
-  };
-  reader.readAsDataURL(file);
-}
-
-
-
- function handleRemovePhoto() {
-  setPhoto(null);
-
-  setAvatarDisplay({
-    type: "initials",
-    value: nickname ? nickname[0] : firstName[0]
-  });
-
-  const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-  delete stored.photo;
-  localStorage.setItem("gapvizUser", JSON.stringify(stored));
-}
-
-
+  }
 
   function playSample() {
     const text = phonetic || nickname || firstName || "Guest";
@@ -241,75 +237,64 @@ export default function Account() {
       <h1 className="account-title">Your Account</h1>
 
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
-       <div className="account-avatar">
+        <div className="account-avatar">
+          <div
+            className="avatar-circle"
+            onClick={() => {
+              if (!photo) {
+                document.getElementById("avatar-file-input").click();
+              } else {
+                setShowAvatarMenu(true);
+              }
+            }}
+          >
+            {avatarDisplay.type === "photo" && (
+              <img src={avatarDisplay.value} alt="Avatar" />
+            )}
+            {avatarDisplay.type === "initials" && (
+              <span>{avatarDisplay.value}</span>
+            )}
+          </div>
 
-  {/* Avatar circle */}
-  <div
-    className="avatar-circle"
-    onClick={() => {
-      if (!photo) {
-        // Initials only → open photo picker immediately
-        document.getElementById("avatar-file-input").click();
-      } else {
-        // Photo exists → show action menu
-        setShowAvatarMenu(true);
-      }
-    }}
-  >
-    {avatarDisplay.type === "photo" && (
-      <img src={avatarDisplay.value} alt="Avatar" />
-    )}
+          <input
+            id="avatar-file-input"
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            style={{ display: "none" }}
+          />
 
-    {avatarDisplay.type === "initials" && (
-      <span>{avatarDisplay.value}</span>
-    )}
-  </div>
-
-  {/* Hidden file input */}
-  <input
-    id="avatar-file-input"
-    type="file"
-    accept="image/*"
-    onChange={handlePhotoChange}
-    style={{ display: "none" }}
-  />
-
-  {/* Avatar action menu */}
- {showAvatarMenu && (
-  <div className="avatar-menu" onClick={(e) => e.stopPropagation()}>
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        document.getElementById("avatar-file-input").click();
-        setShowAvatarMenu(false);
-      }}
-    >
-      Change Photo
-    </button>
-
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowAvatarMenu(false);
-        handleRemovePhoto();
-      }}
-    >
-      Remove Photo
-    </button>
-
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowAvatarMenu(false);
-      }}
-    >
-      Cancel
-    </button>
-  </div>
-)}
-
-</div>
-
+          {showAvatarMenu && (
+            <div className="avatar-menu" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  document.getElementById("avatar-file-input").click();
+                  setShowAvatarMenu(false);
+                }}
+              >
+                Change Photo
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAvatarMenu(false);
+                  handleRemovePhoto();
+                }}
+              >
+                Remove Photo
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAvatarMenu(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="account-field hover-box">
           <label>First Name</label>
@@ -362,41 +347,35 @@ export default function Account() {
         </div>
 
         <div className="account-field hover-box">
-  <label>Email</label>
-  <input
-    type="email"
-    value={email}
-    onChange={handleEmailChange}
-    autoComplete="email"
-  />
-  {emailError && <div className="error-text">{emailError}</div>}
-</div>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={handleEmailChange}
+            autoComplete="email"
+          />
+          {emailError && <div className="error-text">{emailError}</div>}
+        </div>
 
-
-       <div className="account-field password-field hover-box">
-  <label>Password</label>
-
-  <div className="password-wrapper">
-    <input
-      type={showPassword ? "text" : "password"}
-      value={password}
-      onChange={handlePasswordChange}
-      autoComplete="new-password"
-    />
-
-    <button
-      type="button"
-      className="password-toggle-button"
-      onClick={() => setShowPassword(!showPassword)}
-    >
-      {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-    </button>
-  </div>
-
-  {passwordError && <div className="error-text">{passwordError}</div>}
-</div>
-
-
+        <div className="account-field password-field hover-box">
+          <label>Password</label>
+          <div className="password-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={handlePasswordChange}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              className="password-toggle-button"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
+            </button>
+          </div>
+          {passwordError && <div className="error-text">{passwordError}</div>}
+        </div>
 
         <div className="account-field hover-box read-only-row">
           <label>Date Joined</label>
