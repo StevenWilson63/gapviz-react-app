@@ -37,11 +37,13 @@ export default function Account() {
   };
 
   const validateEmail = (value) => {
+    if (!value) return true; // optional if empty
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return pattern.test(value);
   };
 
   const validatePassword = (value) => {
+    if (!value) return true; // optional if empty
     if (value.length < 8) return false;
     const hasLetter = /[A-Za-z]/.test(value);
     const hasNumber = /[0-9]/.test(value);
@@ -90,22 +92,20 @@ export default function Account() {
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
+    setEmail(value);
     if (validateEmail(value)) {
-      setEmail(value);
       setEmailError("");
     } else {
-      setEmail(value);
       setEmailError("Enter a valid email address.");
     }
   };
 
   const handlePasswordChange = (e) => {
     const value = e.target.value;
+    setPassword(value);
     if (validatePassword(value)) {
-      setPassword(value);
       setPasswordError("");
     } else {
-      setPassword(value);
       setPasswordError("Min 8 characters, must include letters and numbers.");
     }
   };
@@ -122,6 +122,7 @@ export default function Account() {
     setPhoto(stored.photo || null);
   }, []);
 
+  // Relaxed validation: requires at least first name and surname without errors
   const allValid =
     !firstNameError &&
     !surnameError &&
@@ -129,12 +130,7 @@ export default function Account() {
     !phoneticError &&
     !emailError &&
     !passwordError &&
-    firstName &&
-    surname &&
-    nickname &&
-    phonetic &&
-    email &&
-    password;
+    firstName;
 
   function handleSave(e) {
     e.preventDefault();
@@ -195,11 +191,6 @@ export default function Account() {
     reader.onload = () => {
       setPhoto(reader.result);
 
-      setAvatarDisplay({
-        type: "photo",
-        value: reader.result
-      });
-
       const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
       stored.photo = reader.result;
       localStorage.setItem("gapvizUser", JSON.stringify(stored));
@@ -209,7 +200,6 @@ export default function Account() {
 
   function handleRemovePhoto() {
     setPhoto(null);
-
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
     delete stored.photo;
     localStorage.setItem("gapvizUser", JSON.stringify(stored));
