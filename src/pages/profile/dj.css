@@ -1,0 +1,173 @@
+.dj-settings-screen {
+  padding: 40px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.back-profile-btn {
+  background: none;
+  border: none;
+  color: #ff1a1a;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.back-profile-btn:hover {
+  opacity: 0.8;
+}
+
+.dj-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.dj-subtitle {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.dj-card {
+  background: #111;
+  border: 1px solid rgba(255, 26, 26, 0.2);
+  border-radius: 12px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Premium lock banner */
+.premium-lock-banner {
+  background: rgba(255, 26, 26, 0.1);
+  border: 1px solid #ff1a1a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #ffcccc;
+}
+
+.premium-lock-banner button {
+  background: #ff1a1a;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.dj-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #1a1a1a;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 26, 26, 0.2);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dj-field.locked-field {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.dj-field label {
+  font-size: 14px;
+  color: #ff1a1a;
+  font-weight: bold;
+}
+
+.dj-field select, .dj-field input[type="text"] {
+  background: #000;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+}
+
+.voice-preview-row {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-btn {
+  background: #222;
+  color: #ff1a1a;
+  border: 1px solid #ff1a1a;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.radio-label.active {
+  color: #fff;
+  font-weight: bold;
+}
+
+.dj-save {
+  background: #ff1a1a;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dj-save:hover {
+  background: #e01414;
+}
+
+.save-confirm-box {
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.hover-box:hover {
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 2px rgba(255, 26, 26, 0.2);
+}

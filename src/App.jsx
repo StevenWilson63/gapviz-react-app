@@ -9,6 +9,7 @@ import Profile from "./pages/profile/profile";
 // Profile sub-pages
 import Account from "./pages/profile/account";
 import Subscription from "./pages/profile/Subscription";
+import DjSettings from "./pages/profile/dj";
 
 export default function App() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
           {/* Profile sub-pages */}
           <Route path="/profile/account" element={<Account />} />
           <Route path="/profile/subscription" element={<Subscription />} />
-          <Route path="/profile/dj" element={<div>DJ Settings Page</div>} />
+          <Route path="/profile/dj" element={<DjSettings />} />
           <Route path="/profile/app" element={<div>App Settings Page</div>} />
           <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
 
