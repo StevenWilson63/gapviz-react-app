@@ -1,0 +1,136 @@
+.connected-services-screen {
+  padding: 40px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+.back-profile-btn {
+  background: none;
+  border: none;
+  color: #ff1a1a;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.back-profile-btn:hover {
+  opacity: 0.8;
+}
+
+.connected-services-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.connected-services-subtitle {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.connected-services-card {
+  background: #111;
+  border: 1px solid rgba(255, 26, 26, 0.2);
+  border-radius: 12px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.service-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 26, 26, 0.2);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.service-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.service-desc {
+  font-size: 12px;
+  color: #888;
+}
+
+.service-toggle-btn {
+  background: #222;
+  color: #ff1a1a;
+  border: 1px solid #ff1a1a;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.service-toggle-btn.connected {
+  background: #ff1a1a;
+  color: #fff;
+  border-color: #ff1a1a;
+}
+
+.read-only-service {
+  opacity: 0.8;
+}
+
+.active-badge {
+  font-size: 12px;
+  color: #00ff00;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.connected-services-save {
+  background: #ff1a1a;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.connected-services-save:hover {
+  background: #e01414;
+}
+
+.save-confirm-box {
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.hover-box:hover {
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 2px rgba(255, 26, 26, 0.2);
+}
