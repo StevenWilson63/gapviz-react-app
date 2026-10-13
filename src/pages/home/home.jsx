@@ -49,17 +49,15 @@ export default function Home() {
 
   return (
     <div id="home-wrapper">
-      {/* FIXED TOP AVATAR WITH 5 O'CLOCK GREEN DOT */}
-      <div className="home-avatar-container">
-        <div
-          id="top-avatar"
-          className={`home-avatar home-theme-${theme}`}
-          onClick={() => navigate("/profile")}
-        >
-          {initials}
-        </div>
-        {hasUnread && <span className="green-notification-dot"></span>}
-      </div>
+    {/* FIXED TOP AVATAR WITH 5 O'CLOCK GREEN DOT */}
+<div
+  id="top-avatar"
+  className={`home-avatar home-theme-${theme}`}
+  onClick={() => navigate("/profile")}
+>
+  {initials}
+  {hasUnread && <span className="green-notification-dot"></span>}
+</div>
 
       {/* FIXED SETTINGS ICON */}
       <div
