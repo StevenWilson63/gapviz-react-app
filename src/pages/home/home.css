@@ -48,7 +48,6 @@ body {
   cursor: pointer;
   z-index: 1000;
   box-sizing: border-box;
-
   transition: border 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
 }
 
@@ -58,8 +57,9 @@ body {
   transform: scale(0.97);
 }
 
-/* 5 o'clock position green dot indicator (Half-in, Half-out border badge) */
-.green-notification-dot {
+/* 5 o'clock position green dot indicator via pseudo-element */
+#top-avatar.has-unread::after {
+  content: '';
   position: absolute;
   bottom: -4px;
   right: -4px;
@@ -69,7 +69,6 @@ body {
   border: 2px solid #000000;
   border-radius: 50%;
   box-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
-  pointer-events: none;
   z-index: 1001;
 }
 
