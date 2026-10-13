@@ -1,0 +1,181 @@
+/* ----------------------------------------------------------
+   APPEARANCE SCREEN STYLING
+---------------------------------------------------------- */
+.appearance-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  background-color: #000000;
+  color: #ffffff;
+  box-sizing: border-box;
+  padding: 30px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.back-profile-btn {
+  background: transparent;
+  border: none;
+  color: #ff1a1a;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 20px;
+  transition: opacity 0.2s ease;
+}
+
+.back-profile-btn:hover {
+  opacity: 0.8;
+}
+
+.appearance-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.appearance-subtitle {
+  font-size: 14px;
+  color: #aaaaaa;
+  margin-bottom: 30px;
+}
+
+.appearance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.appearance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background-color: rgba(20, 20, 20, 0.6);
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  border-radius: 12px;
+  gap: 15px;
+}
+
+.appearance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appearance-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.appearance-desc {
+  font-size: 13px;
+  color: #888888;
+}
+
+/* Option Chips (Theme / Text Size) */
+.appearance-options-group {
+  display: flex;
+  gap: 6px;
+}
+
+.option-chip {
+  background: transparent;
+  border: 1px solid rgba(255, 26, 26, 0.4);
+  color: #cccccc;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-chip:hover {
+  border-color: #ff1a1a;
+  color: #ffffff;
+}
+
+.option-chip.active {
+  background-color: #ff1a1a;
+  border-color: #ff1a1a;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(255, 26, 26, 0.5);
+}
+
+/* Toggle Button styling (matching notifications style) */
+.service-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 26, 26, 0.4);
+  color: #aaaaaa;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.service-toggle-btn.connected {
+  background-color: rgba(0, 255, 0, 0.15);
+  border-color: #00ff00;
+  color: #00ff00;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.3);
+}
+
+/* Language Dropdown Select */
+.appearance-select {
+  background-color: #000000;
+  border: 1px solid rgba(255, 26, 26, 0.5);
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.appearance-select:focus {
+  border-color: #ff1a1a;
+  box-shadow: 0 0 5px rgba(255, 26, 26, 0.4);
+}
+
+/* Save Button */
+.appearance-save {
+  margin-top: 10px;
+  width: 100%;
+  padding: 14px;
+  background-color: transparent;
+  border: 2px solid rgba(255, 26, 26, 0.6);
+  color: #ff1a1a;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appearance-save:hover {
+  background-color: #ff1a1a;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 26, 26, 0.5);
+}
+
+.save-confirm-box {
+  text-align: center;
+  color: #00ff00;
+  font-size: 14px;
+  font-weight: 600;
+  animation: fadeInOut 2s ease;
+}
+
+.hover-box:hover {
+  border-color: #ff1a1a;
+}
