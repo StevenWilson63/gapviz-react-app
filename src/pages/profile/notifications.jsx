@@ -1,113 +1,148 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './notifications.css';
+import React, { useState, useEffect } from "react";
+import "./notifications.css";
+import { useNavigate } from "react-router-dom";
 
-export default function NotificationsScreen() {
+export default function Notifications() {
   const navigate = useNavigate();
 
-  // State management for notification preferences
-  const [settings, setSettings] = useState({
-    pushNotifications: true,
-    featureAnnouncements: true,
-    subscriptionReminders: true,
-    marketingEmails: false,
-  });
+  // Notification Toggles
+  const [pushEnabled, setPushEnabled] = useState(true);
+  const [featureAnnouncements, setFeatureAnnouncements] = useState(true);
+  const [subscriptionReminders, setSubscriptionReminders] = useState(true);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
-  const handleToggle = (key) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+  // Unread badge indicator state
+  const [hasUnread, setHasUnread] = useState(true);
+
+  const [savedMessage, setSavedMessage] = useState(false);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("gv_notificationSettings") || "{}");
+    if (stored.pushEnabled !== undefined) setPushEnabled(stored.pushEnabled);
+    if (stored.featureAnnouncements !== undefined) setFeatureAnnouncements(stored.featureAnnouncements);
+    if (stored.subscriptionReminders !== undefined) setSubscriptionReminders(stored.subscriptionReminders);
+    if (stored.marketingOptIn !== undefined) setMarketingOptIn(stored.marketingOptIn);
+    if (stored.hasUnread !== undefined) setHasUnread(stored.hasUnread);
+  }, []);
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    const settings = {
+      pushEnabled,
+      featureAnnouncements,
+      subscriptionReminders,
+      marketingOptIn,
+      hasUnread,
+    };
+    localStorage.setItem("gv_notificationSettings", JSON.stringify(settings));
+
+    // Dispatch custom event so top nav / home avatar updates instantly
+    window.dispatchEvent(new Event("gv_notifications_updated"));
+
+    setSavedMessage(true);
+    setTimeout(() => setSavedMessage(false), 2000);
+  };
+
+  const handleClearUnread = () => {
+    setHasUnread(false);
+    const stored = JSON.parse(localStorage.getItem("gv_notificationSettings") || "{}");
+    stored.hasUnread = false;
+    localStorage.setItem("gv_notificationSettings", JSON.stringify(stored));
+    window.dispatchEvent(new Event("gv_notifications_updated"));
   };
 
   return (
-    <div className="profile-subscreen-container">
-      {/* Header */}
-      <div className="subscreen-header">
-        <button 
-          className="back-button" 
-          onClick={() => navigate(-1)}
-          aria-label="Back to Profile"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <h1>Notifications</h1>
-      </div>
+    <div className="notifications-screen">
+      <button className="back-profile-btn" onClick={() => navigate("/profile")}>
+        ← Back to Profile
+      </button>
 
-      <p className="subscreen-subtitle">
-        Manage how and when we keep you updated about your account and activity.
+      <h1 className="notifications-title">Notifications</h1>
+      <p className="notifications-subtitle">
+        Manage how and when Gapviz alerts you about features, updates, and subscriptions.
       </p>
 
-      {/* Notification Preferences Cards */}
-      <div className="settings-cards-list">
+      {hasUnread && (
+        <div className="unread-banner hover-box">
+          <span>🔔 You have unread announcements!</span>
+          <button type="button" className="mark-read-btn" onClick={handleClearUnread}>
+            Mark as Read
+          </button>
+        </div>
+      )}
+
+      <form className="notifications-card" onSubmit={handleSave}>
         
-        {/* Push Notifications Master Toggle */}
-        <div className="setting-card-row">
-          <div className="setting-info">
-            <span className="setting-title">Push Notifications</span>
-            <span className="setting-desc">Master toggle for all app push notifications.</span>
+        {/* PUSH NOTIFICATIONS */}
+        <div className="service-row hover-box">
+          <div className="service-info">
+            <span className="service-name">Push Notifications</span>
+            <span className="service-desc">Allow real-time push notifications on this device</span>
           </div>
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={settings.pushNotifications} 
-              onChange={() => handleToggle('pushNotifications')} 
-            />
-            <span className="slider round"></span>
-          </label>
+          <button
+            type="button"
+            className={`service-toggle-btn ${pushEnabled ? "connected" : ""}`}
+            onClick={() => setPushEnabled(!pushEnabled)}
+          >
+            {pushEnabled ? "On ✓" : "Off"}
+          </button>
         </div>
 
-        {/* New Feature Announcements */}
-        <div className="setting-card-row">
-          <div className="setting-info">
-            <span className="setting-title">New Feature Announcements</span>
-            <span className="setting-desc">Get notified about updates, drops, and new tool releases.</span>
+        {/* NEW FEATURE ANNOUNCEMENTS */}
+        <div className="service-row hover-box">
+          <div className="service-info">
+            <span className="service-name">New Feature Announcements</span>
+            <span className="service-desc">Stay updated on new DJ personas, features, and engine updates</span>
           </div>
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={settings.featureAnnouncements} 
-              onChange={() => handleToggle('featureAnnouncements')} 
-            />
-            <span className="slider round"></span>
-          </label>
+          <button
+            type="button"
+            className={`service-toggle-btn ${featureAnnouncements ? "connected" : ""}`}
+            onClick={() => setFeatureAnnouncements(!featureAnnouncements)}
+          >
+            {featureAnnouncements ? "On ✓" : "Off"}
+          </button>
         </div>
 
-        {/* Subscription Reminders */}
-        <div className="setting-card-row">
-          <div className="setting-info">
-            <span className="setting-title">Subscription Reminders</span>
-            <span className="setting-desc">Alerts for renewal dates, trials ending, and billing updates.</span>
+        {/* SUBSCRIPTION REMINDERS */}
+        <div className="service-row hover-box">
+          <div className="service-info">
+            <span className="service-name">Subscription Reminders</span>
+            <span className="service-desc">Alerts regarding trial expiration, renewals, and payment status</span>
           </div>
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={settings.subscriptionReminders} 
-              onChange={() => handleToggle('subscriptionReminders')} 
-            />
-            <span className="slider round"></span>
-          </label>
+          <button
+            type="button"
+            className={`service-toggle-btn ${subscriptionReminders ? "connected" : ""}`}
+            onClick={() => setSubscriptionReminders(!subscriptionReminders)}
+          >
+            {subscriptionReminders ? "On ✓" : "Off"}
+          </button>
         </div>
 
-        {/* Marketing Email Opt-In */}
-        <div className="setting-card-row">
-          <div className="setting-info">
-            <span className="setting-title">Marketing Email Opt-In</span>
-            <span className="setting-desc">Receive exclusive offers, tips, and promotional updates via email.</span>
+        {/* MARKETING EMAIL OPT-IN */}
+        <div className="service-row hover-box">
+          <div className="service-info">
+            <span className="service-name">Marketing Email Opt-in</span>
+            <span className="service-desc">Receive occasional newsletters, offers, and curated playlists</span>
           </div>
-          <label className="switch">
-            <input 
-              type="checkbox" 
-              checked={settings.marketingEmails} 
-              onChange={() => handleToggle('marketingEmails')} 
-            />
-            <span className="slider round"></span>
-          </label>
+          <button
+            type="button"
+            className={`service-toggle-btn ${marketingOptIn ? "connected" : ""}`}
+            onClick={() => setMarketingOptIn(!marketingOptIn)}
+          >
+            {marketingOptIn ? "On ✓" : "Off"}
+          </button>
         </div>
 
-      </div>
+        {/* SAVE BUTTON */}
+        <button className="notifications-save hover-box" type="submit">
+          Save Preferences
+        </button>
+
+        {savedMessage && (
+          <div className="save-confirm-box">✓ Preferences Saved</div>
+        )}
+
+      </form>
     </div>
   );
 }

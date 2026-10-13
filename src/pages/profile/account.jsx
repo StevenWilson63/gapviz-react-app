@@ -22,12 +22,36 @@ export default function Account() {
   const [savedMessage, setSavedMessage] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
 
+  // Unread Notification state for green dot badge
+  const [hasUnread, setHasUnread] = useState(true);
+
   const [firstNameError, setFirstNameError] = useState("");
   const [surnameError, setSurnameError] = useState("");
   const [nicknameError, setNicknameError] = useState("");
   const [phoneticError, setPhoneticError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  const checkUnreadNotifications = () => {
+    const stored = JSON.parse(localStorage.getItem("gv_notificationSettings") || "{}");
+    setHasUnread(stored.hasUnread !== undefined ? stored.hasUnread : true);
+  };
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
+    setFirstName(stored.firstName || "");
+    setSurname(stored.surname || "");
+    setNicknameState(stored.nickname || "");
+    setPhonetic(stored.phonetic || "");
+    setEmail(stored.email || "");
+    setPassword(stored.password || "");
+    setDateJoined(stored.dateJoined || "12 Aug 2026");
+    setPhoto(stored.photo || null);
+
+    checkUnreadNotifications();
+    window.addEventListener("gv_notifications_updated", checkUnreadNotifications);
+    return () => window.removeEventListener("gv_notifications_updated", checkUnreadNotifications);
+  }, []);
 
   const validateName = (value, maxLength) => {
     const allowed = /^[A-Za-z\s'-]+$/;
@@ -110,19 +134,6 @@ export default function Account() {
     }
   };
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-    setFirstName(stored.firstName || "");
-    setSurname(stored.surname || "");
-    setNicknameState(stored.nickname || "");
-    setPhonetic(stored.phonetic || "");
-    setEmail(stored.email || "");
-    setPassword(stored.password || "");
-    setDateJoined(stored.dateJoined || "12 Aug 2026");
-    setPhoto(stored.photo || null);
-  }, []);
-
-  // Relaxed validation: requires at least first name and surname without errors
   const allValid =
     !firstNameError &&
     !surnameError &&
@@ -147,15 +158,12 @@ export default function Account() {
       photo,
     };
 
-    // Save locally for the account page
     localStorage.setItem("gapvizUser", JSON.stringify(user));
 
-    // Save for UserContext / Home screen initials
     const combinedFullName = `${firstName} ${surname}`.trim();
     localStorage.setItem("gv_fullName", combinedFullName);
     localStorage.setItem("gv_nickname", nickname);
 
-    // Update Context live state
     setFullName(combinedFullName);
     setNickname(nickname);
 
@@ -228,22 +236,27 @@ export default function Account() {
 
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
         <div className="account-avatar">
-          <div
-            className="avatar-circle"
-            onClick={() => {
-              if (!photo) {
-                document.getElementById("avatar-file-input").click();
-              } else {
-                setShowAvatarMenu(true);
-              }
-            }}
-          >
-            {avatarDisplay.type === "photo" && (
-              <img src={avatarDisplay.value} alt="Avatar" />
-            )}
-            {avatarDisplay.type === "initials" && (
-              <span>{avatarDisplay.value}</span>
-            )}
+          <div className="avatar-wrapper">
+            <div
+              className="avatar-circle"
+              onClick={() => {
+                if (!photo) {
+                  document.getElementById("avatar-file-input").click();
+                } else {
+                  setShowAvatarMenu(true);
+                }
+              }}
+            >
+              {avatarDisplay.type === "photo" && (
+                <img src={avatarDisplay.value} alt="Avatar" />
+              )}
+              {avatarDisplay.type === "initials" && (
+                <span>{avatarDisplay.value}</span>
+              )}
+            </div>
+
+            {/* 5 O'CLOCK UNREAD NOTIFICATION GREEN DOT */}
+            {hasUnread && <span className="green-notification-dot"></span>}
           </div>
 
           <input

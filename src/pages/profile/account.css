@@ -50,6 +50,12 @@
   gap: 8px;
 }
 
+/* Avatar Wrapper for Green Notification Dot Positioning */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .avatar-circle {
   width: 80px;
   height: 80px;
@@ -63,12 +69,33 @@
   color: #fff;
   font-size: 28px;
   font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.avatar-circle:hover {
+  transform: scale(0.97);
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
 }
 
 .avatar-circle img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* 5 o'clock position green dot badge */
+.green-notification-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #00ff00;
+  border: 2px solid #000000;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
+  z-index: 10;
 }
 
 .avatar-links {
@@ -93,15 +120,6 @@
   transform: scale(0.97);
 }
 
-.avatar-circle {
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.18s ease;
-}
-
-.avatar-circle:hover {
-  transform: scale(0.97);
-  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
-}
 .avatar-menu {
   position: absolute;
   margin-top: 12px;
@@ -130,8 +148,6 @@
 .avatar-menu button:hover {
   background: #ff1a1a;
 }
-
-
 
 .account-field {
   display: flex;
@@ -239,22 +255,6 @@
   padding-right: 44px;
 }
 
-.password-toggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 20px;
-  color: #fff;
-  opacity: 0.85;
-  transition: opacity 0.15s ease;
-}
-
-.password-toggle:hover {
-  opacity: 1;
-}
-
 .password-toggle-button {
   position: absolute;
   right: 12px;
@@ -274,8 +274,6 @@
 .password-toggle-button:hover {
   opacity: 1;
 }
-
-
 
 .read-only-row input {
   opacity: 0.6;
@@ -300,7 +298,6 @@
   transform: scale(0.99);
 }
 
-.disabled
 .disabled-save {
   opacity: 0.4;
   cursor: not-allowed;
@@ -329,7 +326,6 @@ input:-webkit-autofill:not(:focus) {
   -webkit-text-fill-color: #fff !important;
 }
 
-
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
@@ -337,21 +333,18 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #fff !important;
   border: 2px solid #ff1a1a !important;
 }
+
 .account-delete {
   width: 100%;
   padding: 12px;
   margin-top: 24px;
-
   background: #ff1a1a !important;
   color: #fff !important;
-
   border: none !important;
   border-radius: 12px;
-
   font-size: 16px;
   font-weight: 600;
   text-align: center;
-
   cursor: pointer;
   transition: background 0.18s ease, transform 0.12s ease;
   -webkit-appearance: none !important;

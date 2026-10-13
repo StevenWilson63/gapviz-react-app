@@ -1,158 +1,148 @@
-/* ==========================================================================
-   Notifications Screen Styles (Matching Accounts / Subscription / Connected Services)
-   ========================================================================== */
-
-.profile-subscreen-container {
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
+.notifications-screen {
+  padding: 40px 20px;
   max-width: 600px;
   margin: 0 auto;
-  color: var(--text-primary, #ffffff);
-  font-family: inherit;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
 }
 
-/* Header Layout */
-.subscreen-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
-.back-button {
-  background: transparent;
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
-  color: var(--text-primary, #ffffff);
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.back-profile-btn {
+  background: none;
+  border: none;
+  color: #ff1a1a;
+  font-size: 16px;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 20px;
+  padding: 0;
+  transition: opacity 0.2s;
 }
 
-.back-button:hover {
-  background-color: var(--hover-bg, rgba(255, 255, 255, 0.05));
-  border-color: var(--border-hover, rgba(255, 255, 255, 0.3));
+.back-profile-btn:hover {
+  opacity: 0.8;
 }
 
-.subscreen-header h1 {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.5px;
+.notifications-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 5px;
 }
 
-.subscreen-subtitle {
+.notifications-subtitle {
+  color: #aaa;
   font-size: 14px;
-  color: var(--text-secondary, #9ca3af);
-  margin-top: 0;
-  margin-bottom: 28px;
-  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
-/* Cards List Container */
-.settings-cards-list {
+.unread-banner {
+  background: #000000;
+  border: 1px solid #ff1a1a;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #fff;
+}
+
+.mark-read-btn {
+  background: #ff1a1a;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Outer Container - Pure Black */
+.notifications-card {
+  background: #000000;
+  border: 1px solid rgba(255, 26, 26, 0.2);
+  border-radius: 12px;
+  padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
-/* Individual Setting Card Row */
-.setting-card-row {
+/* Inner Toggle Row - Pure Black */
+.service-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  background-color: var(--card-bg, #1e1e24);
-  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
-  padding: 18px 20px;
-  border-radius: 14px;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  align-items: center;
+  background: #000000;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 26, 26, 0.2);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.setting-card-row:hover {
-  border-color: var(--card-border-hover, rgba(255, 255, 255, 0.18));
-}
-
-.setting-info {
+.service-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-right: 16px;
 }
 
-.setting-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary, #ffffff);
+.service-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
 }
 
-.setting-desc {
-  font-size: 13px;
-  color: var(--text-secondary, #9ca3af);
-  line-height: 1.4;
+.service-desc {
+  font-size: 12px;
+  color: #888;
 }
 
-/* ==========================================================================
-   Custom iOS / Android Toggle Switch Components
-   ========================================================================== */
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 26px;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
+.service-toggle-btn {
+  background: #000000;
+  color: #ff1a1a;
+  border: 1px solid #ff1a1a;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--toggle-off-bg, #374151);
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.2s, color 0.2s;
 }
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+.service-toggle-btn.connected {
+  background: #ff1a1a;
+  color: #fff;
+  border-color: #ff1a1a;
 }
 
-input:checked + .slider {
-  background-color: var(--accent-success, #10B981);
+.notifications-save {
+  background: #ff1a1a;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
 }
 
-input:focus + .slider {
-  box-shadow: 0 0 0 2px var(--focus-ring, rgba(16, 185, 129, 0.4));
+.notifications-save:hover {
+  background: #e01414;
 }
 
-input:checked + .slider:before {
-  transform: translateX(22px);
+.save-confirm-box {
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid #00ff00;
+  color: #00ff00;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
 }
 
-.slider.round {
-  border-radius: 34px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
+.hover-box:hover {
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 2px rgba(255, 26, 26, 0.2);
 }
