@@ -180,15 +180,6 @@ export default function ConnectedServices() {
           </button>
         </div>
 
-        {/* METADATA DATABASES (READ-ONLY / ALWAYS ACTIVE) */}
-        <div className="service-row hover-box read-only-service">
-          <div className="service-info">
-            <span className="service-name">MusicBrainz, Wikidata & Wikipedia</span>
-            <span className="service-desc">Open public domain databases used for DJ trivia & facts</span>
-          </div>
-          <span className="active-badge">Always Active</span>
-        </div>
-
         {/* SAVE BUTTON */}
         <button className="connected-services-save hover-box" type="submit">
           Save Changes
