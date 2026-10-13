@@ -254,3 +254,26 @@ body {
 .nav-item.active .nav-underline {
   opacity: 1;
 }
+/* Container for avatar and notification dot positioning */
+.home-avatar-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: inline-block;
+  z-index: 100;
+}
+
+/* 5 o'clock position green dot indicator */
+.green-notification-dot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  background-color: #00ff00;
+  border: 2px solid #000000;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
+  pointer-events: none;
+  z-index: 101;
+}
