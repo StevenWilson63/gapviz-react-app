@@ -34,9 +34,9 @@
   margin-bottom: 30px;
 }
 
-/* Outer Card Container - Matched to Account/Subscription Background */
+/* Outer Card Container - Set to Pure Black to match screen background */
 .connected-services-card {
-  background: #111111;
+  background: #000000;
   border: 1px solid rgba(255, 26, 26, 0.2);
   border-radius: 12px;
   padding: 30px;
@@ -45,7 +45,7 @@
   gap: 16px;
 }
 
-/* Inner Rows - Pure Black to match screen theme */
+/* Inner Service Items - Pure Black with red subtle border */
 .service-row {
   display: flex;
   justify-content: space-between;
@@ -75,7 +75,7 @@
 }
 
 .service-toggle-btn {
-  background: #111111;
+  background: #000000;
   color: #ff1a1a;
   border: 1px solid #ff1a1a;
   padding: 8px 16px;
