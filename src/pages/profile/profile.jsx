@@ -83,11 +83,11 @@ export default function Profile() {
 
         {/* About */}
         <div
-          className="profile-row hover-box"
-          onClick={() => navigate("/profile/about")}
-        >
-          About
-        </div>
+  className="profile-row hover-box"
+  onClick={() => navigate("/profile/about")}
+>
+  About (Legal & Credits)
+</div>
 
         {/* Logout — destructive, no glow */}
         <div

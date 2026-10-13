@@ -15,6 +15,7 @@ import Notifications from "./pages/profile/notifications"; // Added Notification
 import Appearance from "./pages/profile/appearance";
 import PrivacyData from "./pages/profile/privacyData";
 import HelpSupport from "./pages/profile/helpSupport";
+import About from "./pages/profile/about";
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/profile/appearance" element={<Appearance />} />
           <Route path="/profile/privacy-data" element={<PrivacyData />} />
           <Route path="/profile/help-support" element={<HelpSupport />} />
+          <Route path="/profile/about" element={<About />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/home" replace />} />
