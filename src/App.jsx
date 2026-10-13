@@ -39,7 +39,7 @@ export default function App() {
           <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
           <Route path="/profile/appearance" element={<Appearance />} />
           <Route path="/profile/privacy-data" element={<PrivacyData />} />
-          <Route path="/profile/help" element={<HelpSupport />} />
+          <Route path="/profile/help-support" element={<HelpSupport />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/home" replace />} />
