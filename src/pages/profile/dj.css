@@ -42,10 +42,20 @@
   padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-/* Inner DJ Card Rows - Matched to Deep Pure Black */
+.dj-section-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #aaa;
+  margin-top: 5px;
+  margin-bottom: -4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Inner DJ Selection Rows - Pure Deep Black */
 .dj-option-card {
   background: #000000;
   padding: 16px;
@@ -80,22 +90,40 @@
   color: #888;
 }
 
-/* Input / Select Controls - Deep Black */
-.dj-select-input,
-.dj-text-input {
+.dj-radio-dot {
+  font-size: 18px;
+  color: #ff1a1a;
+  font-weight: bold;
+}
+
+/* Settings Group Controls */
+.dj-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dj-setting-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.dj-select-input {
   background: #000000;
   color: #fff;
   border: 1px solid rgba(255, 26, 26, 0.2);
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  cursor: pointer;
 }
 
-.dj-select-input:focus,
-.dj-text-input:focus {
+.dj-select-input:focus {
   border-color: #ff1a1a;
   box-shadow: 0 0 0 2px rgba(255, 26, 26, 0.2);
 }

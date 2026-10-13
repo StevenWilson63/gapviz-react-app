@@ -1,107 +1,114 @@
-import React, { useState } from "react";
-import "./dj.css";
+import React, { useState, useEffect } from "react";
+import "./yourDjs.css";
 import { useNavigate } from "react-router-dom";
 
-export function DjSettings() {
+export default function YourDjs() {
   const navigate = useNavigate();
 
-  // Mock state for user DJ preferences
-  const [selectedPersona, setSelectedPersona] = useState("The Vinyl Archivist");
-  const [commentaryLength, setCommentaryLength] = useState("Standard");
-  const [tone, setTone] = useState("Fact-Focused");
-  const [depth, setDepth] = useState("Deep Historical Context");
-  const [isPremiumUser] = useState(false); // Change to true to test unlocked state
+  const [selectedDj, setSelectedDj] = useState("vinyl-archivist");
+  const [commentaryLength, setCommentaryLength] = useState("medium");
+  const [voiceTone, setVoiceTone] = useState("warm");
   const [savedMessage, setSavedMessage] = useState(false);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("gv_djSettings") || "{}");
+    if (stored.selectedDj) setSelectedDj(stored.selectedDj);
+    if (stored.commentaryLength) setCommentaryLength(stored.commentaryLength);
+    if (stored.voiceTone) setVoiceTone(stored.voiceTone);
+  }, []);
 
   const handleSave = (e) => {
     e.preventDefault();
+    const settings = {
+      selectedDj,
+      commentaryLength,
+      voiceTone,
+    };
+    localStorage.setItem("gv_djSettings", JSON.stringify(settings));
+
     setSavedMessage(true);
     setTimeout(() => setSavedMessage(false), 2000);
   };
 
-  const previewVoice = () => {
-    const text = `Hi, I'm ${selectedPersona}. Ready to dive deep into the liner notes?`;
-    const utter = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utter);
-  };
-
   return (
-    <div className="dj-settings-screen">
+    <div className="your-djs-screen">
       <button className="back-profile-btn" onClick={() => navigate("/profile")}>
         ← Back to Profile
       </button>
 
-      <h1 className="dj-title">Your DJs & Commentary</h1>
-      <p className="dj-subtitle">Configure your default DJ persona, voice, and analytical depth.</p>
+      <h1 className="your-djs-title">Your DJs</h1>
+      <p className="your-djs-subtitle">
+        Choose your AI persona and customize how your music commentary is delivered.
+      </p>
 
-      <form className="dj-card" onSubmit={handleSave}>
+      <form className="your-djs-card" onSubmit={handleSave}>
         
-        {/* PREMIUM LOCK OVERLAY BANNER IF NOT PREMIUM */}
-        {!isPremiumUser && (
-          <div className="premium-lock-banner">
-            <span>🔒 Premium Feature: Upgrade to customize advanced DJ personas & depth.</span>
-            <button type="button" onClick={() => navigate("/profile/subscription")}>
-              Upgrade
-            </button>
-          </div>
-        )}
+        {/* DJ PERSONA SELECTION */}
+        <div className="dj-section-label">Select DJ Persona</div>
 
-        {/* DEFAULT DJ PERSONA */}
-        <div className={`dj-field hover-box ${!isPremiumUser ? "locked-field" : ""}`}>
-          <label>Default DJ Persona</label>
+        <div 
+          className={`dj-option-card hover-box ${selectedDj === "vinyl-archivist" ? "selected" : ""}`}
+          onClick={() => setSelectedDj("vinyl-archivist")}
+        >
+          <div className="dj-info">
+            <span className="dj-name">The Vinyl Archivist</span>
+            <span className="dj-description">Deep cuts, B-sides, liner notes, and recording studio history.</span>
+          </div>
+          <span className="dj-radio-dot">{selectedDj === "vinyl-archivist" ? "●" : "○"}</span>
+        </div>
+
+        <div 
+          className={`dj-option-card hover-box ${selectedDj === "late-night-selector" ? "selected" : ""}`}
+          onClick={() => setSelectedDj("late-night-selector")}
+        >
+          <div className="dj-info">
+            <span className="dj-name">Late Night Selector</span>
+            <span className="dj-description">Smooth, atmospheric vibes, electronic history, and mood curation.</span>
+          </div>
+          <span className="dj-radio-dot">{selectedDj === "late-night-selector" ? "●" : "○"}</span>
+        </div>
+
+        <div 
+          className={`dj-option-card hover-box ${selectedDj === "chart-historian" ? "selected" : ""}`}
+          onClick={() => setSelectedDj("chart-historian")}
+        >
+          <div className="dj-info">
+            <span className="dj-name">Chart Historian</span>
+            <span className="dj-description">Billboard milestones, record-breaking runs, and chart trivia.</span>
+          </div>
+          <span className="dj-radio-dot">{selectedDj === "chart-historian" ? "●" : "○"}</span>
+        </div>
+
+        {/* COMMENTARY SETTINGS */}
+        <div className="dj-settings-group">
+          <label className="dj-setting-label">Commentary Length</label>
           <select 
-            value={selectedPersona} 
-            onChange={(e) => setSelectedPersona(e.target.value)}
-            disabled={!isPremiumUser}
+            className="dj-select-input hover-box"
+            value={commentaryLength}
+            onChange={(e) => setCommentaryLength(e.target.value)}
           >
-            <option value="The Vinyl Archivist">The Vinyl Archivist (Calm, Fact-Dense)</option>
-            <option value="Late Night Selector">Late Night Selector (Warm, Ambient, Story-Driven)</option>
-            <option value="Indie Musicologist">Indie Musicologist (Energetic, Trivia-Heavy)</option>
+            <option value="short">Short & Punchy (Quick Facts)</option>
+            <option value="medium">Balanced (Standard Story)</option>
+            <option value="deep">Deep Dive (Full Liner Notes)</option>
           </select>
         </div>
 
-        {/* VOICE PREVIEW */}
-        <div className="dj-field hover-box voice-preview-row">
-          <div>
-            <label>Voice Persona Preview</label>
-            <p className="field-hint">Listen to a sample of your selected DJ's voice model.</p>
-          </div>
-          <button type="button" className="preview-btn hover-box" onClick={previewVoice}>
-            ▶️ Preview Voice
-          </button>
-        </div>
-
-        {/* COMMENTARY LENGTH */}
-        <div className="dj-field hover-box">
-          <label>Commentary Length</label>
-          <div className="radio-group">
-            {["Short (Quick Fact)", "Standard (Balanced)", "Deep Dive (Full Story)"].map((len) => (
-              <label key={len} className={`radio-label ${commentaryLength === len ? "active" : ""}`}>
-                <input 
-                  type="radio" 
-                  name="length" 
-                  checked={commentaryLength === len} 
-                  onChange={() => setCommentaryLength(len)} 
-                />
-                {len}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* TONE & DEPTH SETTINGS */}
-        <div className="dj-field hover-box">
-          <label>Tone & Historical Depth</label>
-          <select value={tone} onChange={(e) => setTone(e.target.value)}>
-            <option value="Fact-Focused">Fact-Focused (MusicBrainz / AcoustID Verified)</option>
-            <option value="Conversational">Conversational & Narrative</option>
-            <option value="Technical">Technical & Production-Focused (Studio & Gear)</option>
+        <div className="dj-settings-group">
+          <label className="dj-setting-label">Voice Tone</label>
+          <select 
+            className="dj-select-input hover-box"
+            value={voiceTone}
+            onChange={(e) => setVoiceTone(e.target.value)}
+          >
+            <option value="warm">Warm & Conversational</option>
+            <option value="energetic">Upbeat & Energetic</option>
+            <option value="laidback">Mellow & Laidback</option>
           </select>
         </div>
 
         {/* SAVE BUTTON */}
-        <button className="dj-save hover-box" type="submit">
-          Save DJ Preferences
+        <button className="your-djs-save hover-box" type="submit">
+          Save Changes
         </button>
 
         {savedMessage && (
@@ -112,5 +119,3 @@ export function DjSettings() {
     </div>
   );
 }
-
-export default DjSettings;
