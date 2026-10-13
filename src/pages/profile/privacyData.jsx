@@ -11,9 +11,10 @@ export default function PrivacyData() {
   const [allowAITraining, setAllowAITraining] = useState(false);
   const [essentialCookiesOnly, setEssentialCookiesOnly] = useState(true);
 
-  // Status indicators
+  // Status indicators & modals
   const [downloading, setDownloading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeLegalModal, setActiveLegalModal] = useState(null); // 'privacy' | 'terms' | 'licenses' | null
   const [statusMsg, setStatusMsg] = useState("");
 
   useEffect(() => {
@@ -157,11 +158,11 @@ export default function PrivacyData() {
           </button>
         </div>
 
-        <div className="privacy-row privacy-info-row">
+        <div className="privacy-row hover-box">
           <div className="privacy-info">
             <span className="privacy-label">Audio Sample Retention</span>
             <span className="privacy-desc">
-              Short audio samples captured during track recognition are processed in real-time and immediately discarded. No audio recordings are permanently saved.
+              Short audio samples captured during track recognition are processed in real-time and immediately discarded. No raw audio is permanently saved.
             </span>
           </div>
         </div>
@@ -202,20 +203,40 @@ export default function PrivacyData() {
           </button>
         </div>
 
-        {/* --- SECTION 4: LEGAL --- */}
+        {/* --- SECTION 4: LEGAL & COMPLIANCE --- */}
         <h2 className="privacy-section-heading">Legal & Compliance</h2>
-        <div className="privacy-links">
-          <a href="#privacy-policy" onClick={(e) => e.preventDefault()} className="privacy-link">
-            Privacy Policy
-          </a>
-          <span className="privacy-link-sep">•</span>
-          <a href="#terms" onClick={(e) => e.preventDefault()} className="privacy-link">
-            Terms of Service
-          </a>
-          <span className="privacy-link-sep">•</span>
-          <a href="#licenses" onClick={(e) => e.preventDefault()} className="privacy-link">
-            Third-Party Licenses
-          </a>
+
+        <div
+          className="privacy-row hover-box legal-clickable"
+          onClick={() => setActiveLegalModal("privacy")}
+        >
+          <div className="privacy-info">
+            <span className="privacy-label">Privacy Policy</span>
+            <span className="privacy-desc">View our full global data collection policies and GDPR compliance statement.</span>
+          </div>
+          <span className="legal-arrow">→</span>
+        </div>
+
+        <div
+          className="privacy-row hover-box legal-clickable"
+          onClick={() => setActiveLegalModal("terms")}
+        >
+          <div className="privacy-info">
+            <span className="privacy-label">Terms of Service</span>
+            <span className="privacy-desc">Review application usage guidelines, service level terms, and rights.</span>
+          </div>
+          <span className="legal-arrow">→</span>
+        </div>
+
+        <div
+          className="privacy-row hover-box legal-clickable"
+          onClick={() => setActiveLegalModal("licenses")}
+        >
+          <div className="privacy-info">
+            <span className="privacy-label">Third-Party Licenses</span>
+            <span className="privacy-desc">Open-source software attributions, audio libraries, and technology disclosures.</span>
+          </div>
+          <span className="legal-arrow">→</span>
         </div>
 
         {statusMsg && <div className="privacy-status-toast">{statusMsg}</div>}
@@ -244,6 +265,50 @@ export default function PrivacyData() {
                 Permanently Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Legal & Compliance Text Modals */}
+      {activeLegalModal && (
+        <div className="modal-overlay" onClick={() => setActiveLegalModal(null)}>
+          <div className="modal-content legal-modal-body" onClick={(e) => e.stopPropagation()}>
+            {activeLegalModal === "privacy" && (
+              <>
+                <h3>Privacy Policy</h3>
+                <div className="legal-scroll-text">
+                  <p><strong>1. Data Collection & Processing:</strong> Gapviz processes audio fingerprints in real time solely for track identification. Samples are not permanently stored.</p>
+                  <p><strong>2. GDPR & Global Compliance:</strong> You reserve full rights to export or permanently delete your account data at any time via this settings panel.</p>
+                  <p><strong>3. AI & Analytics:</strong> Usage data is strictly anonymized and used only for personalized DJ script commentary if explicitly authorized above.</p>
+                </div>
+              </>
+            )}
+
+            {activeLegalModal === "terms" && (
+              <>
+                <h3>Terms of Service</h3>
+                <div className="legal-scroll-text">
+                  <p><strong>1. Acceptance:</strong> By accessing Gapviz, you agree to adhere to these usage conditions and fair usage policies.</p>
+                  <p><strong>2. Audio Identification:</strong> Commercial broadcast scanning is subject to licensing restrictions provided by integrated recognition providers.</p>
+                  <p><strong>3. Account Usage:</strong> Subscriptions and free trial periods apply strictly to individual non-commercial use.</p>
+                </div>
+              </>
+            )}
+
+            {activeLegalModal === "licenses" && (
+              <>
+                <h3>Third-Party Licenses</h3>
+                <div className="legal-scroll-text">
+                  <p><strong>i18next / react-i18next:</strong> MIT License. Copyright (c) i18next.</p>
+                  <p><strong>React / React Router:</strong> MIT License. Copyright (c) Meta Platforms, Inc.</p>
+                  <p><strong>Acoustic Recognition Engine:</strong> Open-source and commercial audio processing integration modules.</p>
+                </div>
+              </>
+            )}
+
+            <button className="modal-cancel-btn full-width-btn" onClick={() => setActiveLegalModal(null)}>
+              Close
+            </button>
           </div>
         </div>
       )}
