@@ -46,7 +46,7 @@ export default function Appearance() {
       <form className="appearance-card" onSubmit={handleSave}>
         
         {/* Theme Setting */}
-        <div className="appearance-row">
+        <div className="appearance-row hover-box">
           <div className="appearance-info">
             <span className="appearance-label">Theme Mode</span>
             <span className="appearance-desc">Select your preferred visual style</span>
@@ -66,7 +66,7 @@ export default function Appearance() {
         </div>
 
         {/* Text Size Setting */}
-        <div className="appearance-row">
+        <div className="appearance-row hover-box">
           <div className="appearance-info">
             <span className="appearance-label">Text Size</span>
             <span className="appearance-desc">Adjust UI readability scale</span>
@@ -101,7 +101,7 @@ export default function Appearance() {
         </div>
 
         {/* Language Selection */}
-        <div className="appearance-row">
+        <div className="appearance-row hover-box">
           <div className="appearance-info">
             <span className="appearance-label">Language</span>
             <span className="appearance-desc">Choose your preferred display language</span>
