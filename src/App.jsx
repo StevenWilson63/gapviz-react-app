@@ -11,6 +11,7 @@ import Account from "./pages/profile/account";
 import Subscription from "./pages/profile/Subscription";
 import DjSettings from "./pages/profile/dj";
 import ConnectedServices from "./pages/profile/connectedServices";
+import Notifications from "./pages/profile/notifications"; // Added Notifications import
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/profile/subscription" element={<Subscription />} />
           <Route path="/profile/dj" element={<DjSettings />} />
           <Route path="/profile/connected-services" element={<ConnectedServices />} />
+          <Route path="/profile/notifications" element={<Notifications />} /> {/* Added Notifications Route */}
           <Route path="/profile/app" element={<div>App Settings Page</div>} />
           <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
 
