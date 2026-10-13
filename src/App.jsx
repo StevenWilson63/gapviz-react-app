@@ -14,6 +14,7 @@ import ConnectedServices from "./pages/profile/connectedServices";
 import Notifications from "./pages/profile/notifications"; // Added Notifications import
 import Appearance from "./pages/profile/appearance";
 import PrivacyData from "./pages/profile/privacyData";
+import HelpSupport from "./pages/profile/helpSupport";
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
           <Route path="/profile/appearance" element={<Appearance />} />
           <Route path="/profile/privacy-data" element={<PrivacyData />} />
+          <Route path="/profile/help" element={<HelpSupport />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/home" replace />} />
