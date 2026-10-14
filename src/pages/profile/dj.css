@@ -5,6 +5,30 @@
   color: #fff;
   font-family: Arial, sans-serif;
   box-sizing: border-box;
+  position: relative;
+}
+
+/* --- UNIFIED HEADER & BACK BUTTON LAYOUT --- */
+.your-djs-header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+}
+
+.your-djs-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: #fff;
+  text-align: left;
+}
+
+.your-djs-subtitle {
+  font-size: 14px;
+  color: #aaa;
+  margin: 0;
+  text-align: left;
 }
 
 .back-profile-btn {
@@ -13,8 +37,9 @@
   color: #ff1a1a;
   font-size: 16px;
   cursor: pointer;
-  margin-bottom: 20px;
   padding: 0;
+  white-space: nowrap;
+  margin-top: 4px;
   transition: opacity 0.2s;
 }
 

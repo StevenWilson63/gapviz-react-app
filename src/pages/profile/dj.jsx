@@ -37,9 +37,16 @@ export default function YourDjs() {
 
   return (
     <div className="your-djs-screen">
-      <button className="back-profile-btn" onClick={() => navigate("/profile")}>
-        ← Back to Profile
-      </button>
+      {/* UNIFIED HEADER & BACK BUTTON */}
+      <div className="your-djs-header-wrapper">
+        <div>
+          <h1 className="your-djs-title">Your DJs</h1>
+          <p className="your-djs-subtitle">Customize your virtual DJ personas, voice styles, and commentary depth.</p>
+        </div>
+        <button className="back-profile-btn" onClick={() => navigate("/profile")}>
+          ← Back to Profile
+        </button>
+      </div>
 
       <form className="your-djs-container" onSubmit={handleSave}>
 
