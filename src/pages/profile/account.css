@@ -50,7 +50,7 @@
   gap: 8px;
 }
 
-/* Avatar Wrapper for Green Notification Dot Positioning */
+/* Avatar Wrapper for Positioning */
 .avatar-wrapper {
   position: relative;
   display: inline-block;
@@ -61,7 +61,7 @@
   height: 80px;
   border-radius: 50%;
   background: #ff1a1a;
-  border: 2px solid rgba(255, 26, 26, 0.35);
+  border: 2px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,12 +70,11 @@
   font-size: 28px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.18s ease;
+  transition: transform 0.12s ease;
 }
 
 .avatar-circle:hover {
   transform: scale(0.97);
-  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
 }
 
 .avatar-circle img {
@@ -84,18 +83,41 @@
   object-fit: cover;
 }
 
-/* 5 o'clock position green dot badge */
-.green-notification-dot {
+/* Pulsing Red Halo for Notifications (Active only when unread) */
+.avatar-circle.has-unread {
+  border-color: #ffffff; /* Crisp white separation ring */
+  animation: accountAvatarPulse 2.2s infinite ease-in-out;
+}
+
+@keyframes accountAvatarPulse {
+  0% {
+    box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 2px #000000, 0 0 0 7px #ff1a1a, 0 0 16px rgba(255, 26, 26, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5);
+  }
+}
+
+/* --- CUSTOM HOVER TOOLTIP ("New notifications") --- */
+.avatar-notification-tooltip {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 16px;
-  height: 16px;
-  background-color: #00ff00;
-  border: 2px solid #000000;
-  border-radius: 50%;
-  box-shadow: 0 0 6px rgba(0, 255, 0, 0.8);
-  z-index: 10;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background-color: #000000;
+  color: #ffffff;
+  border: 1px solid #ff1a1a;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 8px rgba(255, 26, 26, 0.35);
+  z-index: 1001;
 }
 
 .avatar-links {

@@ -22,8 +22,9 @@ export default function Account() {
   const [savedMessage, setSavedMessage] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
 
-  // Unread Notification state for green dot badge
+  // Notification state & Hover state for custom tooltip
   const [hasUnread, setHasUnread] = useState(true);
+  const [isAvatarHovered, setIsAvatarHovered] = useState(false);
 
   const [firstNameError, setFirstNameError] = useState("");
   const [surnameError, setSurnameError] = useState("");
@@ -33,8 +34,16 @@ export default function Account() {
   const [passwordError, setPasswordError] = useState("");
 
   const checkUnreadNotifications = () => {
-    const stored = JSON.parse(localStorage.getItem("gv_notificationSettings") || "{}");
-    setHasUnread(stored.hasUnread !== undefined ? stored.hasUnread : true);
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem("gv_notifications") ||
+          localStorage.getItem("gv_notificationSettings") ||
+          "{}"
+      );
+      setHasUnread(stored.hasUnread !== undefined ? stored.hasUnread : true);
+    } catch (e) {
+      setHasUnread(true);
+    }
   };
 
   useEffect(() => {
@@ -50,7 +59,8 @@ export default function Account() {
 
     checkUnreadNotifications();
     window.addEventListener("gv_notifications_updated", checkUnreadNotifications);
-    return () => window.removeEventListener("gv_notifications_updated", checkUnreadNotifications);
+    return () =>
+      window.removeEventListener("gv_notifications_updated", checkUnreadNotifications);
   }, []);
 
   const validateName = (value, maxLength) => {
@@ -80,7 +90,9 @@ export default function Account() {
     if (value === "" || validateName(value, 30)) {
       setFirstNameError("");
     } else {
-      setFirstNameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+      setFirstNameError(
+        "Only letters, spaces, hyphens, apostrophes. Max 30 characters."
+      );
     }
   };
 
@@ -90,7 +102,9 @@ export default function Account() {
     if (value === "" || validateName(value, 30)) {
       setSurnameError("");
     } else {
-      setSurnameError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+      setSurnameError(
+        "Only letters, spaces, hyphens, apostrophes. Max 30 characters."
+      );
     }
   };
 
@@ -100,7 +114,9 @@ export default function Account() {
     if (value === "" || validateName(value, 20)) {
       setNicknameError("");
     } else {
-      setNicknameError("Only letters, spaces, hyphens, apostrophes. Max 20 characters.");
+      setNicknameError(
+        "Only letters, spaces, hyphens, apostrophes. Max 20 characters."
+      );
     }
   };
 
@@ -110,7 +126,9 @@ export default function Account() {
     if (value === "" || validateName(value, 30)) {
       setPhoneticError("");
     } else {
-      setPhoneticError("Only letters, spaces, hyphens, apostrophes. Max 30 characters.");
+      setPhoneticError(
+        "Only letters, spaces, hyphens, apostrophes. Max 30 characters."
+      );
     }
   };
 
@@ -236,9 +254,13 @@ export default function Account() {
 
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
         <div className="account-avatar">
-          <div className="avatar-wrapper">
+          <div className="avatar-wrapper" style={{ position: "relative" }}>
+            {/* AVATAR CIRCLE WITH PULSING RED HALO & TOOLTIP */}
             <div
-              className="avatar-circle"
+              className={`avatar-circle ${hasUnread ? "has-unread" : ""}`}
+              onMouseEnter={() => setIsAvatarHovered(true)}
+              onMouseLeave={() => setIsAvatarHovered(false)}
+              title={hasUnread ? "New notifications" : "Change Avatar"}
               onClick={() => {
                 if (!photo) {
                   document.getElementById("avatar-file-input").click();
@@ -255,8 +277,12 @@ export default function Account() {
               )}
             </div>
 
-            {/* 5 O'CLOCK UNREAD NOTIFICATION GREEN DOT */}
-            {hasUnread && <span className="green-notification-dot"></span>}
+            {/* CUSTOM TOOLTIP FOR NEW NOTIFICATIONS */}
+            {hasUnread && isAvatarHovered && (
+              <div className="avatar-notification-tooltip">
+                New notifications
+              </div>
+            )}
           </div>
 
           <input
@@ -270,6 +296,7 @@ export default function Account() {
           {showAvatarMenu && (
             <div className="avatar-menu" onClick={(e) => e.stopPropagation()}>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   document.getElementById("avatar-file-input").click();
@@ -279,6 +306,7 @@ export default function Account() {
                 Change Photo
               </button>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowAvatarMenu(false);
@@ -288,6 +316,7 @@ export default function Account() {
                 Remove Photo
               </button>
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowAvatarMenu(false);
