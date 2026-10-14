@@ -4,33 +4,28 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #000;
+  background-color: #000000;
   font-family: Arial, sans-serif;
-  color: #fff;
+  color: #ffffff;
   overflow-x: hidden;
 }
 
 /* ----------------------------------------------------------
    HOME WRAPPER (required for fixed header/footer)
    Scoped to this screen only — uses position:fixed + inset
-   instead of touching html/body, so it can't affect scrolling
-   on any other screen in the app.
 ---------------------------------------------------------- */
 #home-wrapper {
   position: fixed;
-  inset: 0;               /* top/right/bottom/left: 0 — pins to the viewport */
+  inset: 0;
   width: 100%;
-  height: 100vh;          /* fallback for browsers without dvh support */
-  height: 100dvh;         /* real visible viewport height on mobile (accounts for address bar) */
-  overflow: hidden;       /* isolates scroll area to this screen only */
-  overscroll-behavior: none; /* stop iOS/Android bounce & pull-to-refresh within this screen */
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* ----------------------------------------------------------
-   FIXED TOP-LEFT AVATAR
----------------------------------------------------------- */
-/* ----------------------------------------------------------
-   FIXED TOP-LEFT AVATAR
+   FIXED TOP-LEFT AVATAR (Solid Red Circle + White Initials)
 ---------------------------------------------------------- */
 #top-avatar {
   position: absolute;
@@ -39,12 +34,12 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background-color: #000000; /* Pure black background for red contrast */
-  border: 2px solid rgba(255, 26, 26, 0.4);
+  background-color: #ff1a1a; /* Solid Gapviz Red */
+  border: 2px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff1a1a; /* Gapviz red initials */
+  color: #ffffff; /* White initials */
   font-weight: 700;
   font-size: 14px;
   text-transform: uppercase;
@@ -55,32 +50,54 @@ body {
 }
 
 #top-avatar:hover {
-  border-color: #ff1a1a;
-  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
   transform: scale(0.97);
 }
 
-/* Pulsing Red Outline Selector for both ID & Class */
+/* Pulsing Outer Red Halo — Active ONLY when user has unread notifications */
 #top-avatar.has-unread,
 .home-avatar.has-unread {
-  border-color: #ff1a1a !important;
-  box-shadow: 0 0 14px rgba(255, 26, 26, 0.85);
-  animation: avatarBreathingGlow 2.2s infinite ease-in-out;
+  border-color: #ffffff; /* Inner crisp ring separation */
+  animation: avatarOutlinePulse 2.2s infinite ease-in-out;
 }
 
-@keyframes avatarBreathingGlow {
+@keyframes avatarOutlinePulse {
   0% {
-    box-shadow: 0 0 6px rgba(255, 26, 26, 0.4);
-    border-color: rgba(255, 26, 26, 0.6);
+    box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 26, 26, 0.95);
-    border-color: #ff1a1a;
+    box-shadow: 0 0 0 2px #000000, 0 0 0 7px #ff1a1a, 0 0 16px rgba(255, 26, 26, 0.9);
   }
   100% {
-    box-shadow: 0 0 6px rgba(255, 26, 26, 0.4);
-    border-color: rgba(255, 26, 26, 0.6);
+    box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5);
   }
+}
+
+/* --- CUSTOM GAPVIZ HOVER TOOLTIP ("New notifications") --- */
+#top-avatar.has-unread::after {
+  content: "New notifications";
+  position: absolute;
+  top: 46px;
+  left: 0;
+  white-space: nowrap;
+  background-color: #000000;
+  color: #ffffff;
+  border: 1px solid #ff1a1a;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 8px rgba(255, 26, 26, 0.35);
+  z-index: 1001;
+}
+
+#top-avatar.has-unread:hover::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ----------------------------------------------------------
@@ -114,19 +131,18 @@ body {
 
 /* ----------------------------------------------------------
    SCROLLABLE MAIN HOME SCREEN
-   (the ONLY element that should ever scroll)
 ---------------------------------------------------------- */
 #home-screen {
   position: absolute;
-  top: 100px;     /* FIXED */
-  bottom: 110px;   /* FIXED */
+  top: 100px;
+  bottom: 110px;
   left: 0;
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
-  overscroll-behavior-y: contain;     /* stop scroll chaining/bounce leaking to the page */
-  touch-action: pan-y;                /* only vertical panning inside this region */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 
   display: flex;
   flex-direction: column;

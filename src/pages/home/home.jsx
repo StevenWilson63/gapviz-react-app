@@ -49,11 +49,12 @@ export default function Home() {
 
   return (
     <div id="home-wrapper">
-      {/* FIXED TOP AVATAR WITH PULSING RED NOTIFICATION OUTLINE */}
+      {/* FIXED TOP AVATAR WITH PULSING RED NOTIFICATION HALO & TOOLTIP */}
       <div
         id="top-avatar"
         className={`home-avatar home-theme-${theme} ${hasUnread ? "has-unread" : ""}`}
         onClick={() => navigate("/profile")}
+        title={hasUnread ? "New notifications" : "Profile"}
       >
         {initials}
       </div>
