@@ -49,14 +49,14 @@ export default function Home() {
 
   return (
     <div id="home-wrapper">
-   {/* FIXED TOP AVATAR WITH 5 O'CLOCK GREEN DOT */}
-<div
-  id="top-avatar"
-  className={`home-avatar home-theme-${theme} ${hasUnread ? "has-unread" : ""}`}
-  onClick={() => navigate("/profile")}
->
-  {initials}
-</div>
+      {/* FIXED TOP AVATAR WITH PULSING RED NOTIFICATION OUTLINE */}
+      <div
+        id="top-avatar"
+        className={`home-avatar home-theme-${theme} ${hasUnread ? "has-unread" : ""}`}
+        onClick={() => navigate("/profile")}
+      >
+        {initials}
+      </div>
 
       {/* FIXED SETTINGS ICON */}
       <div
