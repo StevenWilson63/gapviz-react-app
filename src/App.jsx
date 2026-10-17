@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { UserProvider } from "./context/UserContext";
 
+import Splash from "./components/Splash/Splash";
 import Home from "./pages/home/home";
 import Profile from "./pages/profile/profile";
 import Dj from "./pages/dj/Dj"; // Dedicated DJ studio screen
@@ -29,8 +30,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          {/* Splash screen as the default entry point */}
+          <Route path="/" element={<Splash />} />
 
           {/* Main bottom navigation screens */}
           <Route path="/home" element={<Home />} />
