@@ -1,67 +1,6 @@
-.identify-screen {
-  min-height: 100vh;
-  background-color: #000000;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 20px 90px;
-  box-sizing: border-box;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  text-align: center;
-  position: relative;
-}
-
-.fp-logo-container {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-}
-
-.fp-brand-logo {
-  font-size: 20px;
-  font-weight: 500;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.fp-top-text {
-  font-size: 24px;
-  font-weight: 300;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 24px;
-}
-
-.fp-wrapper {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: rgba(255, 26, 26, 0.05);
-  border: 2px solid rgba(255, 26, 26, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 20px 0;
-}
-
-.fp-wrapper:hover {
-  border-color: #FF1A1A;
-  background: rgba(255, 26, 26, 0.1);
-  box-shadow: 0 0 20px rgba(255, 26, 26, 0.25);
-}
-
-.fp-wrapper.active-pulse {
-  animation: pulse-ring 1.5s infinite;
-  border-color: #FF1A1A;
-}
-
 .fp-icon-inner {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,33 +9,5 @@
 .fp-svg {
   width: 100%;
   height: 100%;
-}
-
-.fp-bottom-text {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 24px;
-}
-
-.fp-status {
-  font-size: 18px;
-  color: #FF1A1A;
-  margin-top: 24px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 26, 26, 0.4);
-  }
-  70% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 20px rgba(255, 26, 26, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 26, 26, 0);
-  }
+  object-fit: contain;
 }
