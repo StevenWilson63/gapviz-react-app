@@ -34,25 +34,29 @@ export default function Identify() {
 
   return (
     <div className="identify-screen">
+      {/* Header / Logo */}
       <div className="fp-logo-container">
         <h2 className="fp-brand-logo">gapviz</h2>
       </div>
 
-      {topText && <div className="fp-top-text">{topText}</div>}
+      {/* Main Center Content Container */}
+      <div className="fp-center-content">
+        {topText && <div className="fp-top-text">{topText}</div>}
 
-      <div 
-        className={`fp-wrapper ${isListening ? "active-pulse" : ""}`}
-        onClick={handleFingerprintClick}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="fp-icon-inner">
-          <img src={fingerprintIcon} alt="Gapviz Fingerprint" className="fp-svg" />
+        <div 
+          className={`fp-wrapper ${isListening ? "active-pulse" : ""}`}
+          onClick={handleFingerprintClick}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="fp-icon-inner">
+            <img src={fingerprintIcon} alt="Gapviz Fingerprint" className="fp-svg" />
+          </div>
         </div>
-      </div>
 
-      {bottomText && <div className="fp-bottom-text">{bottomText}</div>}
-      {statusText && <div className="fp-status">{statusText}</div>}
+        {bottomText && <div className="fp-bottom-text">{bottomText}</div>}
+        {statusText && <div className="fp-status">{statusText}</div>}
+      </div>
 
       <MobileFooter />
     </div>

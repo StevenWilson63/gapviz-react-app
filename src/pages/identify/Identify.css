@@ -1,13 +1,122 @@
-.fp-icon-inner {
-  width: 90px;
-  height: 90px;
+.identify-screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #000000;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding-bottom: 80px; /* Leave space for bottom nav */
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+.fp-logo-container {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+}
+
+.fp-brand-logo {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.fp-center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  max-width: 360px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.fp-top-text {
+  font-size: 26px;
+  font-weight: 300;
+  color: #ffffff;
+  margin-bottom: 24px;
+}
+
+.fp-wrapper {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255, 26, 26, 0.05);
+  border: 2px solid rgba(255, 26, 26, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.3s ease;
+  margin: 10px 0;
+}
+
+.fp-wrapper:hover,
+.fp-wrapper:active {
+  border-color: #FF1A1A;
+  background: rgba(255, 26, 26, 0.12);
+  box-shadow: 0 0 25px rgba(255, 26, 26, 0.3);
+}
+
+.fp-wrapper.active-pulse {
+  animation: pulse-ring 1.5s infinite;
+  border-color: #FF1A1A;
+}
+
+.fp-icon-inner {
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Passes click directly to wrapper */
 }
 
 .fp-svg {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  pointer-events: none;
+}
+
+.fp-bottom-text {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 24px;
+}
+
+.fp-status {
+  font-size: 18px;
+  color: #FF1A1A;
+  margin-top: 24px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(255, 26, 26, 0.5);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 24px rgba(255, 26, 26, 0);
+  }
+  100% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(255, 26, 26, 0);
+  }
 }
