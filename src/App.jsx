@@ -6,6 +6,7 @@ import { UserProvider } from "./context/UserContext";
 import Home from "./pages/home/home";
 import Profile from "./pages/profile/profile";
 import Dj from "./pages/dj/Dj"; // Dedicated DJ studio screen
+import Library from "./pages/library/Library";
 
 // Identify screens
 import Identify from "./pages/identify/Identify";
@@ -34,7 +35,7 @@ export default function App() {
           {/* Main bottom navigation screens */}
           <Route path="/home" element={<Home />} />
           <Route path="/dj" element={<Dj />} />
-          <Route path="/library" element={<div style={{color: '#fff', padding: '40px'}}>Library Screen (Coming Soon)</div>} />
+          <Route path="/library" element={<Library />} />
           <Route path="/identify" element={<Identify />} />
           <Route path="/identify-story" element={<IdentifyStory />} />
 

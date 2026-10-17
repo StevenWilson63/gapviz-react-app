@@ -1,0 +1,50 @@
+.library-screen {
+  min-height: calc(100vh - 70px);
+  background-color: #000000;
+  color: #ffffff;
+  padding: 30px 20px 90px;
+  box-sizing: border-box;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.library-header {
+  margin-bottom: 24px;
+}
+
+.library-header h1 {
+  font-size: 32px;
+  font-weight: 300;
+  margin: 0 0 6px 0;
+}
+
+.library-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.library-content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.library-card {
+  background: rgba(17, 17, 17, 0.8);
+  border: 1px solid rgba(255, 26, 26, 0.35);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.library-card h3 {
+  font-size: 18px;
+  margin: 0 0 8px 0;
+  color: #ffffff;
+}
+
+.library-card p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  line-height: 1.5;
+}
