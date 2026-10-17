@@ -9,8 +9,8 @@
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
-  padding-bottom: 80px; /* Leave space for bottom nav */
-  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  padding-bottom: 80px; /* Space for bottom footer */
+  font-family: 'Space Grotesk', system-ui, sans-serif;
   overflow: hidden;
 }
 
@@ -48,48 +48,50 @@
   margin-bottom: 24px;
 }
 
+/* Updated Wrapper: The circular border is REMOVED */
 .fp-wrapper {
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: rgba(255, 26, 26, 0.05);
-  border: 2px solid rgba(255, 26, 26, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   transition: all 0.3s ease;
   margin: 10px 0;
-}
-
-.fp-wrapper:hover,
-.fp-wrapper:active {
-  border-color: #FF1A1A;
-  background: rgba(255, 26, 26, 0.12);
-  box-shadow: 0 0 25px rgba(255, 26, 26, 0.3);
-}
-
-.fp-wrapper.active-pulse {
-  animation: pulse-ring 1.5s infinite;
-  border-color: #FF1A1A;
-}
-
-.fp-icon-inner {
-  width: 110px;
-  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* Passes click directly to wrapper */
+  /* Maintain overall click area size without visual circle */
+  width: 180px; 
+  height: 180px;
 }
 
+/* Add a subtle hover effect (opacity) since the border is gone */
+.fp-wrapper:hover {
+  opacity: 0.85;
+}
+
+/* Icon Container */
+.fp-icon-inner {
+  width: 130px; /* Size of the icon itself */
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Let the wrapper handle the click */
+}
+
+/* The Fingerprint SVG/Image styling */
 .fp-svg {
   width: 100%;
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+  transition: all 0.2s ease;
+  /* A subtle resting drop-shadow looks nice on pure black */
+  filter: drop-shadow(0 0 4px rgba(255, 26, 26, 0.1));
+}
+
+/* Active Glowing and Pulsing class - Applied to the SVG */
+.fp-svg.icon-listening-glow {
+  animation: icon-pulse-glow 1.5s infinite;
 }
 
 .fp-bottom-text {
@@ -106,17 +108,19 @@
   letter-spacing: 0.5px;
 }
 
-@keyframes pulse-ring {
+/* KEYFRAMES: Specific animation for glowing and pulsing the icon itself */
+@keyframes icon-pulse-glow {
   0% {
-    transform: scale(0.96);
-    box-shadow: 0 0 0 0 rgba(255, 26, 26, 0.5);
+    transform: scale(0.97);
+    filter: drop-shadow(0 0 5px rgba(255, 26, 26, 0.6));
   }
-  70% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 24px rgba(255, 26, 26, 0);
+  50% {
+    transform: scale(1.03);
+    /* Stronger glow and red tint */
+    filter: drop-shadow(0 0 18px rgba(255, 26, 26, 1)) brightness(1.1);
   }
   100% {
-    transform: scale(0.96);
-    box-shadow: 0 0 0 0 rgba(255, 26, 26, 0);
+    transform: scale(0.97);
+    filter: drop-shadow(0 0 5px rgba(255, 26, 26, 0.6));
   }
 }

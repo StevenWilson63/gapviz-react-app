@@ -44,13 +44,18 @@ export default function Identify() {
         {topText && <div className="fp-top-text">{topText}</div>}
 
         <div 
-          className={`fp-wrapper ${isListening ? "active-pulse" : ""}`}
+          className="fp-wrapper"
           onClick={handleFingerprintClick}
           role="button"
           tabIndex={0}
         >
+          {/* We now apply the 'isListening' pulse class directly to the SVG/Image */}
           <div className="fp-icon-inner">
-            <img src={fingerprintIcon} alt="Gapviz Fingerprint" className="fp-svg" />
+            <img 
+              src={fingerprintIcon} 
+              alt="Gapviz Fingerprint" 
+              className={`fp-svg ${isListening ? "icon-listening-glow" : ""}`} 
+            />
           </div>
         </div>
 
