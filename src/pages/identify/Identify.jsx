@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import MobileFooter from "../../components/MobileFooter";
-import "./identify.css";
+import MobileFooter from "../../components/mobile-footer/MobileFooter";
 
 export default function Identify() {
   const navigate = useNavigate();
@@ -18,17 +17,14 @@ export default function Identify() {
     setBottomText("");
     setStatusText("Listening…");
 
-    // Step 1: We know the song
     setTimeout(() => {
       setStatusText("We know the song…");
     }, 1800);
 
-    // Step 2: Unlocking the story
     setTimeout(() => {
       setStatusText("Unlocking the story…");
     }, 3500);
 
-    // Step 3: Navigate to commentary/story screen
     setTimeout(() => {
       navigate("/identify-story");
     }, 5200);

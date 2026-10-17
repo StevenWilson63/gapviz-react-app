@@ -1,5 +1,5 @@
 import React from "react";
-import MobileFooter from "../../components/MobileFooter";
+import MobileFooter from "../../components/mobile-footer/MobileFooter";
 import "./Dj.css";
 
 export default function Dj() {

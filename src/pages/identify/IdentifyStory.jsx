@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import MobileFooter from "../../components/MobileFooter";
-import "./identify-story.css";
+import MobileFooter from "../../components/mobile-footer/MobileFooter";
 
 export default function IdentifyStory() {
   const navigate = useNavigate();
