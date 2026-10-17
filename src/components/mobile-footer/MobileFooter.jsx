@@ -7,16 +7,15 @@ export default function MobileFooter() {
     const location = useLocation();
 
     const navItems = [
-        { label: "Home", path: "/home", emoji: "🏠" },
-        { label: "DJ", path: "/dj", emoji: "🎧" },
-        { label: "Library", path: "/library", emoji: "📚" },
-        { label: "Identify", path: "/identify", emoji: "👆" },
+        { label: "Home", path: "/home", icon: "🏠" },
+        { label: "DJ", path: "/dj", icon: "🎧" },
+        { label: "Library", path: "/library", icon: "📚" },
+        { label: "Identify", path: "/identify", icon: "🎙️" },
     ];
 
     return (
         <div id="mobile-footer">
             {navItems.map((item) => {
-                // Highlight active tab (handles /identify and /identify-story)
                 const isActive = 
                     location.pathname === item.path || 
                     (item.path === "/identify" && location.pathname === "/identify-story");
@@ -27,7 +26,7 @@ export default function MobileFooter() {
                         className={`nav-item ${isActive ? "active" : ""}`}
                         onClick={() => navigate(item.path)}
                     >
-                        <div className="icon">{item.emoji}</div>
+                        <span className="nav-icon">{item.icon}</span>
                         <span className="nav-label">{item.label}</span>
                         <div className="nav-underline"></div>
                     </div>

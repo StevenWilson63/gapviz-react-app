@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileFooter from "../../components/mobile-footer/MobileFooter";
+import "./Identify.css";
+import "./IdentifyStory.css";
 
 export default function Identify() {
   const navigate = useNavigate();
@@ -10,7 +12,7 @@ export default function Identify() {
   const [isListening, setIsListening] = useState(false);
 
   const handleFingerprintClick = () => {
-    if (isListening) return; // Prevent double taps
+    if (isListening) return;
 
     setIsListening(true);
     setTopText("");

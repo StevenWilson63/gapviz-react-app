@@ -1,0 +1,64 @@
+.song-story-screen {
+  min-height: 100vh;
+  background-color: #000000;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 20px 90px;
+  box-sizing: border-box;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.story-header-title {
+  font-size: 28px;
+  font-weight: 300;
+  margin: 0 0 24px 0;
+  letter-spacing: -0.5px;
+}
+
+.story-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(17, 17, 17, 0.8);
+  border: 1px solid rgba(255, 26, 26, 0.25);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.story-line {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.story-line.highlight {
+  color: #FF1A1A;
+  font-weight: 500;
+}
+
+.actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gv-button {
+  background-color: #FF1A1A;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  text-align: center;
+}
+
+.gv-button:hover {
+  background-color: #e01414;
+}
