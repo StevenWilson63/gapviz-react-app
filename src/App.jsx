@@ -5,6 +5,7 @@ import { UserProvider } from "./context/UserContext";
 
 import Home from "./pages/home/home";
 import Profile from "./pages/profile/profile";
+import Dj from "./pages/dj/Dj"; // Dedicated DJ studio screen
 
 // Identify screens
 import Identify from "./pages/identify/Identify";
@@ -13,7 +14,7 @@ import IdentifyStory from "./pages/identify/IdentifyStory";
 // Profile sub-pages
 import Account from "./pages/profile/account";
 import Subscription from "./pages/profile/Subscription";
-import DjSettings from "./pages/profile/dj";
+import DjSettings from "./pages/profile/dj"; // Profile settings for DJ
 import ConnectedServices from "./pages/profile/connectedServices";
 import Notifications from "./pages/profile/notifications";
 import Appearance from "./pages/profile/appearance";
@@ -32,8 +33,8 @@ export default function App() {
 
           {/* Main bottom navigation screens */}
           <Route path="/home" element={<Home />} />
-          <Route path="/dj" element={<DjSettings />} />
-          <Route path="/library" element={<div>Library Screen (Coming Soon)</div>} />
+          <Route path="/dj" element={<Dj />} />
+          <Route path="/library" element={<div style={{color: '#fff', padding: '40px'}}>Library Screen (Coming Soon)</div>} />
           <Route path="/identify" element={<Identify />} />
           <Route path="/identify-story" element={<IdentifyStory />} />
 
