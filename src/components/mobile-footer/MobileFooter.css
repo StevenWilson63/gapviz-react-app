@@ -35,10 +35,18 @@
   color: #ffffff;
 }
 
-.nav-icon {
-  font-size: 22px;
-  line-height: 1;
+.nav-icon-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
   margin-bottom: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.nav-item.active .nav-icon-img {
+  opacity: 1;
+  /* Optional: filter to tint active icon red if desired */
 }
 
 .nav-label {

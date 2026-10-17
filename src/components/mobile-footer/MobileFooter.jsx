@@ -2,15 +2,21 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./MobileFooter.css";
 
+// Import your custom SVG icons from assets
+import homeIcon from "../../assets/icons/home.svg";
+import djIcon from "../../assets/icons/dj.svg";
+import libraryIcon from "../../assets/icons/library.svg";
+import fingerprintIcon from "../../assets/icons/fingerprint.svg";
+
 export default function MobileFooter() {
     const navigate = useNavigate();
     const location = useLocation();
 
     const navItems = [
-        { label: "Home", path: "/home", icon: "🏠" },
-        { label: "DJ", path: "/dj", icon: "🎧" },
-        { label: "Library", path: "/library", icon: "📚" },
-        { label: "Identify", path: "/identify", icon: "🎙️" },
+        { label: "Home", path: "/home", icon: homeIcon },
+        { label: "DJ", path: "/dj", icon: djIcon },
+        { label: "Library", path: "/library", icon: libraryIcon },
+        { label: "Identify", path: "/identify", icon: fingerprintIcon },
     ];
 
     return (
@@ -26,7 +32,7 @@ export default function MobileFooter() {
                         className={`nav-item ${isActive ? "active" : ""}`}
                         onClick={() => navigate(item.path)}
                     >
-                        <span className="nav-icon">{item.icon}</span>
+                        <img src={item.icon} alt={item.label} className="nav-icon-img" />
                         <span className="nav-label">{item.label}</span>
                         <div className="nav-underline"></div>
                     </div>
