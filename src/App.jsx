@@ -6,12 +6,16 @@ import { UserProvider } from "./context/UserContext";
 import Home from "./pages/home/home";
 import Profile from "./pages/profile/profile";
 
+// Identify screens
+import Identify from "./pages/identify/Identify";
+import IdentifyStory from "./pages/identify/IdentifyStory";
+
 // Profile sub-pages
 import Account from "./pages/profile/account";
 import Subscription from "./pages/profile/Subscription";
 import DjSettings from "./pages/profile/dj";
 import ConnectedServices from "./pages/profile/connectedServices";
-import Notifications from "./pages/profile/notifications"; // Added Notifications import
+import Notifications from "./pages/profile/notifications";
 import Appearance from "./pages/profile/appearance";
 import PrivacyData from "./pages/profile/privacyData";
 import HelpSupport from "./pages/profile/helpSupport";
@@ -26,8 +30,14 @@ export default function App() {
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/home" replace />} />
 
-          {/* Main screens */}
+          {/* Main bottom navigation screens */}
           <Route path="/home" element={<Home />} />
+          <Route path="/dj" element={<DjSettings />} />
+          <Route path="/library" element={<div>Library Screen (Coming Soon)</div>} />
+          <Route path="/identify" element={<Identify />} />
+          <Route path="/identify-story" element={<IdentifyStory />} />
+
+          {/* Profile screen */}
           <Route path="/profile" element={<Profile />} />
 
           {/* Profile sub-pages */}
@@ -35,7 +45,7 @@ export default function App() {
           <Route path="/profile/subscription" element={<Subscription />} />
           <Route path="/profile/dj" element={<DjSettings />} />
           <Route path="/profile/connected-services" element={<ConnectedServices />} />
-          <Route path="/profile/notifications" element={<Notifications />} /> {/* Added Notifications Route */}
+          <Route path="/profile/notifications" element={<Notifications />} />
           <Route path="/profile/app" element={<div>App Settings Page</div>} />
           <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
           <Route path="/profile/appearance" element={<Appearance />} />
