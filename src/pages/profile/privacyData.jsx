@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./privacyData.css";
 import { useNavigate } from "react-router-dom";
+import LegalModal from "../../components/LegalModal/LegalModal";
 
 export default function PrivacyData() {
   const navigate = useNavigate();
@@ -48,15 +49,57 @@ export default function PrivacyData() {
 
   const handleDownloadData = () => {
     setDownloading(true);
-    setTimeout(() => {
+
+    try {
+      // Gather local user bundle and privacy settings for download
+      const userData = localStorage.getItem("gapvizUser") || "{}";
+      const privacySettings = localStorage.getItem("gv_privacy") || "{}";
+      
+      const exportBundle = {
+        exportDate: new Date().toISOString(),
+        profile: JSON.parse(userData),
+        privacyPreferences: JSON.parse(privacySettings),
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportBundle, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `gapviz_user_data_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      setTimeout(() => {
+        setDownloading(false);
+        triggerFeedback("✓ Data package downloaded (.json)");
+      }, 1200);
+    } catch (err) {
+      console.error("Data export failed", err);
       setDownloading(false);
-      triggerFeedback("✓ Data package download started (.json)");
-    }, 1500);
+      triggerFeedback("Export failed. Please try again.");
+    }
   };
 
   const handleDeleteAccount = () => {
-    triggerFeedback("Account deletion requested. Check your email to confirm.");
+    // Clear user bundle and settings
+    localStorage.removeItem("gapvizUser");
+    localStorage.removeItem("returningUser");
+    localStorage.removeItem("gv_privacy");
+    localStorage.removeItem("firstName");
+    localStorage.removeItem("surname");
+    localStorage.removeItem("nickname");
+    localStorage.removeItem("displayName");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userCountry");
+    localStorage.removeItem("userDOB");
+    localStorage.removeItem("gv_fullName");
+    localStorage.removeItem("gv_nickname");
+
     setShowDeleteConfirm(false);
+    triggerFeedback("Account deleted. Redirecting...");
+    setTimeout(() => {
+      navigate("/");
+    }, 1500);
   };
 
   return (
@@ -269,43 +312,24 @@ export default function PrivacyData() {
         </div>
       )}
 
-      {/* Legal & Compliance Text Modals */}
-      {activeLegalModal && (
+      {/* Reusable Legal Modal for Terms & Privacy */}
+      {(activeLegalModal === "privacy" || activeLegalModal === "terms") && (
+        <LegalModal
+          type={activeLegalModal}
+          onClose={() => setActiveLegalModal(null)}
+        />
+      )}
+
+      {/* Third-Party Licenses Modal */}
+      {activeLegalModal === "licenses" && (
         <div className="modal-overlay" onClick={() => setActiveLegalModal(null)}>
           <div className="modal-content legal-modal-body" onClick={(e) => e.stopPropagation()}>
-            {activeLegalModal === "privacy" && (
-              <>
-                <h3>Privacy Policy</h3>
-                <div className="legal-scroll-text">
-                  <p><strong>1. Data Collection & Processing:</strong> Gapviz processes audio fingerprints in real time solely for track identification. Samples are not permanently stored.</p>
-                  <p><strong>2. GDPR & Global Compliance:</strong> You reserve full rights to export or permanently delete your account data at any time via this settings panel.</p>
-                  <p><strong>3. AI & Analytics:</strong> Usage data is strictly anonymized and used only for personalized DJ script commentary if explicitly authorized above.</p>
-                </div>
-              </>
-            )}
-
-            {activeLegalModal === "terms" && (
-              <>
-                <h3>Terms of Service</h3>
-                <div className="legal-scroll-text">
-                  <p><strong>1. Acceptance:</strong> By accessing Gapviz, you agree to adhere to these usage conditions and fair usage policies.</p>
-                  <p><strong>2. Audio Identification:</strong> Commercial broadcast scanning is subject to licensing restrictions provided by integrated recognition providers.</p>
-                  <p><strong>3. Account Usage:</strong> Subscriptions and free trial periods apply strictly to individual non-commercial use.</p>
-                </div>
-              </>
-            )}
-
-            {activeLegalModal === "licenses" && (
-              <>
-                <h3>Third-Party Licenses</h3>
-                <div className="legal-scroll-text">
-                  <p><strong>i18next / react-i18next:</strong> MIT License. Copyright (c) i18next.</p>
-                  <p><strong>React / React Router:</strong> MIT License. Copyright (c) Meta Platforms, Inc.</p>
-                  <p><strong>Acoustic Recognition Engine:</strong> Open-source and commercial audio processing integration modules.</p>
-                </div>
-              </>
-            )}
-
+            <h3>Third-Party Licenses</h3>
+            <div className="legal-scroll-text">
+              <p><strong>i18next / react-i18next:</strong> MIT License. Copyright (c) i18next.</p>
+              <p><strong>React / React Router:</strong> MIT License. Copyright (c) Meta Platforms, Inc.</p>
+              <p><strong>Acoustic Recognition Engine:</strong> Open-source and commercial audio processing integration modules.</p>
+            </div>
             <button className="modal-cancel-btn full-width-btn" onClick={() => setActiveLegalModal(null)}>
               Close
             </button>
