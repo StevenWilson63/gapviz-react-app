@@ -15,6 +15,8 @@ export default function Account() {
   const [phonetic, setPhonetic] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [country, setCountry] = useState("United Kingdom");
+  const [dob, setDob] = useState("");
   const [dateJoined, setDateJoined] = useState("");
   const [photo, setPhoto] = useState(null);
 
@@ -47,13 +49,17 @@ export default function Account() {
   };
 
   useEffect(() => {
+    // Read from gapvizUser JSON object or individual key fallbacks set during /join
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
-    setFirstName(stored.firstName || "");
-    setSurname(stored.surname || "");
-    setNicknameState(stored.nickname || "");
+
+    setFirstName(stored.firstName || localStorage.getItem("firstName") || "");
+    setSurname(stored.surname || localStorage.getItem("surname") || "");
+    setNicknameState(stored.nickname || localStorage.getItem("nickname") || "");
     setPhonetic(stored.phonetic || "");
-    setEmail(stored.email || "");
+    setEmail(stored.email || localStorage.getItem("userEmail") || "");
     setPassword(stored.password || "");
+    setCountry(stored.country || localStorage.getItem("userCountry") || "United Kingdom");
+    setDob(stored.dob || localStorage.getItem("userDOB") || "");
     setDateJoined(stored.dateJoined || "12 Aug 2026");
     setPhoto(stored.photo || null);
 
@@ -172,13 +178,27 @@ export default function Account() {
       phonetic,
       email,
       password,
+      country,
+      dob,
       dateJoined: dateJoined || new Date().toLocaleDateString(),
       photo,
     };
 
+    // Save JSON bundle
     localStorage.setItem("gapvizUser", JSON.stringify(user));
 
+    // Save sync keys for Splash / Join / Home modules
+    const preferredDisplayName = nickname.trim() || firstName.trim();
     const combinedFullName = `${firstName} ${surname}`.trim();
+
+    localStorage.setItem("firstName", firstName.trim());
+    localStorage.setItem("surname", surname.trim());
+    localStorage.setItem("nickname", nickname.trim());
+    localStorage.setItem("displayName", preferredDisplayName);
+    localStorage.setItem("userEmail", email.trim());
+    localStorage.setItem("userCountry", country);
+    localStorage.setItem("userDOB", dob);
+
     localStorage.setItem("gv_fullName", combinedFullName);
     localStorage.setItem("gv_nickname", nickname);
 
@@ -194,8 +214,17 @@ export default function Account() {
     if (!confirmed) return;
 
     localStorage.removeItem("gapvizUser");
+    localStorage.removeItem("returningUser");
+    localStorage.removeItem("firstName");
+    localStorage.removeItem("surname");
+    localStorage.removeItem("nickname");
+    localStorage.removeItem("displayName");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userCountry");
+    localStorage.removeItem("userDOB");
     localStorage.removeItem("gv_fullName");
     localStorage.removeItem("gv_nickname");
+
     setFullName("");
     setNickname("");
 
@@ -205,8 +234,12 @@ export default function Account() {
     setPhonetic("");
     setEmail("");
     setPassword("");
+    setCountry("United Kingdom");
+    setDob("");
     setDateJoined("");
     setPhoto(null);
+
+    navigate("/");
   }
 
   function handlePhotoChange(e) {
@@ -351,7 +384,7 @@ export default function Account() {
         </div>
 
         <div className="account-field hover-box">
-          <label>Nickname</label>
+          <label>Nickname (DJ Callout)</label>
           <input
             type="text"
             value={nickname}
@@ -407,6 +440,41 @@ export default function Account() {
             </button>
           </div>
           {passwordError && <div className="error-text">{passwordError}</div>}
+        </div>
+
+        <div className="account-field hover-box">
+          <label>Location / Country</label>
+          <select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            style={{
+              background: "#111111",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              borderRadius: "8px",
+              padding: "12px 14px",
+              color: "#ffffff",
+              fontSize: "15px",
+              outline: "none"
+            }}
+          >
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="United States">United States</option>
+            <option value="Canada">Canada</option>
+            <option value="Australia">Australia</option>
+            <option value="Germany">Germany</option>
+            <option value="France">France</option>
+            <option value="Japan">Japan</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div className="account-field hover-box">
+          <label>Date of Birth</label>
+          <input
+            type="date"
+            value={dob}
+            onChange={(e) => setDob(e.target.value)}
+          />
         </div>
 
         <div className="account-field hover-box read-only-row">
