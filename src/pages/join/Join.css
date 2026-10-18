@@ -147,3 +147,41 @@
 .join-submit-btn:active {
   transform: scale(0.98);
 }
+
+/* Password wrapper & eye toggle styling */
+.join-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.join-password-wrapper input {
+  width: 100%;
+  padding-right: 44px; /* Room for eye icon */
+  box-sizing: border-box;
+}
+
+.join-password-toggle-button {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s ease;
+}
+
+.join-password-toggle-button:hover {
+  color: #FF1A1A;
+}
+
+.join-password-toggle-button svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}

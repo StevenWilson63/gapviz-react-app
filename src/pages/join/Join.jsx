@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import gapvizLogo from "../../assets/logos/gapviz-logo.svg";
+import { EyeOpenIcon, EyeClosedIcon } from "../../assets/icons/EyeIcons";
 import "./Join.css";
 
 export default function Join() {
@@ -17,6 +18,7 @@ export default function Join() {
     termsAccepted: false,
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
@@ -42,8 +44,27 @@ export default function Join() {
 
     // Determine preferred display name (nickname first, fallback to first name)
     const preferredName = formData.nickname.trim() || formData.firstName.trim();
+    const combinedFullName = `${formData.firstName.trim()} ${formData.surname.trim()}`.trim();
 
-    // Persist user details to localStorage
+    // Persist JSON user bundle
+    const gapvizUserObj = {
+      firstName: formData.firstName.trim(),
+      surname: formData.surname.trim(),
+      nickname: formData.nickname.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+      country: formData.country,
+      dob: formData.dob,
+      dateJoined: new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    };
+
+    localStorage.setItem("gapvizUser", JSON.stringify(gapvizUserObj));
+
+    // Persist sync keys for Splash / Home / Account modules
     localStorage.setItem("returningUser", "true");
     localStorage.setItem("firstName", formData.firstName.trim());
     localStorage.setItem("surname", formData.surname.trim());
@@ -52,7 +73,9 @@ export default function Join() {
     localStorage.setItem("userEmail", formData.email.trim());
     localStorage.setItem("userCountry", formData.country);
     localStorage.setItem("userDOB", formData.dob);
-    
+    localStorage.setItem("gv_fullName", combinedFullName);
+    localStorage.setItem("gv_nickname", formData.nickname.trim());
+
     // Default initial DJ if not already set
     if (!localStorage.getItem("lastDJName")) {
       localStorage.setItem("lastDJName", "The Curator");
@@ -127,17 +150,28 @@ export default function Join() {
           />
         </div>
 
+        {/* Password Field with Eye Toggle */}
         <div className="form-group">
           <label htmlFor="password">Password *</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+          <div className="join-password-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            <button
+              type="button"
+              className="join-password-toggle-button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
+            </button>
+          </div>
         </div>
 
         <div className="form-row">
