@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import gapvizLogo from "../../assets/logos/gapviz-logo.svg";
 import { EyeOpenIcon, EyeClosedIcon } from "../../assets/icons/EyeIcons";
 import CountrySelect from "../../components/CountrySelect/CountrySelect";
+import LegalModal from "../../components/LegalModal/LegalModal";
 import "./Join.css";
 
 export default function Join() {
@@ -21,6 +22,7 @@ export default function Join() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [activeModal, setActiveModal] = useState(null); // 'terms' | 'privacy' | null
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -213,7 +215,26 @@ export default function Join() {
             />
             <span className="checkmark"></span>
             <span className="terms-text">
-              I accept the <a href="#terms" onClick={(e) => e.preventDefault()}>Terms & Conditions</a> and <a href="#privacy" onClick={(e) => e.preventDefault()}>Privacy Policy</a>
+              I accept the{" "}
+              <a
+                href="#terms"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveModal("terms");
+                }}
+              >
+                Terms & Conditions
+              </a>{" "}
+              and{" "}
+              <a
+                href="#privacy"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveModal("privacy");
+                }}
+              >
+                Privacy Policy
+              </a>
             </span>
           </label>
         </div>
@@ -222,6 +243,11 @@ export default function Join() {
           Create Account & Start Listening
         </button>
       </form>
+
+      {/* Render Legal Overlay Modal */}
+      {activeModal && (
+        <LegalModal type={activeModal} onClose={() => setActiveModal(null)} />
+      )}
     </div>
   );
 }
