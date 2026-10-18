@@ -44,8 +44,8 @@ export default function Splash() {
       // Start smooth screen fade-out at 6 seconds
       const tFade = setTimeout(() => setIsFadingOut(true), 6000);
 
-      // Navigate to Home at 8.2 seconds (after fade finishes)
-      const tNav = setTimeout(() => navigate("/home"), 8200);
+      // Navigate to Home at 7.2 seconds (after fade finishes)
+      const tNav = setTimeout(() => navigate("/home"), 7200);
 
       return () => {
         clearTimeout(t1);
