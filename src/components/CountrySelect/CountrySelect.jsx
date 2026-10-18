@@ -2,9 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import "./CountrySelect.css";
 
 export const WORLD_COUNTRIES = [
-  "United Kingdom",
-  "United States of America",
-  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+  "United Kingdom", "United States of America", "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
   "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
   "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo (Congo-Brazzaville)", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czechia (Czech Republic)",
   "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic",
@@ -36,13 +34,12 @@ export default function CountrySelect({ value, onChange }) {
   const [dropUp, setDropUp] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Check positioning to see if it should flip upwards if near screen bottom
   const handleToggle = () => {
     if (!isOpen && wrapperRef.current) {
       const rect = wrapperRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      // If less than 300px space below, open upwards
-      setDropUp(spaceBelow < 300);
+      // If there's less than 320px below the input, flip it UPWARDS
+      setDropUp(spaceBelow < 320);
     }
     setIsOpen(!isOpen);
     setSearchTerm("");
@@ -87,7 +84,7 @@ export default function CountrySelect({ value, onChange }) {
               placeholder="Type to search country..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.stopPropagation()} // Prevent parent form handlers from capturing single keys
+              onKeyDown={(e) => e.stopPropagation()}
               autoFocus
             />
           </div>

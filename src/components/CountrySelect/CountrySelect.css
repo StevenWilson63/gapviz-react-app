@@ -29,17 +29,29 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* --- DROPDOWN MENU --- */
 .country-dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: #111111;
   border: 1px solid #FF1A1A;
   border-radius: 8px;
-  z-index: 9999;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9);
+  z-index: 99999; /* Float over everything */
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.95);
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Default position: Open Downward */
+.country-dropdown-menu {
+  top: calc(100% + 4px);
+}
+
+/* Drop-Up position: Open Upward when near bottom of screen */
+.country-dropdown-menu.drop-up {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
 .search-input-box {
@@ -65,11 +77,12 @@
   border-color: #FF1A1A;
 }
 
+/* --- SCROLL AREA (CALCULATED TO PREVENT VIEWPORT CUTOFF) --- */
 .country-list-scroll {
-  max-height: 280px; /* Expanded so users see plenty of countries */
+  max-height: 220px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #333 #111;
+  scrollbar-color: #FF1A1A #111111;
 }
 
 .country-item {
@@ -81,7 +94,7 @@
 }
 
 .country-item:hover {
-  background: rgba(255, 26, 26, 0.15);
+  background: rgba(255, 26, 26, 0.2);
   color: #ffffff;
 }
 
