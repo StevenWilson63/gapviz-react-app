@@ -20,7 +20,8 @@ export const WORLD_COUNTRIES = [
   "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway",
   "Oman",
   "Pakistan", "Palau", "Palestine State", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
-  "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria",
+  "Qatar", "Romania", "Russia", "Rwanda",
+  "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria",
   "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
   "Uganda", "Ukraine", "United Arab Emirates", "Uruguay", "Uzbekistan",
   "Vanuatu", "Venezuela", "Vietnam",
@@ -32,7 +33,20 @@ export const WORLD_COUNTRIES = [
 export default function CountrySelect({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [dropUp, setDropUp] = useState(false);
   const wrapperRef = useRef(null);
+
+  // Check positioning to see if it should flip upwards if near screen bottom
+  const handleToggle = () => {
+    if (!isOpen && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // If less than 300px space below, open upwards
+      setDropUp(spaceBelow < 300);
+    }
+    setIsOpen(!isOpen);
+    setSearchTerm("");
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -59,23 +73,21 @@ export default function CountrySelect({ value, onChange }) {
     <div className="country-select-wrapper" ref={wrapperRef}>
       <div 
         className={`country-select-trigger ${isOpen ? "open" : ""}`}
-        onClick={() => {
-          setIsOpen(!isOpen);
-          setSearchTerm("");
-        }}
+        onClick={handleToggle}
       >
         <span>{value || "Select Country"}</span>
         <span className="dropdown-arrow">▾</span>
       </div>
 
       {isOpen && (
-        <div className="country-dropdown-menu">
+        <div className={`country-dropdown-menu ${dropUp ? "drop-up" : ""}`}>
           <div className="search-input-box">
             <input
               type="text"
               placeholder="Type to search country..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()} // Prevent parent form handlers from capturing single keys
               autoFocus
             />
           </div>
