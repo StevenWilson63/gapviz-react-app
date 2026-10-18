@@ -3,6 +3,7 @@ import "./account.css";
 import { useNavigate } from "react-router-dom";
 import { getAvatarDisplay } from "../../utils/avatarLogic";
 import { EyeOpenIcon, EyeClosedIcon } from "../../assets/icons/EyeIcons";
+import CountrySelect from "../../components/CountrySelect/CountrySelect";
 import { useUser } from "../../context/UserContext";
 
 export default function Account() {
@@ -444,28 +445,10 @@ export default function Account() {
 
         <div className="account-field hover-box">
           <label>Location / Country</label>
-          <select
+          <CountrySelect
             value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            style={{
-              background: "#111111",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              borderRadius: "8px",
-              padding: "12px 14px",
-              color: "#ffffff",
-              fontSize: "15px",
-              outline: "none"
-            }}
-          >
-            <option value="United Kingdom">United Kingdom</option>
-            <option value="United States">United States</option>
-            <option value="Canada">Canada</option>
-            <option value="Australia">Australia</option>
-            <option value="Germany">Germany</option>
-            <option value="France">France</option>
-            <option value="Japan">Japan</option>
-            <option value="Other">Other</option>
-          </select>
+            onChange={(selectedCountry) => setCountry(selectedCountry)}
+          />
         </div>
 
         <div className="account-field hover-box">

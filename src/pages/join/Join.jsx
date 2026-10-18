@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import gapvizLogo from "../../assets/logos/gapviz-logo.svg";
 import { EyeOpenIcon, EyeClosedIcon } from "../../assets/icons/EyeIcons";
+import CountrySelect from "../../components/CountrySelect/CountrySelect";
 import "./Join.css";
 
 export default function Join() {
@@ -26,6 +27,13 @@ export default function Join() {
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleCountryChange = (selectedCountry) => {
+    setFormData((prev) => ({
+      ...prev,
+      country: selectedCountry,
     }));
   };
 
@@ -177,21 +185,10 @@ export default function Join() {
         <div className="form-row">
           <div className="form-group">
             <label htmlFor="country">Location / Country</label>
-            <select
-              id="country"
-              name="country"
+            <CountrySelect
               value={formData.country}
-              onChange={handleChange}
-            >
-              <option value="United Kingdom">United Kingdom</option>
-              <option value="United States">United States</option>
-              <option value="Canada">Canada</option>
-              <option value="Australia">Australia</option>
-              <option value="Germany">Germany</option>
-              <option value="France">France</option>
-              <option value="Japan">Japan</option>
-              <option value="Other">Other</option>
-            </select>
+              onChange={handleCountryChange}
+            />
           </div>
 
           <div className="form-group">
