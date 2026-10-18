@@ -1,4 +1,4 @@
-/* GLOBAL CONTAINER */
+/* GLOBAL CONTAINER WITH SMOOTH DISSOLVE FADE OUT */
 .splash-container {
   background: black;
   height: 100vh;
@@ -9,6 +9,15 @@
   align-items: center;
   text-align: center;
   overflow: hidden;
+  opacity: 1;
+  transition: opacity 1.2s ease-in-out; /* Smooth transition into Home screen */
+  box-sizing: border-box;
+}
+
+/* FADE OUT CLASS TRIGGERED BEFORE NAVIGATION */
+.splash-container.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* LOGO — 4s fade-in */
@@ -36,7 +45,7 @@
 
 .tagline-part {
   opacity: 0;
-  transition: opacity 0s;
+  transition: opacity 0.3s ease;
   color: white;
 }
 
@@ -64,11 +73,6 @@
   opacity: 1;
 }
 
-.onair-box {
-  animation: fadeIn 1s forwards;
-  animation-delay: 4s;
-}
-
 .onair-box span {
   animation: pulse 2s infinite;
 }
@@ -85,7 +89,9 @@
   transition: opacity 1s ease;
   text-align: center;
   margin-top: 30px;
-  color: #ffffff; /* bright white */
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 500;
 }
 
 .returning-message.visible {
@@ -94,9 +100,10 @@
 
 .returning-message .welcome-line,
 .returning-message .dj-line {
-  font-size: 20px; /* matches Discover Gapviz */
-  font-weight: 500;
   margin-bottom: 10px;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 500;
 }
 
 /* SUBSCRIBER BLOCK */
@@ -111,14 +118,12 @@
   opacity: 1;
 }
 
-/* Discover Gapviz — join now */
 .discover-line {
   font-size: 20px;
   margin-bottom: 18px;
   color: #ffffff;
 }
 
-/* Join now capsule */
 .join-capsule {
   display: inline-block;
   background: #ff2a2a;
@@ -140,7 +145,6 @@
   opacity: 0.75;
 }
 
-/* Free trial lines */
 .trial-line {
   font-size: 18px;
   margin-bottom: 4px;
@@ -153,7 +157,7 @@
   color: #ffffff;
 }
 
-/* MOBILE */
+/* MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
   .splash-logo {
     width: 75vw !important;
@@ -179,35 +183,4 @@
   .returning-message .dj-line {
     font-size: 20px !important;
   }
-}
-
-/* FADE-IN KEYFRAME */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* RETURNING USER MESSAGE — FINAL WORKING VERSION */
-.returning-message {
-  opacity: 0;
-  transition: opacity 1s ease;
-  text-align: center;
-  margin-top: 30px;
-  color: #ffffff; /* bright white */
-  font-size: 20px; /* match Discover Gapviz */
-  font-weight: 500;
-}
-
-/* Fade-in when visible */
-.returning-message.visible {
-  opacity: 1;
-}
-
-/* Lines inside the message */
-.returning-message .welcome-line,
-.returning-message .dj-line {
-  margin-bottom: 10px;
-  color: #ffffff; /* ensure bright white */
-  font-size: 20px; /* match Discover Gapviz */
-  font-weight: 500;
 }

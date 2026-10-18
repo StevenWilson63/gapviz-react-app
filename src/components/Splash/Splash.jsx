@@ -10,11 +10,12 @@ export default function Splash() {
   const [showOnAir, setShowOnAir] = useState(false);
   const [showTap, setShowTap] = useState(false);
   const [showSubscriber, setShowSubscriber] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   // ⭐ Returning-user state
   const isReturning = localStorage.getItem("returningUser") === "true";
-  const displayName = localStorage.getItem("displayName");
-  const lastDJName = localStorage.getItem("lastDJName");
+  const displayName = localStorage.getItem("displayName") || "Listener";
+  const lastDJName = localStorage.getItem("lastDJName") || "The Curator";
 
   const [showReturningMessage, setShowReturningMessage] = useState(false);
 
@@ -22,38 +23,57 @@ export default function Splash() {
 
   useEffect(() => {
     // Logo fade-in
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
       setShowLogo(true);
     }, 200);
 
     // "Your music." pops in
-    setTimeout(() => setShowTagline(true), 1400);
+    const t2 = setTimeout(() => setShowTagline(true), 1400);
 
     // "Their story." pops in
-    setTimeout(() => setShowSecondTagline(true), 2000);
+    const t3 = setTimeout(() => setShowSecondTagline(true), 2000);
 
     // ON AIR appears
-    setTimeout(() => setShowOnAir(true), 2400);
+    const t4 = setTimeout(() => setShowOnAir(true), 2400);
 
     // ⭐ RETURNING USER SEQUENCE
     if (isReturning) {
-      // Returning message appears at SAME timing as subscriber block
-      setTimeout(() => setShowReturningMessage(true), 3000);
+      // Returning message appears at 3 seconds
+      const tMsg = setTimeout(() => setShowReturningMessage(true), 3000);
 
-      // Auto-navigate to home after 6 seconds
-      setTimeout(() => navigate("/home"), 6000);
+      // Start smooth screen fade-out at 7 seconds
+      const tFade = setTimeout(() => setIsFadingOut(true), 7000);
 
-      return; // Stop new-user sequence
+      // Navigate to Home at 8.2 seconds (after fade finishes)
+      const tNav = setTimeout(() => navigate("/home"), 8200);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+        clearTimeout(t4);
+        clearTimeout(tMsg);
+        clearTimeout(tFade);
+        clearTimeout(tNav);
+      };
     }
 
     // ⭐ NEW USER SEQUENCE
-    setTimeout(() => setShowTap(true), 2800);
-    setTimeout(() => setShowSubscriber(true), 3000);
-  }, []);
+    const tTap = setTimeout(() => setShowTap(true), 2800);
+    const tSub = setTimeout(() => setShowSubscriber(true), 3000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(tTap);
+      clearTimeout(tSub);
+    };
+  }, [isReturning, navigate]);
 
   return (
-    <div className="splash-container">
-
+    <div className={`splash-container ${isFadingOut ? "fade-out" : ""}`}>
       {/* Logo */}
       <img
         src={gapvizLogo}
@@ -106,7 +126,6 @@ export default function Splash() {
           <p className="nocard-line">No card required</p>
         </div>
       )}
-
     </div>
   );
 }
