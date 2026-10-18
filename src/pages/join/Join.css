@@ -41,6 +41,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  box-sizing: border-box;
 }
 
 .join-error-banner {
@@ -53,13 +54,17 @@
   text-align: center;
 }
 
+/* FORM ROW & FLEX BOXES */
 .form-row {
   display: flex;
   gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-row .form-group {
   flex: 1;
+  min-width: 0; /* Prevents overflow in flex row */
 }
 
 .form-group {
@@ -67,6 +72,8 @@
   flex-direction: column;
   gap: 6px;
   text-align: left;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .form-group label {
@@ -93,6 +100,8 @@
   outline: none;
   transition: border-color 0.2s ease;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -125,6 +134,10 @@
 .terms-text a {
   color: #FF1A1A;
   text-decoration: none;
+}
+
+.terms-text a:hover {
+  text-decoration: underline;
 }
 
 .join-submit-btn {
@@ -184,4 +197,29 @@
   width: 20px;
   height: 20px;
   fill: currentColor;
+}
+
+/* --- MOBILE RESPONSIVE MEDIA QUERY --- */
+@media (max-width: 600px) {
+  .join-container {
+    padding: 24px 16px 40px;
+  }
+
+  /* Force side-by-side inputs (First Name / Surname, Country / DOB) to stack vertically */
+  .form-row {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .form-row .form-group {
+    width: 100%;
+  }
+
+  .join-header h2 {
+    font-size: 22px;
+  }
+
+  .join-subtitle {
+    font-size: 13px;
+  }
 }
