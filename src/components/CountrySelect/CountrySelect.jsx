@@ -34,7 +34,6 @@ export default function CountrySelect({ value, onChange }) {
   const [searchTerm, setSearchTerm] = useState("");
   const wrapperRef = useRef(null);
 
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -60,7 +59,10 @@ export default function CountrySelect({ value, onChange }) {
     <div className="country-select-wrapper" ref={wrapperRef}>
       <div 
         className={`country-select-trigger ${isOpen ? "open" : ""}`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSearchTerm("");
+        }}
       >
         <span>{value || "Select Country"}</span>
         <span className="dropdown-arrow">▾</span>

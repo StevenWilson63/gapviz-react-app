@@ -16,6 +16,7 @@
   cursor: pointer;
   user-select: none;
   transition: border-color 0.2s ease;
+  box-sizing: border-box;
 }
 
 .country-select-trigger.open,
@@ -30,14 +31,14 @@
 
 .country-dropdown-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: #111111;
   border: 1px solid #FF1A1A;
   border-radius: 8px;
-  z-index: 1000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9);
   overflow: hidden;
 }
 
@@ -57,6 +58,7 @@
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .search-input-box input:focus {
@@ -64,8 +66,10 @@
 }
 
 .country-list-scroll {
-  max-height: 200px;
+  max-height: 280px; /* Expanded so users see plenty of countries */
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #333 #111;
 }
 
 .country-item {
