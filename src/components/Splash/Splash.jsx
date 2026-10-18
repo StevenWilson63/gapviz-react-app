@@ -41,8 +41,8 @@ export default function Splash() {
       // Returning message appears at 3 seconds
       const tMsg = setTimeout(() => setShowReturningMessage(true), 3000);
 
-      // Start smooth screen fade-out at 7 seconds
-      const tFade = setTimeout(() => setIsFadingOut(true), 7000);
+      // Start smooth screen fade-out at 6 seconds
+      const tFade = setTimeout(() => setIsFadingOut(true), 6000);
 
       // Navigate to Home at 8.2 seconds (after fade finishes)
       const tNav = setTimeout(() => navigate("/home"), 8200);
