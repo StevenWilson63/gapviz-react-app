@@ -40,8 +40,8 @@ export default function Splash() {
       // Returning message appears at SAME timing as subscriber block
       setTimeout(() => setShowReturningMessage(true), 3000);
 
-      // Auto-navigate to home after 8 seconds
-      setTimeout(() => navigate("/home"), 8000);
+      // Auto-navigate to home after 6 seconds
+      setTimeout(() => navigate("/home"), 6000);
 
       return; // Stop new-user sequence
     }
