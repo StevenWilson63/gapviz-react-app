@@ -20,7 +20,7 @@
   --gapviz-grey: #ccc;
   --gapviz-white: #fff;
 
-  --font-main: Arial, sans-serif;
+  --font-main: 'Space Grotesk', Arial, sans-serif; /* Update this line */
 }
 
 /* --------------------------------------------------
