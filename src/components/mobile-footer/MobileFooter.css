@@ -87,3 +87,8 @@
 .nav-item.active .nav-underline {
   background-color: #FF1A1A !important;
 }
+
+#mobile-footer .nav-label {
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "clig" 0 !important;
+}
