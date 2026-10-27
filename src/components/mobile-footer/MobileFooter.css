@@ -89,6 +89,19 @@
 }
 
 #mobile-footer .nav-label {
-  font-variant-ligatures: none !important;
-  font-feature-settings: "liga" 0, "clig" 0 !important;
+  display: inline-block;
+  margin-top: 2px;
+  line-height: 1.2;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 11px !important;
+  font-style: normal !important;
+  font-weight: 500 !important;
+  /* Prevents desktop browsers from synthetically altering/distortion of short capitalized words */
+  font-synthesis: none !important;
+  -webkit-font-synthesis: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  white-space: nowrap;
 }
