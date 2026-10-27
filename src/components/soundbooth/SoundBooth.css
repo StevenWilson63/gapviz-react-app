@@ -1,12 +1,13 @@
 .soundbooth-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background-color: #0a0a0a;
-  z-index: 40;
+  z-index: 9999; /* Forces it to sit above everything else in the app */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 20px;
+  overflow-y: auto; /* Allows scrolling on smaller phone screens so buttons never get cut off */
   animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -61,16 +62,17 @@
   justify-content: center;
   align-items: center;
   text-align: center;
+  margin: 10px 0;
 }
 
 .soundbooth-art {
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
   object-fit: cover;
   border-radius: 16px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
   border: 1px solid #262626;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .soundbooth-song-title {
@@ -97,7 +99,7 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 16px;
   padding: 14px;
-  margin: 12px 0;
+  margin: 10px 0;
 }
 
 .soundbooth-commentary-header {
@@ -130,7 +132,7 @@
 
 .soundbooth-control-room-btn {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   background-color: rgba(127, 29, 29, 0.3);
   border: 1px solid #ef4444;
   color: #f87171;
@@ -142,6 +144,7 @@
   justify-content: center;
   gap: 8px;
   cursor: pointer;
+  margin-top: 10px;
   transition: background-color 0.2s;
 }
 
