@@ -24,9 +24,9 @@
   cursor: pointer;
   color: #ef4444; /* Gapviz red for inactive tabs */
   font-size: 11px;
-  font-family: 'Space Grotesk', sans-serif !important;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-weight: 500;
-  letter-spacing: 0.02em; /* Uniform letter spacing prevents short words like DJ from stretching */
+  letter-spacing: 0.02em;
   width: 25%;
   height: 100%;
   transition: color 0.2s ease;
@@ -39,7 +39,7 @@
 }
 
 .nav-item.active {
-  color: #ffffff; /* Turns white when active */
+  color: #ffffff; /* White when active */
   font-weight: 600;
 }
 
@@ -56,10 +56,22 @@
   opacity: 1;
 }
 
-.nav-label {
+/* Reset and enforce uniform font styling on all label spans */
+#mobile-footer .nav-label {
   margin-top: 2px;
   line-height: 1.2;
-  font-family: 'Space Grotesk', sans-serif !important;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-shadow: none !important; /* Strips 3D glitch / cyan-red shadow */
+  filter: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+#mobile-footer .nav-label::before,
+#mobile-footer .nav-label::after {
+  content: none !important; /* Removes any pseudo-element glitch overlays */
 }
 
 .nav-underline {
