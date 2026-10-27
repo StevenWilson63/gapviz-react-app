@@ -5,9 +5,11 @@ import { UserProvider } from "./context/UserContext";
 
 import Splash from "./components/Splash/Splash";
 import Join from "./pages/join/Join";
+import MainLayout from "./components/layout/MainLayout";
+
 import Home from "./pages/home/home";
 import Profile from "./pages/profile/profile";
-import Dj from "./pages/dj/Dj"; // Dedicated DJ studio screen
+import Dj from "./pages/dj/Dj";
 import Library from "./pages/library/Library";
 
 // Identify screens
@@ -17,7 +19,7 @@ import IdentifyStory from "./pages/identify/IdentifyStory";
 // Profile sub-pages
 import Account from "./pages/profile/account";
 import Subscription from "./pages/profile/Subscription";
-import DjSettings from "./pages/profile/dj"; // Profile settings for DJ
+import DjSettings from "./pages/profile/dj";
 import ConnectedServices from "./pages/profile/connectedServices";
 import Notifications from "./pages/profile/notifications";
 import Appearance from "./pages/profile/appearance";
@@ -31,34 +33,32 @@ export default function App() {
       <BrowserRouter>
         <Routes>
 
-          {/* Splash screen as the default entry point */}
+          {/* Splash screen & Join (No footer / mini-player) */}
           <Route path="/" element={<Splash />} />
-
-          {/* Onboarding / Registration screen */}
           <Route path="/join" element={<Join />} />
 
-          {/* Main bottom navigation screens */}
-          <Route path="/home" element={<Home />} />
-          <Route path="/dj" element={<Dj />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/identify" element={<Identify />} />
-          <Route path="/identify-story" element={<IdentifyStory />} />
+          {/* Main App Layout (Includes MiniPlayer & MobileFooter automatically) */}
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/dj" element={<Dj />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/identify" element={<Identify />} />
+            <Route path="/identify-story" element={<IdentifyStory />} />
 
-          {/* Profile screen */}
-          <Route path="/profile" element={<Profile />} />
-
-          {/* Profile sub-pages */}
-          <Route path="/profile/account" element={<Account />} />
-          <Route path="/profile/subscription" element={<Subscription />} />
-          <Route path="/profile/dj" element={<DjSettings />} />
-          <Route path="/profile/connected-services" element={<ConnectedServices />} />
-          <Route path="/profile/notifications" element={<Notifications />} />
-          <Route path="/profile/app" element={<div>App Settings Page</div>} />
-          <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
-          <Route path="/profile/appearance" element={<Appearance />} />
-          <Route path="/profile/privacy-data" element={<PrivacyData />} />
-          <Route path="/profile/help-support" element={<HelpSupport />} />
-          <Route path="/profile/about" element={<About />} />
+            {/* Profile screen & sub-pages */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/account" element={<Account />} />
+            <Route path="/profile/subscription" element={<Subscription />} />
+            <Route path="/profile/dj" element={<DjSettings />} />
+            <Route path="/profile/connected-services" element={<ConnectedServices />} />
+            <Route path="/profile/notifications" element={<Notifications />} />
+            <Route path="/profile/app" element={<div>App Settings Page</div>} />
+            <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
+            <Route path="/profile/appearance" element={<Appearance />} />
+            <Route path="/profile/privacy-data" element={<PrivacyData />} />
+            <Route path="/profile/help-support" element={<HelpSupport />} />
+            <Route path="/profile/about" element={<About />} />
+          </Route>
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/home" replace />} />
