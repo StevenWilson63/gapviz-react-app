@@ -13,6 +13,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-item {
@@ -24,15 +25,22 @@
   color: #777777;
   font-size: 11px;
   font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500; /* Locks font weight uniformly across desktop & mobile */
   width: 25%;
   height: 100%;
   transition: color 0.2s ease;
   background: transparent;
   border: none;
+  /* Prevents mobile browsers from auto-adjusting text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 .nav-item.active {
   color: #ffffff;
+  font-weight: 600; /* Gives active tab a clean, crisp uniform weight */
 }
 
 .nav-icon-img {
@@ -46,11 +54,11 @@
 
 .nav-item.active .nav-icon-img {
   opacity: 1;
-  /* Optional: filter to tint active icon red if desired */
 }
 
 .nav-label {
   margin-top: 2px;
+  line-height: 1.2;
 }
 
 .nav-underline {
@@ -60,6 +68,7 @@
   margin-top: 4px;
   border-radius: 2px;
   transition: background-color 0.2s ease;
+  flex-shrink: 0; /* Prevents mobile webkit from squishing the dash thickness */
 }
 
 .nav-item.active .nav-underline {
