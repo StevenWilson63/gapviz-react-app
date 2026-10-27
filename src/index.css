@@ -20,7 +20,9 @@
   --gapviz-grey: #ccc;
   --gapviz-white: #fff;
 
-  --font-main: 'Space Grotesk', Arial, sans-serif; /* Update this line */
+  :root {
+  --font-main: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 }
 
 /* --------------------------------------------------
