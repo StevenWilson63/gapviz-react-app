@@ -1,14 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import MiniPlayer from "../mini-player/MiniPlayer";
 import MobileFooter from "../mobile-footer/MobileFooter";
+import SoundBooth from "../soundbooth/SoundBooth";
 
 export default function MainLayout() {
+  const [isSoundBoothOpen, setIsSoundBoothOpen] = useState(false);
   const navigate = useNavigate();
 
-  // This triggers when the user clicks the MiniPlayer to open Layer 2 (SoundBooth)
   const handleOpenSoundBooth = () => {
-    navigate("/dj"); // Or opens the SoundBooth view/modal
+    setIsSoundBoothOpen(true);
+  };
+
+  const handleCloseSoundBooth = () => {
+    setIsSoundBoothOpen(false);
+  };
+
+  const handleOpenControlRoom = () => {
+    setIsSoundBoothOpen(false);
+    navigate("/dj"); // Or opens the control room drawer
   };
 
   return (
@@ -18,11 +28,18 @@ export default function MainLayout() {
         <Outlet />
       </div>
 
-      {/* Persistent Mini-Player (Sits above footer) */}
+      {/* Persistent Mini-Player */}
       <MiniPlayer onOpenSoundBooth={handleOpenSoundBooth} />
 
-      {/* Your Existing Mobile Footer Taskbar */}
+      {/* Mobile Footer Taskbar */}
       <MobileFooter />
+
+      {/* Layer 2: SoundBooth Immersive Screen */}
+      <SoundBooth
+        isOpen={isSoundBoothOpen}
+        onClose={handleCloseSoundBooth}
+        onOpenControlRoom={handleOpenControlRoom}
+      />
     </div>
   );
 }
