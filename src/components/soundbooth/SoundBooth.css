@@ -2,12 +2,11 @@
   position: fixed;
   inset: 0;
   background-color: #0a0a0a;
-  z-index: 9999; /* Forces it to sit above everything else in the app */
+  z-index: 9999;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   padding: 20px;
-  overflow-y: auto; /* Allows scrolling on smaller phone screens so buttons never get cut off */
+  overflow-y: auto; /* Enables smooth scrolling on both desktop and mobile */
   animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -20,7 +19,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-icon-btn {
@@ -56,13 +56,12 @@
 }
 
 .soundbooth-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   text-align: center;
-  margin: 10px 0;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-art {
@@ -99,7 +98,8 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 16px;
   padding: 14px;
-  margin: 10px 0;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-commentary-header {
@@ -144,8 +144,8 @@
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  margin-top: 10px;
-  transition: background-color 0.2s;
+  margin-bottom: 40px; /* Ensures generous padding so the button is fully visible */
+  flex-shrink: 0;
 }
 
 .soundbooth-control-room-btn:hover {
