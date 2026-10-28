@@ -1,154 +1,262 @@
 .soundbooth-overlay {
   position: fixed;
   inset: 0;
-  background-color: #0a0a0a;
-  z-index: 9999;
+  background-color: #0b0b0b;
+  z-index: 99999;
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow-y: auto; /* Enables smooth scrolling on both desktop and mobile */
-  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.soundbooth-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.soundbooth-icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: #171717;
-  border: 1px solid #404040;
-  color: #a3a3a3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.soundbooth-icon-btn.red-border {
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #f87171;
-}
-
-.soundbooth-icon-btn:hover {
-  background-color: #262626;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family: Arial, sans-serif;
   color: #ffffff;
 }
 
+/* Header Deck */
+.soundbooth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.soundbooth-icon-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.soundbooth-icon-btn.red-border {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.soundbooth-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.soundbooth-icon-btn:active {
+  transform: scale(0.95);
+}
+
 .soundbooth-header-title {
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
-  color: #ef4444;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
+  color: #d4d4d4;
   text-transform: uppercase;
 }
 
+/* Album & Metadata */
 .soundbooth-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   margin-bottom: 20px;
-  flex-shrink: 0;
 }
 
 .soundbooth-art {
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
+  border-radius: 12px;
   object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   border: 1px solid #262626;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .soundbooth-song-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
+  margin: 0 0 4px 0;
   color: #ffffff;
-  margin-bottom: 4px;
 }
 
 .soundbooth-artist {
-  font-size: 13px;
+  font-size: 16px;
   color: #a3a3a3;
-  margin-bottom: 4px;
+  margin: 0 0 2px 0;
 }
 
 .soundbooth-album {
-  font-size: 11px;
-  color: #f87171;
-  font-weight: 500;
+  font-size: 13px;
+  color: #ef4444;
+  margin: 0;
 }
 
+/* Progress Scrubber */
+.soundbooth-progress-container {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.soundbooth-progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #262626;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.soundbooth-progress-fill {
+  height: 100%;
+  background-color: #ef4444;
+}
+
+.soundbooth-time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #737373;
+}
+
+/* Playback Controls */
+.soundbooth-playback-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.soundbooth-sub-control-btn {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.soundbooth-sub-control-btn:hover {
+  color: #ffffff;
+}
+
+.soundbooth-main-play-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.soundbooth-main-play-btn:hover {
+  background-color: #dc2626;
+}
+
+.soundbooth-main-play-btn:active {
+  transform: scale(0.95);
+}
+
+/* Commentary Card */
 .soundbooth-commentary-card {
-  background-color: rgba(23, 23, 23, 0.9);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 16px;
-  padding: 14px;
+  background-color: #161616;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  padding: 16px;
   margin-bottom: 20px;
-  flex-shrink: 0;
 }
 
 .soundbooth-commentary-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .soundbooth-story-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  color: #f87171;
+  color: #ef4444;
+  text-transform: uppercase;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+.commentary-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .soundbooth-host-tag {
-  font-size: 10px;
+  font-size: 12px;
   color: #737373;
 }
 
-.soundbooth-story-text {
-  font-size: 11px;
-  color: #d4d4d4;
-  line-height: 1.4;
-  font-style: italic;
+.font-size-buttons {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px;
 }
 
+.font-size-btn {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.font-size-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #ffffff;
+}
+
+.soundbooth-story-text {
+  color: #d4d4d4;
+  margin: 0;
+  transition: font-size 0.2s ease;
+}
+
+/* Control Room Button */
 .soundbooth-control-room-btn {
   width: 100%;
   padding: 14px;
-  background-color: rgba(127, 29, 29, 0.3);
-  border: 1px solid #ef4444;
-  color: #f87171;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 700;
-  border-radius: 12px;
-  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  margin-bottom: 40px; /* Ensures generous padding so the button is fully visible */
-  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+  transition: background-color 0.2s ease;
+  margin-top: auto;
 }
 
 .soundbooth-control-room-btn:hover {
-  background-color: rgba(153, 27, 27, 0.5);
-  color: #ffffff;
+  background-color: #dc2626;
 }

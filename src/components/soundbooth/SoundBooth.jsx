@@ -3,21 +3,28 @@ import "./SoundBooth.css";
 
 export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   const [isPlaying, setIsPlaying] = useState(true);
+  const [commentaryFontSize, setCommentaryFontSize] = useState(15); // Default font size in pixels
 
   if (!isOpen) return null;
+
+  const increaseText = () => {
+    setCommentaryFontSize((prev) => Math.min(prev + 2, 22)); // Max 22px
+  };
+
+  const decreaseText = () => {
+    setCommentaryFontSize((prev) => Math.max(prev - 2, 13)); // Min 13px
+  };
 
   return (
     <div className="soundbooth-overlay">
       {/* Top Header Deck */}
       <header className="soundbooth-header">
-        {/* Left Circle: Minimize / Back to browsing */}
         <button className="soundbooth-icon-btn" onClick={onClose} title="Minimize Player">
           <i className="fa-solid fa-chevron-down"></i>
         </button>
 
         <span className="soundbooth-header-title">SoundBooth Player</span>
 
-        {/* Right Circle: Open DJ Control Room / Settings */}
         <button className="soundbooth-icon-btn red-border" onClick={onOpenControlRoom} title="DJ Control Room">
           <i className="fa-solid fa-sliders"></i>
         </button>
@@ -65,15 +72,21 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </button>
       </div>
 
-      {/* Live Commentary Card */}
+      {/* Live Commentary Card with Font Resizer */}
       <div className="soundbooth-commentary-card">
         <div className="soundbooth-commentary-header">
           <span className="soundbooth-story-label">
             <i className="fa-solid fa-comment-dots"></i> Story Behind The Song
           </span>
-          <span className="soundbooth-host-tag">Host: DJ Rude Boy</span>
+          <div className="commentary-controls-right">
+            <span className="soundbooth-host-tag">DJ Rude Boy</span>
+            <div className="font-size-buttons">
+              <button onClick={decreaseText} title="Decrease text size" className="font-size-btn">A-</button>
+              <button onClick={increaseText} title="Increase text size" className="font-size-btn">A+</button>
+            </div>
+          </div>
         </div>
-        <p className="soundbooth-story-text">
+        <p className="soundbooth-story-text" style={{ fontSize: `${commentaryFontSize}px`, lineHeight: '1.5' }}>
           "Rumours was recorded under intense emotional turmoil in Sausalito, California. Stevie Nicks wrote 'Dreams' in just 10 minutes sitting on a bed in Sly Stone’s studio room..."
         </p>
       </div>
