@@ -53,24 +53,24 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </div>
       </div>
 
-      {/* Full Playback Controls */}
+     {/* Full Playback Controls */}
       <div className="soundbooth-playback-controls">
-        <button className="soundbooth-sub-control-btn">
+        <button className="soundbooth-sub-control-btn" title="Shuffle">
           <i className="fa-solid fa-shuffle"></i>
         </button>
-        <button className="soundbooth-sub-control-btn">
+        <button className="soundbooth-sub-control-btn" title="Previous Track">
           <i className="fa-solid fa-backward-step"></i>
         </button>
-        <button className="soundbooth-main-play-btn" onClick={() => setIsPlaying(!isPlaying)}>
+        <button className="soundbooth-main-play-btn" onClick={() => setIsPlaying(!isPlaying)} title={isPlaying ? "Pause" : "Play"}>
           <i className={`fa-solid ${isPlaying ? "fa-pause" : "fa-play"}`}></i>
         </button>
-        <button className="soundbooth-sub-control-btn">
+        <button className="soundbooth-sub-control-btn" title="Next Track">
           <i className="fa-solid fa-forward-step"></i>
         </button>
-        <button className="soundbooth-sub-control-btn">
+        <button className="soundbooth-sub-control-btn" title="Repeat">
           <i className="fa-solid fa-repeat"></i>
         </button>
-      </div>
+      </div> 
 
       {/* Live Commentary Card with Font Resizer */}
       <div className="soundbooth-commentary-card">
