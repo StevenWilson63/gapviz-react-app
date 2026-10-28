@@ -22,13 +22,19 @@ export default function MainLayout() {
 
   const handleOpenControlRoom = () => {
     setIsSoundBoothOpen(false);
-    navigate("/dj"); // Or opens the control room drawer
+    navigate("/dj");
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between overflow-hidden">
+    <div className="relative w-full h-screen flex flex-col justify-between overflow-hidden">
       {/* Page Content */}
-      <div className={`flex-1 overflow-y-auto ${isProfileScreen ? "pb-20" : "pb-32"}`}>
+      <div 
+        className="flex-1 overflow-y-auto"
+        style={{
+          paddingBottom: isProfileScreen ? "80px" : "130px", /* Gives ample scroll space above the footer */
+          WebkitOverflowScrolling: "touch" /* Smooth scrolling on iOS / iPhone */
+        }}
+      >
         <Outlet />
       </div>
 
