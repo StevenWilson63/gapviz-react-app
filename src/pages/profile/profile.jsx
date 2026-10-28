@@ -9,7 +9,7 @@ export default function Profile() {
     <div className="profile-screen">
 
       {/* Back to Home */}
-      <button className="back-home-btn" onClick={() => navigate("/")}>
+      <button className="back-home-btn" onClick={() => navigate("/home")}>
         ← Home
       </button>
 
@@ -83,11 +83,11 @@ export default function Profile() {
 
         {/* About */}
         <div
-  className="profile-row hover-box"
-  onClick={() => navigate("/profile/about")}
->
-  About (Legal & Credits)
-</div>
+          className="profile-row hover-box"
+          onClick={() => navigate("/profile/about")}
+        >
+          About (Legal & Credits)
+        </div>
 
         {/* Logout — destructive, no glow */}
         <div
