@@ -24,9 +24,8 @@
   cursor: pointer;
   color: #ef4444; /* Gapviz red for inactive tabs */
   font-size: 11px;
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-family: Arial, sans-serif !important; /* Locks all footer text to clean Arial */
+  font-weight: 600;
   width: 25%;
   height: 100%;
   transition: color 0.2s ease;
@@ -34,13 +33,10 @@
   border: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
 }
 
 .nav-item.active {
-  color: #ffffff; /* White when active */
-  font-weight: 600;
+  color: #ffffff; /* Turns white when active */
 }
 
 .nav-icon-img {
@@ -56,22 +52,13 @@
   opacity: 1;
 }
 
-/* Reset and enforce uniform font styling on all label spans */
 #mobile-footer .nav-label {
   margin-top: 2px;
   line-height: 1.2;
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
-  font-style: normal !important;
-  font-variant: normal !important;
-  text-shadow: none !important; /* Strips 3D glitch / cyan-red shadow */
-  filter: none !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
-}
-
-#mobile-footer .nav-label::before,
-#mobile-footer .nav-label::after {
-  content: none !important; /* Removes any pseudo-element glitch overlays */
+  font-family: Arial, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
 }
 
 .nav-underline {
@@ -86,22 +73,4 @@
 
 .nav-item.active .nav-underline {
   background-color: #FF1A1A !important;
-}
-
-#mobile-footer .nav-label {
-  display: inline-block;
-  margin-top: 2px;
-  line-height: 1.2;
-  font-family: 'Space Grotesk', sans-serif !important;
-  font-size: 11px !important;
-  font-style: normal !important;
-  font-weight: 500 !important;
-  /* Prevents desktop browsers from synthetically altering/distortion of short capitalized words */
-  font-synthesis: none !important;
-  -webkit-font-synthesis: none !important;
-  text-shadow: none !important;
-  filter: none !important;
-  letter-spacing: 0.02em !important;
-  text-transform: none !important;
-  white-space: nowrap;
 }
