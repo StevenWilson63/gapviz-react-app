@@ -49,14 +49,21 @@ export default function Home() {
 
   return (
     <div id="home-wrapper">
-      {/* FIXED TOP AVATAR WITH PULSING RED NOTIFICATION HALO & TOOLTIP */}
+      {/* FIXED TOP AVATAR + MICRO-PILL BADGE FOR PROFILE & NOTIFICATIONS */}
       <div
-        id="top-avatar"
-        className={`home-avatar home-theme-${theme} ${hasUnread ? "has-unread" : ""}`}
+        id="top-avatar-container"
         onClick={() => navigate("/profile")}
-        title={hasUnread ? "New notifications" : "Profile"}
+        title={hasUnread ? "Profile & New Notifications" : "Your Profile"}
       >
-        {initials}
+        <div
+          id="top-avatar"
+          className={`home-theme-${theme} ${hasUnread ? "has-unread" : ""}`}
+        >
+          {initials}
+        </div>
+        <div className={`avatar-pill-tag ${hasUnread ? "unread" : ""}`}>
+          {hasUnread ? "Profile • 1 New" : "Profile"}
+        </div>
       </div>
 
       {/* FIXED SETTINGS ICON */}
