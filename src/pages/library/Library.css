@@ -94,6 +94,159 @@
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
+/* --- New Playlist Action & Creator Card --- */
+.playlists-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.create-playlist-trigger-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.create-playlist-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.create-playlist-btn:hover {
+  background: #ef4444;
+}
+
+.playlist-creator-card {
+  background-color: #121212;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.creator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.creator-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.close-creator-btn {
+  background: transparent;
+  border: none;
+  color: #737373;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.close-creator-btn:hover {
+  color: #ffffff;
+}
+
+.creator-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.creator-field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.creator-input {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: #0b0b0b;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.creator-input:focus {
+  border-color: #ef4444;
+  outline: none;
+}
+
+.platform-selector-row, .source-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platform-toggle-chip, .source-chip {
+  background: #181818;
+  border: 1px solid #262626;
+  color: #a3a3a3;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.platform-toggle-chip.selected {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.source-chip:hover {
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.creator-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.save-playlist-confirm-btn {
+  background-color: #ef4444;
+  border: none;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-playlist-confirm-btn:hover {
+  background-color: #dc2626;
+}
+
 /* Grid Layout for Playlists & Albums */
 .library-grid {
   display: grid;
@@ -160,7 +313,7 @@
   border-radius: 6px;
 }
 
-/* List Stacks for Songs & Identified */
+/* List Stacks for Songs, Identified & Inbox */
 .library-list-stack {
   display: flex;
   flex-direction: column;
@@ -222,7 +375,7 @@
   color: #737373;
 }
 
-/* Identified Cards */
+/* Identified & Inbox Cards */
 .library-identified-card {
   background-color: #0b0b0b;
   border: 1px solid rgba(239, 68, 68, 0.35);
@@ -268,7 +421,8 @@
   font-style: italic;
   line-height: 1.4;
 }
-/* --- Saved From Identify Tab Styles --- */
+
+/* Identify Inbox Styling */
 .saved-tab-banner {
   background-color: rgba(239, 68, 68, 0.08);
   border: 1px dashed rgba(239, 68, 68, 0.3);
@@ -325,13 +479,39 @@
   color: #737373;
 }
 
+.inbox-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-to-playlist-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-to-playlist-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
 .remove-saved-btn {
   background: transparent;
   border: none;
   color: #737373;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
   cursor: pointer;
+  padding: 4px 6px;
   transition: color 0.2s ease;
 }
 
