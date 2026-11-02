@@ -4,8 +4,8 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #0b0b0b; /* Solid opaque background so background screens never show through */
-  z-index: 999999; /* Higher than any layout or footer element */
+  background-color: #0b0b0b; /* Solid opaque background */
+  z-index: 999999;
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -59,9 +59,9 @@
   text-transform: uppercase;
 }
 
-/* --- Interactive Top Playlist Bar --- */
+/* --- Interactive Top Playlist Bar (Profile Screen Theme) --- */
 .soundbooth-playlist-bar {
-  background: rgba(22, 22, 22, 0.9);
+  background-color: #0b0b0b; /* Matches screen background */
   border: 1px solid rgba(239, 68, 68, 0.4);
   border-radius: 10px;
   padding: 10px 14px;
@@ -70,12 +70,13 @@
   justify-content: space-between;
   cursor: pointer;
   margin-bottom: 20px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .soundbooth-playlist-bar:hover {
-  border-color: #ef4444;
-  background: rgba(30, 30, 30, 0.95);
+  border-color: #ef4444; /* Brighter red border on hover */
+  background-color: rgba(239, 68, 68, 0.05); /* Subtle red tint on hover matching profile cards */
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
 }
 
 .playlist-bar-left {

@@ -65,7 +65,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
             ))}
           </div>
           <button className="queue-toggle-btn">
-            Queue <i className="fa-solid fa-chevron-up"></i>
+            Track List <i className="fa-solid fa-chevron-down"></i>
           </button>
         </div>
       </div>
