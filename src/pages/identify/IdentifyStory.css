@@ -38,27 +38,27 @@
 .story-screen-badge {
   font-size: 10px;
   font-weight: 700;
-  color: #ef4444;
+  color: #ff1a1a;
   letter-spacing: 0.1em;
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(255, 26, 26, 0.1);
   padding: 4px 8px;
   border-radius: 6px;
 }
 
-/* Hero Metadata Card (Profile / Library Card Style) */
+/* Hero Metadata Card — Matches Profile Row Interaction */
 .story-hero-card {
-  background-color: #0b0b0b;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: transparent;
+  border: 2px solid rgba(255, 26, 26, 0.35);
   border-radius: 12px;
   padding: 18px 20px;
   margin-bottom: 16px;
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
 }
 
 .story-hero-card:hover {
-  border-color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.04);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  transform: scale(0.99);
 }
 
 .hero-title-row {
@@ -85,30 +85,30 @@
   margin: 0;
 }
 
-/* Core Commentary Card (Profile / Library Card Style) */
+/* Core Commentary Card — Matches Profile Row Interaction */
 .story-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: #0b0b0b;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: transparent;
+  border: 2px solid rgba(255, 26, 26, 0.35);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
 }
 
 .story-container:hover {
-  border-color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.04);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  transform: scale(0.99);
 }
 
 .story-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid rgba(255, 26, 26, 0.2);
   padding-bottom: 12px;
 }
 
@@ -121,9 +121,9 @@
 .host-avatar-dot {
   width: 8px;
   height: 8px;
-  background-color: #ef4444;
+  background-color: #ff1a1a;
   border-radius: 50%;
-  box-shadow: 0 0 8px #ef4444;
+  box-shadow: 0 0 8px #ff1a1a;
 }
 
 .host-name {
@@ -152,8 +152,8 @@
 }
 
 .font-size-btn.active, .font-size-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
+  background: rgba(255, 26, 26, 0.2);
+  border-color: #ff1a1a;
   color: #ffffff;
 }
 
@@ -166,7 +166,7 @@
 .story-subtitle-heading {
   font-size: 14px;
   font-weight: 700;
-  color: #ef4444;
+  color: #ff1a1a;
   margin: 0 0 4px 0;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -189,57 +189,62 @@
   font-weight: 600;
 }
 
-/* Action Suite Buttons */
+/* Action Suite Buttons — Matches Profile Row Interaction */
 .actions-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .gv-button {
-  background-color: #0b0b0b;
+  background: transparent;
   color: #ffffff;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: 10px;
-  padding: 13px 20px;
-  font-size: 13px;
-  font-weight: 700;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 600;
   font-family: Arial, sans-serif;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: border 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, transform 0.12s ease;
   text-align: center;
 }
 
 .gv-button:hover {
-  border-color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.05);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+  border-color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
+  color: #ff1a1a;
+  transform: scale(0.99);
 }
 
 .gv-button.primary-action {
-  background-color: #ef4444;
-  border-color: #ef4444;
+  background-color: #ff1a1a;
+  border-color: #ff1a1a;
   color: #ffffff;
 }
 
 .gv-button.primary-action:hover {
-  background-color: #dc2626;
-  border-color: #dc2626;
+  background-color: #d41414;
+  border-color: #d41414;
+  box-shadow: none;
+  color: #ffffff;
+  transform: none;
 }
 
 .gv-button.primary-action.playing {
-  background-color: #0b0b0b;
-  border-color: #ef4444;
-  color: #ef4444;
+  background: transparent;
+  border-color: #ff1a1a;
+  color: #ff1a1a;
+  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
 }
 
 .gv-button.secondary-action.saved {
-  background-color: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
+  background: rgba(255, 26, 26, 0.15);
+  border-color: #ff1a1a;
   color: #ffffff;
 }
 
@@ -254,4 +259,5 @@
   background: transparent;
   border-color: transparent;
   box-shadow: none;
+  transform: none;
 }
