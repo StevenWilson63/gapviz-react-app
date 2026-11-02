@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import "./Library.css";
 
 export default function Library() {
-  const [activeTab, setActiveTab] = useState("playlists");
+  const [activeTab, setActiveTab, setIsActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Mock data for each tab
+  // Mock data for each tab, including the new 'saved' tab
   const libraryData = {
     playlists: [
       { id: 1, name: "Massive Guitar Solos", count: 24, platforms: ["🟢", "🟦", "🍎"], curator: "Gapviz Curated" },
@@ -29,6 +29,11 @@ export default function Library() {
       { id: 1, title: "Dreams", artist: "Fleetwood Mac", date: "Today, 2:15 PM", platform: "🟢", storySnippet: "Written by Stevie Nicks in just 10 minutes..." },
       { id: 2, title: "Sultans of Swing", artist: "Dire Straits", date: "Yesterday", platform: "🟦", storySnippet: "Inspired by a lackluster jazz band in a south London pub..." },
       { id: 3, title: "Hotel California", artist: "Eagles", date: "Oct 28", platform: "🍎", storySnippet: "A metaphor for the dark underbelly of the American dream..." }
+    ],
+    saved: [
+      { id: 1, title: "Rhiannon", artist: "Fleetwood Mac", savedDate: "Saved from Identify • 2 hours ago", platform: "🟢", storySnippet: "Based on a Welsh witch character from a novel Stevie Nicks read on a plane..." },
+      { id: 2, title: "Money for Nothing", artist: "Dire Straits", savedDate: "Saved from Identify • Yesterday", platform: "🟦", storySnippet: "Mark Knopfler overheard appliance store workers complaining about MTV royalties..." },
+      { id: 3, title: "Wish You Were Here", artist: "Pink Floyd", savedDate: "Saved from Identify • 3 days ago", platform: "🍎", storySnippet: "A tribute to founding member Syd Barrett, who visited the studio during recording..." }
     ]
   };
 
@@ -37,7 +42,7 @@ export default function Library() {
       {/* Header Deck */}
       <div className="library-header">
         <h1>Master Library</h1>
-        <p className="library-subtitle">Your aggregated multi-platform music vault & identified lore</p>
+        <p className="library-subtitle">Your aggregated multi-platform music vault, identified tracks & saved lore</p>
       </div>
 
       {/* Search Bar */}
@@ -52,7 +57,7 @@ export default function Library() {
         />
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation (Including Saved from Identify) */}
       <div className="library-tabs">
         <button
           className={`library-tab-btn ${activeTab === "playlists" ? "active" : ""}`}
@@ -77,6 +82,12 @@ export default function Library() {
           onClick={() => setActiveTab("identified")}
         >
           <i className="fa-solid fa-ear-listen"></i> Identified
+        </button>
+        <button
+          className={`library-tab-btn ${activeTab === "saved" ? "active" : ""}`}
+          onClick={() => setActiveTab("saved")}
+        >
+          <i className="fa-solid fa-bookmark"></i> Saved
         </button>
       </div>
 
@@ -150,6 +161,37 @@ export default function Library() {
                   <span className="identified-date">{item.date} {item.platform}</span>
                 </div>
                 <p className="identified-story">"{item.storySnippet}"</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SAVED FROM IDENTIFY TAB */}
+        {activeTab === "saved" && (
+          <div className="library-list-stack">
+            <div className="saved-tab-banner">
+              <i className="fa-solid fa-bookmark" style={{ color: "#ef4444" }}></i>
+              <span>Tracks and stories bookmarked for later from your Identify sessions.</span>
+            </div>
+            {libraryData.saved.map((item) => (
+              <div key={item.id} className="library-identified-card saved-card">
+                <div className="identified-header-row">
+                  <div className="identified-title-group">
+                    <h4>{item.title}</h4>
+                    <span className="identified-artist">{item.artist}</span>
+                  </div>
+                  <div className="saved-card-actions">
+                    <span className="identified-date">{item.platform}</span>
+                    <button className="saved-play-action-btn" title="Queue / Play Track">
+                      <i className="fa-solid fa-play"></i>
+                    </button>
+                  </div>
+                </div>
+                <p className="identified-story">"{item.storySnippet}"</p>
+                <div className="saved-footer-row">
+                  <span className="saved-timestamp">{item.savedDate}</span>
+                  <button className="remove-saved-btn">Remove</button>
+                </div>
               </div>
             ))}
           </div>
