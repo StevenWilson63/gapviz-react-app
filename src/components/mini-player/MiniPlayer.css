@@ -1,6 +1,6 @@
 #mini-player-bar {
-  position: absolute;
-  bottom: 60px; /* Sits right above MobileFooter (assuming footer is ~60px tall) */
+  position: fixed;
+  bottom: 60px; /* Sits right above MobileFooter */
   left: 0;
   right: 0;
   height: 64px;
@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  z-index: 30;
+  z-index: 100; /* High z-index to ensure it floats above all page content and never gets blocked */
   cursor: pointer;
   transition: background-color 0.2s ease;
 }

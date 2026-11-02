@@ -1,10 +1,11 @@
-soundbooth.css
-
 .soundbooth-overlay {
   position: fixed;
-  inset: 0;
-  background-color: #0b0b0b;
-  z-index: 99999;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #0b0b0b; /* Solid opaque background so background screens never show through */
+  z-index: 999999; /* Higher than any layout or footer element */
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -20,7 +21,7 @@ soundbooth.css
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .soundbooth-icon-btn {
@@ -58,6 +59,79 @@ soundbooth.css
   text-transform: uppercase;
 }
 
+/* --- Interactive Top Playlist Bar --- */
+.soundbooth-playlist-bar {
+  background: rgba(22, 22, 22, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.soundbooth-playlist-bar:hover {
+  border-color: #ef4444;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.playlist-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.playlist-icon {
+  font-size: 18px;
+}
+
+.playlist-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.08em;
+}
+
+.playlist-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.playlist-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.platform-badges {
+  display: flex;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.queue-toggle-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
 /* Album & Metadata */
 .soundbooth-content {
   display: flex;
@@ -68,13 +142,13 @@ soundbooth.css
 }
 
 .soundbooth-art {
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   border: 1px solid #262626;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .soundbooth-song-title {
@@ -99,7 +173,7 @@ soundbooth.css
 /* Progress Scrubber */
 .soundbooth-progress-container {
   width: 100%;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .soundbooth-progress-bar {
@@ -129,7 +203,7 @@ soundbooth.css
   align-items: center;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .soundbooth-sub-control-btn {
@@ -261,78 +335,6 @@ soundbooth.css
 
 .soundbooth-control-room-btn:hover {
   background-color: #dc2626;
-}
-/* --- Interactive Top Playlist Bar --- */
-.soundbooth-playlist-bar {
-  background: rgba(22, 22, 22, 0.9);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 10px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.soundbooth-playlist-bar:hover {
-  border-color: #ef4444;
-  background: rgba(30, 30, 30, 0.95);
-}
-
-.playlist-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.playlist-icon {
-  font-size: 18px;
-}
-
-.playlist-info-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.playlist-label {
-  font-size: 9px;
-  font-weight: 700;
-  color: #ef4444;
-  letter-spacing: 0.08em;
-}
-
-.playlist-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.playlist-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.platform-badges {
-  display: flex;
-  gap: 4px;
-  font-size: 12px;
-}
-
-.queue-toggle-btn {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
 }
 
 /* --- Slide-Up Queue Drawer Styles --- */
