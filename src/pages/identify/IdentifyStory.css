@@ -45,13 +45,20 @@
   border-radius: 6px;
 }
 
-/* Hero Metadata Card */
+/* Hero Metadata Card (Profile / Library Card Style) */
 .story-hero-card {
-  background-color: #121212;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background-color: #0b0b0b;
+  border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 12px;
-  padding: 16px 20px;
+  padding: 18px 20px;
   margin-bottom: 16px;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.story-hero-card:hover {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.04);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
 }
 
 .hero-title-row {
@@ -78,23 +85,30 @@
   margin: 0;
 }
 
-/* Core Commentary Card (SoundBooth Style) */
+/* Core Commentary Card (Profile / Library Card Style) */
 .story-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: #121212;
+  background: #0b0b0b;
   border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.story-container:hover {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.04);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
 }
 
 .story-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #202020;
+  border-bottom: 1px solid #1a1a1a;
   padding-bottom: 12px;
 }
 
@@ -124,7 +138,7 @@
 }
 
 .font-size-btn {
-  background: #1a1a1a;
+  background: #161616;
   border: 1px solid #262626;
   color: #737373;
   width: 26px;
@@ -183,9 +197,9 @@
 }
 
 .gv-button {
-  background-color: #161616;
+  background-color: #0b0b0b;
   color: #ffffff;
-  border: 1px solid #262626;
+  border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 10px;
   padding: 13px 20px;
   font-size: 13px;
@@ -202,20 +216,23 @@
 
 .gv-button:hover {
   border-color: #ef4444;
-  background-color: #202020;
+  background-color: rgba(239, 68, 68, 0.05);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
 }
 
 .gv-button.primary-action {
   background-color: #ef4444;
   border-color: #ef4444;
+  color: #ffffff;
 }
 
 .gv-button.primary-action:hover {
   background-color: #dc2626;
+  border-color: #dc2626;
 }
 
 .gv-button.primary-action.playing {
-  background-color: #161616;
+  background-color: #0b0b0b;
   border-color: #ef4444;
   color: #ef4444;
 }
@@ -236,4 +253,5 @@
   color: #ffffff;
   background: transparent;
   border-color: transparent;
+  box-shadow: none;
 }
