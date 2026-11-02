@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileFooter from "../../components/mobile-footer/MobileFooter";
 import fingerprintIcon from "../../assets/icons/fingerprint.svg";
+import gapvizLogo from "../../assets/logos/gapviz-logo.svg";
 import "./Identify.css";
 
 export default function Identify() {
@@ -36,7 +37,11 @@ export default function Identify() {
     <div className="identify-screen">
       {/* Header / Logo */}
       <div className="fp-logo-container">
-        <h2 className="fp-brand-logo">gapviz</h2>
+        <img 
+          src={gapvizLogo} 
+          alt="Gapviz Logo" 
+          className="fp-brand-logo-img" 
+        />
       </div>
 
       {/* Main Center Content Container */}
@@ -49,7 +54,6 @@ export default function Identify() {
           role="button"
           tabIndex={0}
         >
-          {/* We now apply the 'isListening' pulse class directly to the SVG/Image */}
           <div className="fp-icon-inner">
             <img 
               src={fingerprintIcon} 

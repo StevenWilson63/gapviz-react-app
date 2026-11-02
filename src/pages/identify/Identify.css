@@ -21,12 +21,10 @@
   z-index: 10;
 }
 
-.fp-brand-logo {
-  font-size: 22px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.5px;
+.fp-brand-logo-img {
+  height: 28px;
+  width: auto;
+  display: block;
 }
 
 .fp-center-content {
