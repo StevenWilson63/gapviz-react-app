@@ -10,7 +10,7 @@
   align-items: center;
   box-sizing: border-box;
   padding-bottom: 80px; /* Space for bottom footer */
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: Arial, sans-serif;
   overflow: hidden;
 }
 
@@ -23,7 +23,7 @@
 
 .fp-brand-logo {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffffff;
   margin: 0;
   letter-spacing: -0.5px;
@@ -42,13 +42,13 @@
 }
 
 .fp-top-text {
-  font-size: 26px;
-  font-weight: 300;
+  font-size: 24px;
+  font-weight: 400;
   color: #ffffff;
   margin-bottom: 24px;
 }
 
-/* Updated Wrapper: The circular border is REMOVED */
+/* Wrapper: Circular border removed */
 .fp-wrapper {
   cursor: pointer;
   user-select: none;
@@ -58,69 +58,65 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Maintain overall click area size without visual circle */
   width: 180px; 
   height: 180px;
 }
 
-/* Add a subtle hover effect (opacity) since the border is gone */
 .fp-wrapper:hover {
   opacity: 0.85;
 }
 
 /* Icon Container */
 .fp-icon-inner {
-  width: 130px; /* Size of the icon itself */
+  width: 130px;
   height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* Let the wrapper handle the click */
+  pointer-events: none;
 }
 
-/* The Fingerprint SVG/Image styling */
+/* Fingerprint SVG styling */
 .fp-svg {
   width: 100%;
   height: 100%;
   object-fit: contain;
   pointer-events: none;
   transition: all 0.2s ease;
-  /* A subtle resting drop-shadow looks nice on pure black */
-  filter: drop-shadow(0 0 4px rgba(255, 26, 26, 0.1));
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.15));
 }
 
-/* Active Glowing and Pulsing class - Applied to the SVG */
+/* Active Glowing and Pulsing class */
 .fp-svg.icon-listening-glow {
   animation: icon-pulse-glow 1.5s infinite;
 }
 
 .fp-bottom-text {
-  font-size: 16px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.65);
   margin-top: 24px;
 }
 
 .fp-status {
-  font-size: 18px;
-  color: #FF1A1A;
+  font-size: 16px;
+  color: #ef4444;
   margin-top: 24px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-/* KEYFRAMES: Specific animation for glowing and pulsing the icon itself */
+/* Keyframes for glowing/pulsing */
 @keyframes icon-pulse-glow {
   0% {
     transform: scale(0.97);
-    filter: drop-shadow(0 0 5px rgba(255, 26, 26, 0.6));
+    filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.6));
   }
   50% {
     transform: scale(1.03);
-    /* Stronger glow and red tint */
-    filter: drop-shadow(0 0 18px rgba(255, 26, 26, 1)) brightness(1.1);
+    filter: drop-shadow(0 0 18px rgba(239, 68, 68, 1)) brightness(1.1);
   }
   100% {
     transform: scale(0.97);
-    filter: drop-shadow(0 0 5px rgba(255, 26, 26, 0.6));
+    filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.6));
   }
 }
