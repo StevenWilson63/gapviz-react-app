@@ -18,7 +18,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .soundbooth-icon-btn {
@@ -56,79 +56,6 @@
   text-transform: uppercase;
 }
 
-/* --- Interactive Top Playlist Bar --- */
-.soundbooth-playlist-bar {
-  background: rgba(22, 22, 22, 0.9);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 10px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.soundbooth-playlist-bar:hover {
-  border-color: #ef4444;
-  background: rgba(30, 30, 30, 0.95);
-}
-
-.playlist-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.playlist-icon {
-  font-size: 18px;
-}
-
-.playlist-info-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.playlist-label {
-  font-size: 9px;
-  font-weight: 700;
-  color: #ef4444;
-  letter-spacing: 0.08em;
-}
-
-.playlist-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.playlist-bar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.platform-badges {
-  display: flex;
-  gap: 4px;
-  font-size: 12px;
-}
-
-.queue-toggle-btn {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-}
-
 /* Album & Metadata */
 .soundbooth-content {
   display: flex;
@@ -139,13 +66,13 @@
 }
 
 .soundbooth-art {
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   border: 1px solid #262626;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .soundbooth-song-title {
@@ -170,7 +97,7 @@
 /* Progress Scrubber */
 .soundbooth-progress-container {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .soundbooth-progress-bar {
@@ -200,7 +127,7 @@
   align-items: center;
   justify-content: center;
   gap: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .soundbooth-sub-control-btn {
@@ -332,169 +259,4 @@
 
 .soundbooth-control-room-btn:hover {
   background-color: #dc2626;
-}
-
-/* --- Slide-Up Queue Drawer Styles --- */
-.soundbooth-queue-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-  z-index: 100000;
-  display: flex;
-  align-items: flex-end;
-  animation: fadeIn 0.2s ease;
-}
-
-.soundbooth-queue-drawer {
-  width: 100%;
-  max-height: 80vh;
-  background-color: #121212;
-  border-top: 1px solid rgba(239, 68, 68, 0.4);
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
-  animation: slideUp 0.25s ease;
-}
-
-.queue-drawer-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #262626;
-  padding-bottom: 12px;
-}
-
-.queue-drawer-title-group h3 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  color: #ffffff;
-}
-
-.queue-subtitle {
-  font-size: 11px;
-  color: #a3a3a3;
-}
-
-.queue-close-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.queue-tracks-list {
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 55vh;
-  padding-right: 4px;
-}
-
-.queue-track-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-}
-
-/* Played Tracks (Faded out) */
-.queue-track-item.track-played {
-  opacity: 0.45;
-}
-
-/* Current Playing Track */
-.queue-track-item.track-current {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.5);
-}
-
-.queue-track-item.track-current .queue-track-title {
-  color: #ef4444;
-  font-weight: 700;
-}
-
-/* Upcoming Tracks */
-.queue-track-item.track-upcoming {
-  opacity: 0.85;
-}
-
-.queue-track-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.track-number {
-  font-size: 13px;
-  font-weight: 600;
-  color: #737373;
-  width: 24px;
-  text-align: center;
-}
-
-.queue-track-meta {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  margin-left: 10px;
-}
-
-.queue-track-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 2px;
-}
-
-.queue-track-artist {
-  font-size: 12px;
-  color: #a3a3a3;
-}
-
-.queue-track-status-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-
-.track-played .queue-track-status-badge {
-  color: #737373;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.track-current .queue-track-status-badge {
-  color: #ffffff;
-  background: #ef4444;
-}
-
-.track-upcoming .queue-track-status-badge {
-  color: #a3a3a3;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
