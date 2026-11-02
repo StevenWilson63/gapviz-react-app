@@ -1,64 +1,237 @@
 .song-story-screen {
-  min-height: 100vh;
-  background-color: #000000;
+  min-height: calc(100vh - 70px);
+  background-color: #0b0b0b;
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  padding: 30px 20px 90px;
+  padding: 24px 20px 110px;
   box-sizing: border-box;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
-.story-header-title {
-  font-size: 28px;
-  font-weight: 300;
-  margin: 0 0 24px 0;
-  letter-spacing: -0.5px;
+/* Top Nav Deck */
+.story-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
+.story-back-btn {
+  background: transparent;
+  border: none;
+  color: #a3a3a3;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.story-back-btn:hover {
+  color: #ffffff;
+}
+
+.story-screen-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.1em;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* Hero Metadata Card */
+.story-hero-card {
+  background-color: #121212;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.hero-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.hero-title-row h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.hero-platform-badge {
+  font-size: 12px;
+}
+
+.hero-artist-album {
+  font-size: 13px;
+  color: #a3a3a3;
+  margin: 0;
+}
+
+/* Core Commentary Card (SoundBooth Style) */
 .story-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: rgba(17, 17, 17, 0.8);
-  border: 1px solid rgba(255, 26, 26, 0.25);
+  background: #121212;
+  border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
 }
 
-.story-line {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-  margin: 0;
+.story-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #202020;
+  padding-bottom: 12px;
 }
 
-.story-line.highlight {
-  color: #FF1A1A;
-  font-weight: 500;
+.host-tag-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.actions-container {
+.host-avatar-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.host-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4d4d4;
+}
+
+.font-resizer-group {
+  display: flex;
+  gap: 4px;
+}
+
+.font-size-btn {
+  background: #1a1a1a;
+  border: 1px solid #262626;
+  color: #737373;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.font-size-btn.active, .font-size-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.story-content-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.gv-button {
-  background-color: #FF1A1A;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 14px 20px;
+.story-subtitle-heading {
   font-size: 14px;
-  font-weight: 500;
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  color: #ef4444;
+  margin: 0 0 4px 0;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.story-line {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.font-large .story-line {
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.story-line.highlight {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Action Suite Buttons */
+.actions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gv-button {
+  background-color: #161616;
+  color: #ffffff;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  padding: 13px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: Arial, sans-serif;
   cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
   text-align: center;
 }
 
 .gv-button:hover {
-  background-color: #e01414;
+  border-color: #ef4444;
+  background-color: #202020;
+}
+
+.gv-button.primary-action {
+  background-color: #ef4444;
+  border-color: #ef4444;
+}
+
+.gv-button.primary-action:hover {
+  background-color: #dc2626;
+}
+
+.gv-button.primary-action.playing {
+  background-color: #161616;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.gv-button.secondary-action.saved {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.gv-button.subtle-action {
+  background: transparent;
+  border-color: transparent;
+  color: #737373;
+}
+
+.gv-button.subtle-action:hover {
+  color: #ffffff;
+  background: transparent;
+  border-color: transparent;
 }
