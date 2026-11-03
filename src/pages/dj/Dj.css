@@ -7,12 +7,11 @@
   min-height: calc(100vh - 70px);
   background-color: #000000;
   color: #ffffff;
-  padding: 24px 16px 120px; /* Extra bottom padding for Mini-Player + Footer */
+  padding: 24px 16px 120px;
   box-sizing: border-box;
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Header & Context Greeting Engine */
 .dj-header {
   margin-bottom: 20px;
 }
@@ -48,7 +47,7 @@
   line-height: 1.4;
 }
 
-/* 3-Tier Segmented Tab Switcher */
+/* 3-Tier Segmented Switcher */
 .dj-tier-switcher {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -93,7 +92,46 @@
   text-transform: uppercase;
 }
 
-/* Generic Card Styles */
+/* DJ Vault Top Bar Controls */
+.dj-preset-vault-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.vault-select {
+  flex: 1;
+  background: #121212;
+  border: 1px solid rgba(255, 26, 26, 0.4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+
+.vault-btn {
+  background: #1a0505;
+  border: 1px solid #ff1a1a;
+  color: #ff4d4d;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.vault-btn:hover {
+  background: #ff1a1a;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 26, 26, 0.4);
+}
+
+/* Card Container */
 .dj-card {
   background: #0b0b0b;
   border: 1px solid rgba(255, 26, 26, 0.35);
@@ -126,9 +164,6 @@
   font-weight: 600;
   text-transform: none;
   letter-spacing: normal;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 /* Persona Grid Cards */
@@ -179,6 +214,34 @@
   color: rgba(255, 255, 255, 0.6);
   margin: 0;
   line-height: 1.3;
+}
+
+/* Gender Segmented Pill Control */
+.gender-pill-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: #121212;
+  border: 1px solid rgba(255, 26, 26, 0.3);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.gender-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gender-btn.active {
+  background: #ff1a1a;
+  color: #ffffff;
 }
 
 /* Form Controls & Select Inputs */
@@ -246,8 +309,142 @@
   box-shadow: 0 0 10px rgba(255, 26, 26, 0.4);
 }
 
-.sample-play-btn:active {
-  transform: scale(0.97);
+/* Save & Action Button Row */
+.action-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.action-btn-primary {
+  background: #ff1a1a;
+  border: none;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-primary:hover {
+  background: #f87171;
+  box-shadow: 0 0 14px rgba(255, 26, 26, 0.4);
+}
+
+.action-btn-secondary {
+  background: #141414;
+  border: 1px solid rgba(255, 26, 26, 0.4);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-secondary:hover {
+  border-color: #ff1a1a;
+  color: #ffffff;
+}
+
+/* DJ Vault Modal */
+.vault-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.vault-modal {
+  background: #0b0b0b;
+  border: 2px solid #ff1a1a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+  box-shadow: 0 0 30px rgba(255, 26, 26, 0.3);
+}
+
+.vault-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.vault-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #ffffff;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.vault-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.vault-item {
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vault-item-info h5 {
+  margin: 0 0 2px 0;
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.vault-item-info p {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.vault-item-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.vault-action-btn {
+  background: #222;
+  border: 1px solid rgba(255, 26, 26, 0.3);
+  color: #fff;
+  font-size: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.vault-action-btn.delete {
+  border-color: #dc2626;
+  color: #f87171;
 }
 
 /* Dynamic Trait Sliders with Badge */

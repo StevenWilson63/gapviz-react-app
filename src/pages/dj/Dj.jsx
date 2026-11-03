@@ -3,12 +3,30 @@ import MobileFooter from "../../components/mobile-footer/MobileFooter";
 import "./Dj.css";
 
 export default function Dj() {
-  // State Management
+  // Navigation & Vault State
   const [activeTier, setActiveTier] = useState(1);
+  const [isVaultOpen, setIsVaultOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  // Saved DJ Profiles List (Mock Storage)
+  const [savedDjs, setSavedDjs] = useState([
+    { id: "p1", name: "The Curator", style: "Curator", gender: "Male", language: "UK Scottish", isPreset: true },
+    { id: "p2", name: "The Cool Friend", style: "Cool", gender: "Male", language: "US West Coast", isPreset: true },
+    { id: "p3", name: "The Rock Jock", style: "Rock", gender: "Male", language: "UK Scottish", isPreset: true },
+    { id: "p4", name: "Late Night Spinner", style: "Late", gender: "Female", language: "US East Coast", isPreset: true },
+    { id: "u1", name: "DJ Rude Boy (My Setup)", style: "Rock", gender: "Male", language: "UK Scottish", isPreset: false }
+  ]);
+
+  // Active DJ Identity
+  const [activeDjId, setActiveDjId] = useState("u1");
+  const [customDjName, setCustomDjName] = useState("DJ Rude Boy");
   const [selectedPersona, setSelectedPersona] = useState("Rock");
+  const [gender, setGender] = useState("Male");
+  const [language, setLanguage] = useState("UK Scottish");
+
+  // User Profile Phonetics
   const [userName, setUserName] = useState("Steven");
   const [userPhonetic, setUserPhonetic] = useState("Stee-ven");
-  const [toastMessage, setToastMessage] = useState(null);
 
   // Dynamic Trait Sliders (Tier 2)
   const [energy, setEnergy] = useState(75);
@@ -23,45 +41,68 @@ export default function Dj() {
     setTimeout(() => setToastMessage(null), 2200);
   };
 
-  // Kokoro TTS Phonetics Sample Simulation
-  const handlePlayPhoneticSample = () => {
-    triggerToast(`▶ Kokoro TTS: "Hey ${userName}, welcome back to Gapviz!"`);
-    
-    // Web Speech API fallback audio preview
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(`Hey ${userPhonetic || userName}, welcome back to Gapviz!`);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
+  // Select Saved DJ Profile
+  const handleSelectDj = (djId) => {
+    const target = savedDjs.find((item) => item.id === djId);
+    if (target) {
+      setActiveDjId(target.id);
+      setCustomDjName(target.name);
+      setSelectedPersona(target.style);
+      setGender(target.gender);
+      setLanguage(target.language);
+      triggerToast(`Loaded DJ Profile: "${target.name}"`);
     }
   };
 
-  // Helper Functions for Dynamic Badge Text
-  const getEnergyText = (val) => {
-    if (val <= 20) return `${val}% • Quiet & Chill`;
-    if (val <= 40) return `${val}% • Relaxed`;
-    if (val <= 60) return `${val}% • Conversational`;
-    if (val <= 85) return `${val}% • High Energy`;
-    return `${val}% • Full Party Mode`;
+  // Save or Overwrite DJ DNA Profile
+  const handleSaveDj = () => {
+    const existingIndex = savedDjs.findIndex((item) => item.id === activeDjId);
+
+    if (existingIndex >= 0 && !savedDjs[existingIndex].isPreset) {
+      // Overwrite existing user DJ
+      const updated = [...savedDjs];
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        name: customDjName,
+        style: selectedPersona,
+        gender: gender,
+        language: language
+      };
+      setSavedDjs(updated);
+      triggerToast(`Updated DJ DNA: "${customDjName}"`);
+    } else {
+      // Save as New DJ
+      const newDj = {
+        id: "u_" + Date.now(),
+        name: customDjName || "My Custom DJ",
+        style: selectedPersona,
+        gender: gender,
+        language: language,
+        isPreset: false
+      };
+      setSavedDjs([...savedDjs, newDj]);
+      setActiveDjId(newDj.id);
+      triggerToast(`Saved New DJ: "${newDj.name}"`);
+    }
   };
 
-  const getSpeedText = (val) => {
-    if (val <= 0.9) return `${val}x • Relaxed Pace`;
-    if (val <= 1.1) return `${val}x • Natural Radio`;
-    return `${val}x • Fast Pitch`;
+  // Delete User DJ
+  const handleDeleteDj = (id) => {
+    setSavedDjs(savedDjs.filter((item) => item.id !== id));
+    if (activeDjId === id) {
+      handleSelectDj("p3"); // Fallback to Rock Jock
+    }
+    triggerToast("Deleted DJ Profile from Vault");
   };
 
-  const getDepthText = (val) => {
-    if (val <= 30) return `${val}% • Bite-Sized Trivia`;
-    if (val <= 70) return `${val}% • Balanced Backstory`;
-    return `${val}% • Deep Lore`;
-  };
-
-  const getFormalityText = (val) => {
-    if (val <= 25) return "Strict Professional";
-    if (val <= 60) return "Casual Broadcaster";
-    return "Unfiltered / Off-the-Cuff";
+  // TTS Phonetic Sample
+  const handlePlayPhoneticSample = () => {
+    triggerToast(`▶ Kokoro TTS: "Hey ${userName}, welcome back to Gapviz!"`);
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(`Hey ${userPhonetic || userName}, welcome back to Gapviz!`);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   return (
@@ -110,13 +151,45 @@ export default function Dj() {
       {/* ================= TIER 1: JUST PLAY ================= */}
       {activeTier === 1 && (
         <div className="tier-content">
-          {/* Persona Selection */}
+          {/* Active Preset Dropdown & Vault Trigger Bar */}
+          <div className="dj-preset-vault-bar">
+            <select
+              className="vault-select"
+              value={activeDjId}
+              onChange={(e) => handleSelectDj(e.target.value)}
+            >
+              <optgroup label="Custom Saved DJs">
+                {savedDjs
+                  .filter((item) => !item.isPreset)
+                  .map((dj) => (
+                    <option key={dj.id} value={dj.id}>
+                      ⭐ {dj.name}
+                    </option>
+                  ))}
+              </optgroup>
+              <optgroup label="Default Station Presets">
+                {savedDjs
+                  .filter((item) => item.isPreset)
+                  .map((dj) => (
+                    <option key={dj.id} value={dj.id}>
+                      📻 {dj.name}
+                    </option>
+                  ))}
+              </optgroup>
+            </select>
+
+            <button className="vault-btn" onClick={() => setIsVaultOpen(true)}>
+              📁 DJ Vault
+            </button>
+          </div>
+
+          {/* Persona Style Grid */}
           <div className="dj-card">
             <div className="dj-card-title">YOUR DJ STYLE</div>
             <div className="persona-grid">
               <div
                 className={`persona-card ${selectedPersona === "Curator" ? "active" : ""}`}
-                onClick={() => { setSelectedPersona("Curator"); triggerToast("Selected: The Curator"); }}
+                onClick={() => setSelectedPersona("Curator")}
               >
                 <div className="persona-emoji">🎓</div>
                 <h4>The Curator</h4>
@@ -125,7 +198,7 @@ export default function Dj() {
 
               <div
                 className={`persona-card ${selectedPersona === "Cool" ? "active" : ""}`}
-                onClick={() => { setSelectedPersona("Cool"); triggerToast("Selected: The Cool Friend"); }}
+                onClick={() => setSelectedPersona("Cool")}
               >
                 <div className="persona-emoji">😎</div>
                 <h4>The Cool Friend</h4>
@@ -134,7 +207,7 @@ export default function Dj() {
 
               <div
                 className={`persona-card ${selectedPersona === "Rock" ? "active" : ""}`}
-                onClick={() => { setSelectedPersona("Rock"); triggerToast("Selected: The Rock Jock"); }}
+                onClick={() => setSelectedPersona("Rock")}
               >
                 <div className="persona-emoji">🎸</div>
                 <h4>The Rock Jock</h4>
@@ -143,7 +216,7 @@ export default function Dj() {
 
               <div
                 className={`persona-card ${selectedPersona === "Late" ? "active" : ""}`}
-                onClick={() => { setSelectedPersona("Late"); triggerToast("Selected: Late Night Spinner"); }}
+                onClick={() => setSelectedPersona("Late")}
               >
                 <div className="persona-emoji">🌙</div>
                 <h4>Late Night Spinner</h4>
@@ -152,25 +225,72 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* Voice Identity & Phonetics */}
+          {/* Voice Identity & Language Architecture */}
           <div className="dj-card">
             <div className="dj-card-title">
-              VOICE IDENTITY & PHONETICS
+              VOICE IDENTITY & LANGUAGES
               <span className="sync-badge">✓ Two-Way Account Sync</span>
             </div>
 
+            {/* Gender Toggle */}
             <div className="form-group">
-              <label className="form-label">Regional Accent & Language</label>
-              <select className="form-select">
-                <option>🇬🇧 UK Scottish (Glasgow / Edinburgh)</option>
-                <option>🇬🇧 UK Welsh (Cardiff)</option>
-                <option>🇬🇧 UK Northern Irish (Belfast)</option>
-                <option>🇮🇪 Irish (Dublin Accent)</option>
-                <option>🇬🇧 UK London / RP Broadcaster</option>
-                <option>🇺🇸 US East Coast (Radio Host)</option>
+              <label className="form-label">Voice Gender</label>
+              <div className="gender-pill-group">
+                <button
+                  className={`gender-btn ${gender === "Male" ? "active" : ""}`}
+                  onClick={() => setGender("Male")}
+                >
+                  Male
+                </button>
+                <button
+                  className={`gender-btn ${gender === "Female" ? "active" : ""}`}
+                  onClick={() => setGender("Female")}
+                >
+                  Female
+                </button>
+                <button
+                  className={`gender-btn ${gender === "Neutral" ? "active" : ""}`}
+                  onClick={() => setGender("Neutral")}
+                >
+                  Neutral
+                </button>
+              </div>
+            </div>
+
+            {/* Language & Regional Accent Selection */}
+            <div className="form-group">
+              <label className="form-label">Language & Regional Dialect</label>
+              <select
+                className="form-select"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+              >
+                <optgroup label="Default Account Language">
+                  <option value="UK Default">🌐 Account Default (English - UK)</option>
+                </optgroup>
+                <optgroup label="Regional Accents (Native)">
+                  <option value="UK Scottish">🇬🇧 UK Scottish (Glasgow / Edinburgh)</option>
+                  <option value="UK Welsh">🇬🇧 UK Welsh (Cardiff)</option>
+                  <option value="UK Northern Irish">🇬🇧 UK Northern Irish (Belfast)</option>
+                  <option value="Irish">🇮🇪 Irish (Dublin Accent)</option>
+                  <option value="UK RP">🇬🇧 UK London / RP Broadcaster</option>
+                </optgroup>
+                <optgroup label="Global English Variants">
+                  <option value="US East Coast">🇺🇸 US East Coast (Radio Host)</option>
+                  <option value="US West Coast">🇺🇸 US West Coast (Chill)</option>
+                  <option value="Australian">🇦🇺 Australian (Sydney)</option>
+                  <option value="Canadian">🇨🇦 Canadian</option>
+                </optgroup>
+                <optgroup label="Global Languages">
+                  <option value="Spanish">🇪🇸 Spanish (Castilian)</option>
+                  <option value="French">🇫🇷 French</option>
+                  <option value="German">🇩🇪 German</option>
+                  <option value="Japanese">🇯🇵 Japanese</option>
+                </optgroup>
               </select>
             </div>
 
+            {/* Name & Phonetic Pronunciation */}
             <div className="form-group">
               <label className="form-label">Name & Phonetic Pronunciation</label>
               <div className="phonetics-row">
@@ -186,12 +306,33 @@ export default function Dj() {
                   className="form-input"
                   value={userPhonetic}
                   onChange={(e) => setUserPhonetic(e.target.value)}
-                  placeholder="e.g. Stee-ven"
+                  placeholder="Phonetic (e.g. Stee-ven)"
                 />
                 <button className="sample-play-btn" onClick={handlePlayPhoneticSample}>
                   ▶ Play Sample
                 </button>
               </div>
+            </div>
+
+            {/* DJ Name & Save Action Row */}
+            <div className="form-group" style={{ marginTop: "14px" }}>
+              <label className="form-label">Custom DJ Name</label>
+              <input
+                type="text"
+                className="form-input"
+                value={customDjName}
+                onChange={(e) => setCustomDjName(e.target.value)}
+                placeholder="e.g. DJ Rude Boy"
+              />
+            </div>
+
+            <div className="action-btn-row">
+              <button className="action-btn-primary" onClick={handleSaveDj}>
+                💾 Save DJ DNA
+              </button>
+              <button className="action-btn-secondary" onClick={() => setIsVaultOpen(true)}>
+                📁 Manage Vault
+              </button>
             </div>
           </div>
         </div>
@@ -200,14 +341,13 @@ export default function Dj() {
       {/* ================= TIER 2: VIBE CURATOR ================= */}
       {activeTier === 2 && (
         <div className="tier-content">
-          {/* Dynamic Trait Sliders */}
           <div className="dj-card">
             <div className="dj-card-title">DYNAMIC TRAIT SLIDERS</div>
 
             <div className="form-group">
               <div className="slider-header">
                 <span className="slider-label">Energy Level</span>
-                <span className="trait-badge">{getEnergyText(energy)}</span>
+                <span className="trait-badge">{energy}%</span>
               </div>
               <input
                 type="range"
@@ -222,7 +362,7 @@ export default function Dj() {
             <div className="form-group">
               <div className="slider-header">
                 <span className="slider-label">Speaking Speed</span>
-                <span className="trait-badge">{getSpeedText(speed)}</span>
+                <span className="trait-badge">{speed}x</span>
               </div>
               <input
                 type="range"
@@ -234,39 +374,8 @@ export default function Dj() {
                 className="form-slider"
               />
             </div>
-
-            <div className="form-group">
-              <div className="slider-header">
-                <span className="slider-label">Storytelling Depth</span>
-                <span className="trait-badge">{getDepthText(depth)}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={depth}
-                onChange={(e) => setDepth(Number(e.target.value))}
-                className="form-slider"
-              />
-            </div>
-
-            <div className="form-group">
-              <div className="slider-header">
-                <span className="slider-label">Formality & Humor</span>
-                <span className="trait-badge">{getFormalityText(formality)}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formality}
-                onChange={(e) => setFormality(Number(e.target.value))}
-                className="form-slider"
-              />
-            </div>
           </div>
 
-          {/* Commentary Focus Matrix */}
           <div className="dj-card">
             <div className="dj-card-title">COMMENTARY FOCUS MATRIX</div>
             <div className="matrix-grid">
@@ -287,22 +396,6 @@ export default function Dj() {
               </button>
 
               <button
-                className={`matrix-btn ${focusStyle === "Nerd" ? "active" : ""}`}
-                onClick={() => setFocusStyle("Nerd")}
-              >
-                <h5>Music Nerd</h5>
-                <p>Gear, synths & chords</p>
-              </button>
-
-              <button
-                className={`matrix-btn ${focusStyle === "Pop" ? "active" : ""}`}
-                onClick={() => setFocusStyle("Pop")}
-              >
-                <h5>Pop Culture</h5>
-                <p>Film soundtracks & trends</p>
-              </button>
-
-              <button
                 className={`matrix-btn full-width ${focusStyle === "Random" ? "active" : ""}`}
                 onClick={() => setFocusStyle("Random")}
               >
@@ -317,30 +410,6 @@ export default function Dj() {
       {/* ================= TIER 3: STUDIO PRO ================= */}
       {activeTier === 3 && (
         <div className="tier-content">
-          {/* Broadcast DSP Profiles */}
-          <div className="dj-card">
-            <div className="dj-card-title">BROADCAST DSP & EQ PROFILES</div>
-            <div className="form-group">
-              <label className="form-label">Master Voice Equalizer</label>
-              <select className="form-select">
-                <option>🎙️ Warm FM Radio (Vintage 70s)</option>
-                <option>📻 Punchy Modern Broadcaster</option>
-                <option>🎧 Crisp Podcast (Clean & Close)</option>
-                <option>🎚️ Flat / Unprocessed Reference</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Spatial Width & Panning</label>
-              <select className="form-select">
-                <option>Center Mono (Classic Radio)</option>
-                <option>Spatial Stereo Width (Enhanced)</option>
-                <option>Binaural Headphone 3D</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Manual Station Sound Drops Soundboard */}
           <div className="dj-card">
             <div className="dj-card-title">MANUAL STATION SOUND DROPS</div>
             <div className="soundboard-grid">
@@ -361,7 +430,55 @@ export default function Dj() {
         </div>
       )}
 
-      {/* Locked DJ VoiceDeck Add-On CTA */}
+      {/* DJ Vault Modal Drawer */}
+      {isVaultOpen && (
+        <div className="vault-modal-overlay">
+          <div className="vault-modal">
+            <div className="vault-modal-header">
+              <h3>📁 Saved DJ Vault</h3>
+              <button className="close-btn" onClick={() => setIsVaultOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="vault-list">
+              {savedDjs.map((dj) => (
+                <div key={dj.id} className="vault-item">
+                  <div className="vault-item-info">
+                    <h5>
+                      {dj.name} {dj.id === activeDjId && "(Active)"}
+                    </h5>
+                    <p>
+                      {dj.style} • {dj.gender} • {dj.language}
+                    </p>
+                  </div>
+                  <div className="vault-item-actions">
+                    <button
+                      className="vault-action-btn"
+                      onClick={() => {
+                        handleSelectDj(dj.id);
+                        setIsVaultOpen(false);
+                      }}
+                    >
+                      Load
+                    </button>
+                    {!dj.isPreset && (
+                      <button
+                        className="vault-action-btn delete"
+                        onClick={() => handleDeleteDj(dj.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Locked Add-On */}
       <div className="locked-card">
         <div className="locked-info">
           <h4>🔒 DJ VoiceDeck Creator Pass</h4>
