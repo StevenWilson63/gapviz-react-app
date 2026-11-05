@@ -35,6 +35,10 @@ export default function Dj() {
   const [formality, setFormality] = useState(40);
   const [focusStyle, setFocusStyle] = useState("Random");
 
+  // "Also in this year..." Timeline Trivia Feature State (Tier 2)
+  const [enableTimelineTrivia, setEnableTimelineTrivia] = useState(true);
+  const [timelineFrequency, setTimelineFrequency] = useState(4); // Every 3-4 tracks
+
   // Trigger Toast Notifications
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -404,6 +408,39 @@ export default function Dj() {
               </button>
             </div>
           </div>
+
+          {/* "Also in this year..." Historical Timeline Trivia Module */}
+          <div className="dj-card">
+            <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>"ALSO IN THIS YEAR..." TIMELINE</span>
+              <input
+                type="checkbox"
+                checked={enableTimelineTrivia}
+                onChange={() => setEnableTimelineTrivia(!enableTimelineTrivia)}
+                style={{ accentColor: "#ff1a1a", width: "16px", height: "16px", cursor: "pointer" }}
+              />
+            </div>
+            <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 12px 0", lineHeight: "1.4" }}>
+              Weaves unrelated cultural, cinematic, or historical events from the track's release year into the AI host commentary.
+            </p>
+
+            {enableTimelineTrivia && (
+              <div className="form-group" style={{ marginTop: "10px" }}>
+                <div className="slider-header">
+                  <span className="slider-label">Timeline Trivia Frequency</span>
+                  <span className="trait-badge">Every {timelineFrequency} Tracks</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="6"
+                  value={timelineFrequency}
+                  onChange={(e) => setTimelineFrequency(Number(e.target.value))}
+                  className="form-slider"
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -448,7 +485,7 @@ export default function Dj() {
                     <h5>
                       {dj.name} {dj.id === activeDjId && "(Active)"}
                     </h5>
-                    <p>
+                    <p style={{ margin: 0, fontSize: "10px", color: "rgba(255,255,255,0.5)" }}>
                       {dj.style} • {dj.gender} • {dj.language}
                     </p>
                   </div>
