@@ -510,3 +510,22 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* --- Commentary Source Attribution Pill --- */
+.commentary-attribution-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.commentary-attribution-pill {
+  background-color: #0b0b0b;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #a3a3a3;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
