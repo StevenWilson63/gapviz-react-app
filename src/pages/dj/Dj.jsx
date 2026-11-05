@@ -439,7 +439,9 @@ export default function Dj() {
               <div className="form-group" style={{ marginTop: "10px" }}>
                 <div className="slider-header">
                   <span className="slider-label">Timeline Trivia Frequency</span>
-                  <span className="trait-badge">Every {timelineFrequency} Tracks</span>
+                  <span className="trait-badge">
+                    Every {timelineFrequency} {timelineFrequency === 1 ? "Track" : "Tracks"}
+                  </span>
                 </div>
                 <input
                   type="range"
