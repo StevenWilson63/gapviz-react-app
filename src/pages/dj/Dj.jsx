@@ -37,7 +37,23 @@ export default function Dj() {
 
   // "Also in this year..." Timeline Trivia Feature State (Tier 2)
   const [enableTimelineTrivia, setEnableTimelineTrivia] = useState(true);
-  const [timelineFrequency, setTimelineFrequency] = useState(4); // Every 3-4 tracks
+  const [timelineFrequency, setTimelineFrequency] = useState(2); // Default to "Occasional"
+
+  // Descriptive Label Generator for Timeline Frequency
+  const getTimelineFrequencyLabel = (val) => {
+    switch (val) {
+      case 1:
+        return "Rare";
+      case 2:
+        return "Occasional";
+      case 3:
+        return "Frequently";
+      case 4:
+        return "Every Commentary";
+      default:
+        return "Occasional";
+    }
+  };
 
   // Trigger Toast Notifications
   const triggerToast = (msg) => {
@@ -439,14 +455,13 @@ export default function Dj() {
               <div className="form-group" style={{ marginTop: "10px" }}>
                 <div className="slider-header">
                   <span className="slider-label">Timeline Trivia Frequency</span>
-                  <span className="trait-badge">
-                    Every {timelineFrequency} {timelineFrequency === 1 ? "Track" : "Tracks"}
-                  </span>
+                  <span className="trait-badge">{getTimelineFrequencyLabel(timelineFrequency)}</span>
                 </div>
                 <input
                   type="range"
                   min="1"
-                  max="6"
+                  max="4"
+                  step="1"
                   value={timelineFrequency}
                   onChange={(e) => setTimelineFrequency(Number(e.target.value))}
                   className="form-slider"
