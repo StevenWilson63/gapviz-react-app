@@ -1,5 +1,67 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./SoundBooth.css";
+
+// HTML5 Canvas Text Renderer Component for Script Anti-Copy Security
+function CanvasTeleprompter({ text, fontSize, lineHeightRatio = 1.5 }) {
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext("2d");
+    const containerWidth = container.clientWidth || 300;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Helper for wrapping text cleanly into canvas line layers
+    const words = text.split(" ");
+    let lines = [];
+    let currentLine = "";
+
+    ctx.font = `${fontSize}px Arial, sans-serif`;
+
+    for (let i = 0; i < words.length; i++) {
+      const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > containerWidth - 10 && i > 0) {
+        lines.push(currentLine);
+        currentLine = words[i];
+      } else {
+        currentLine = testLine;
+      }
+    }
+    lines.push(currentLine);
+
+    const calculatedLineHeight = fontSize * lineHeightRatio;
+    const canvasHeight = Math.max(lines.length * calculatedLineHeight + 10, 60);
+
+    // Scale canvas resolution for high-DPI crisp rendering
+    canvas.width = containerWidth * dpr;
+    canvas.height = canvasHeight * dpr;
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${canvasHeight}px`;
+
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, containerWidth, canvasHeight);
+
+    // Draw text directly to Canvas pixel canvas
+    ctx.font = `${fontSize}px Arial, sans-serif`;
+    ctx.fillStyle = "#d4d4d4";
+    ctx.textBaseline = "top";
+
+    lines.forEach((line, index) => {
+      ctx.fillText(line, 0, index * calculatedLineHeight);
+    });
+  }, [text, fontSize, lineHeightRatio]);
+
+  return (
+    <div ref={containerRef} className="canvas-teleprompter-container">
+      <canvas ref={canvasRef} className="soundbooth-canvas-text" />
+    </div>
+  );
+}
 
 export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   const [isPlaying, setIsPlaying] = useState(true);
@@ -24,6 +86,9 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
     ]
   };
 
+  const currentScriptText =
+    "\"Rumours was recorded under intense emotional turmoil in Sausalito, California. Stevie Nicks wrote 'Dreams' in just 10 minutes sitting on a bed in Sly Stone’s studio room...\"";
+
   if (!isOpen) return null;
 
   const increaseText = () => {
@@ -32,6 +97,11 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
 
   const decreaseText = () => {
     setCommentaryFontSize((prev) => Math.max(prev - 2, 13));
+  };
+
+  // Right-Click Context Menu Suppression Guard
+  const handleContextMenu = (e) => {
+    e.preventDefault();
   };
 
   return (
@@ -93,7 +163,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </div>
       </div>
 
-     {/* Full Playback Controls */}
+      {/* Full Playback Controls */}
       <div className="soundbooth-playback-controls">
         <button className="soundbooth-sub-control-btn" title="Shuffle">
           <i className="fa-solid fa-shuffle"></i>
@@ -112,8 +182,11 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </button>
       </div> 
 
-      {/* Live Commentary Card with Anti-Copy & Source Attribution Pill */}
-      <div className="soundbooth-commentary-card user-select-none">
+      {/* Live Commentary Card with HTML5 Canvas Teleprompter & Right-Click Suppression */}
+      <div 
+        className="soundbooth-commentary-card user-select-none" 
+        onContextMenu={handleContextMenu}
+      >
         <div className="soundbooth-commentary-header">
           <span className="soundbooth-story-label">
             <i className="fa-solid fa-comment-dots"></i> Story Behind The Song
@@ -126,9 +199,9 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
             </div>
           </div>
         </div>
-        <p className="soundbooth-story-text" style={{ fontSize: `${commentaryFontSize}px`, lineHeight: '1.5' }}>
-          "Rumours was recorded under intense emotional turmoil in Sausalito, California. Stevie Nicks wrote 'Dreams' in just 10 minutes sitting on a bed in Sly Stone’s studio room..."
-        </p>
+
+        {/* HTML5 Canvas Teleprompter (No DOM Text Nodes) */}
+        <CanvasTeleprompter text={currentScriptText} fontSize={commentaryFontSize} />
         
         {/* Attribution Pill Box */}
         <div className="commentary-attribution-wrapper">

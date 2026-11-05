@@ -252,7 +252,7 @@
   transform: scale(0.95);
 }
 
-/* Commentary Card */
+/* Commentary Card & HTML5 Canvas Renderer */
 .soundbooth-commentary-card {
   background-color: #161616;
   border: 1px solid #262626;
@@ -316,10 +316,16 @@
   color: #ffffff;
 }
 
-.soundbooth-story-text {
-  color: #d4d4d4;
-  margin: 0;
-  transition: font-size 0.2s ease;
+/* HTML5 Canvas Teleprompter */
+.canvas-teleprompter-container {
+  width: 100%;
+  display: block;
+}
+
+.soundbooth-canvas-text {
+  display: block;
+  width: 100%;
+  pointer-events: none;
 }
 
 /* Control Room Button */
