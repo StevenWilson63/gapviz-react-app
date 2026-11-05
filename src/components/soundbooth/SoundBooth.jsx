@@ -112,7 +112,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </button>
       </div> 
 
-      {/* Live Commentary Card with Anti-Copy Script Protection */}
+      {/* Live Commentary Card with Anti-Copy & Source Attribution */}
       <div className="soundbooth-commentary-card user-select-none">
         <div className="soundbooth-commentary-header">
           <span className="soundbooth-story-label">
@@ -129,6 +129,11 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         <p className="soundbooth-story-text" style={{ fontSize: `${commentaryFontSize}px`, lineHeight: '1.5' }}>
           "Rumours was recorded under intense emotional turmoil in Sausalito, California. Stevie Nicks wrote 'Dreams' in just 10 minutes sitting on a bed in Sly Stone’s studio room..."
         </p>
+        
+        {/* Attribution Footer */}
+        <div className="commentary-attribution">
+          <span>Metadata & Insights via Spotify / MusicBrainz</span>
+        </div>
       </div>
 
       {/* Gapviz Red Control Room Button */}
