@@ -112,8 +112,8 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </button>
       </div> 
 
-      {/* Live Commentary Card with Font Resizer */}
-      <div className="soundbooth-commentary-card">
+      {/* Live Commentary Card with Anti-Copy Script Protection */}
+      <div className="soundbooth-commentary-card user-select-none">
         <div className="soundbooth-commentary-header">
           <span className="soundbooth-story-label">
             <i className="fa-solid fa-comment-dots"></i> Story Behind The Song
