@@ -409,16 +409,27 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* "Also in this year..." Historical Timeline Trivia Module */}
+          {/* "Also in this year..." Historical Timeline Trivia Module with Toggle Switch */}
           <div className="dj-card">
             <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>"ALSO IN THIS YEAR..." TIMELINE</span>
-              <input
-                type="checkbox"
-                checked={enableTimelineTrivia}
-                onChange={() => setEnableTimelineTrivia(!enableTimelineTrivia)}
-                style={{ accentColor: "#ff1a1a", width: "16px", height: "16px", cursor: "pointer" }}
-              />
+              <label className="switch-container" style={{ position: "relative", display: "inline-block", width: "40px", height: "22px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={enableTimelineTrivia}
+                  onChange={() => setEnableTimelineTrivia(!enableTimelineTrivia)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: "absolute", inset: 0, backgroundColor: enableTimelineTrivia ? "#ff1a1a" : "#222",
+                  borderRadius: "22px", transition: "0.3s", border: "1px solid rgba(255, 26, 26, 0.4)"
+                }}>
+                  <span style={{
+                    position: "absolute", content: "''", height: "16px", width: "16px", left: enableTimelineTrivia ? "20px" : "3px",
+                    bottom: "2px", backgroundColor: "white", borderRadius: "50%", transition: "0.3s"
+                  }}></span>
+                </span>
+              </label>
             </div>
             <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 12px 0", lineHeight: "1.4" }}>
               Weaves unrelated cultural, cinematic, or historical events from the track's release year into the AI host commentary.
