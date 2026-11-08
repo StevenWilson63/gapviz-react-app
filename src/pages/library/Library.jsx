@@ -455,35 +455,63 @@ export default function Library() {
               </div>
             </div>
 
-            {/* Commentary Vault List */}
+            {/* Commentary Vault List with Active Filters & Sorters */}
             <div className="library-list-stack">
-              {libraryData.commentaryVault.length === 0 ? (
+              {libraryData.commentaryVault
+                .filter(item => {
+                  if (vaultEra !== "all" && item.decade !== vaultEra) return false;
+                  if (vaultHost !== "all" && item.djPersonaName !== vaultHost) return false;
+                  if (vaultFocus !== "all" && item.focus !== vaultFocus) return false;
+                  if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase()) && !item.artist.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+                  return true;
+                })
+                .sort((a, b) => {
+                  if (vaultSort === "year-desc") return b.year - a.year;
+                  if (vaultSort === "year-asc") return a.year - b.year;
+                  if (vaultSort === "artist") return a.artist.localeCompare(b.artist);
+                  return 0; // "recent" default
+                })
+                .length === 0 ? (
                 <div className="empty-vault-state">
-                  <p>Your Commentary Vault is empty. Save commentary snippets from the Identify screen or DJ sessions.</p>
+                  <p>No commentary items match your current filter criteria.</p>
                 </div>
               ) : (
-                libraryData.commentaryVault.map((item) => (
-                  <div key={item.id} className="library-identified-card vault-card">
-                    <div className="identified-header-row">
-                      <div className="identified-title-group">
-                        <h4>🎙️ {item.title} — {item.artist} ({item.year})</h4>
-                        <span className="identified-artist">Delivered by: {item.djPersonaName} | {item.focus}</span>
+                libraryData.commentaryVault
+                  .filter(item => {
+                    if (vaultEra !== "all" && item.decade !== vaultEra) return false;
+                    if (vaultHost !== "all" && item.djPersonaName !== vaultHost) return false;
+                    if (vaultFocus !== "all" && item.focus !== vaultFocus) return false;
+                    if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase()) && !item.artist.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+                    return true;
+                  })
+                  .sort((a, b) => {
+                    if (vaultSort === "year-desc") return b.year - a.year;
+                    if (vaultSort === "year-asc") return a.year - b.year;
+                    if (vaultSort === "artist") return a.artist.localeCompare(b.artist);
+                    return 0;
+                  })
+                  .map((item) => (
+                    <div key={item.id} className="library-identified-card vault-card">
+                      <div className="identified-header-row">
+                        <div className="identified-title-group">
+                          <h4>🎙️ {item.title} — {item.artist} ({item.year})</h4>
+                          <span className="identified-artist">Delivered by: {item.djPersonaName} | {item.focus}</span>
+                        </div>
+                        <span className="identified-date">{item.savedDate}</span>
                       </div>
-                      <span className="identified-date">{item.savedDate}</span>
-                    </div>
 
-                    <p className="identified-story">"{item.storySnippet}"</p>
+                      <p className="identified-story">"{item.storySnippet}"</p>
 
-                    <div className="vault-card-actions">
-                      <button className="add-to-playlist-btn" onClick={() => alert("Synthesizing audio clip via Kokoro-82M ONNX...")}>
-                        <i className="fa-solid fa-play"></i> Play DJ Commentary
-                      </button>
-                      <button className="remove-saved-btn" onClick={() => handleRemoveVaultItem(item.id)} title="Remove from Vault">
-                        <i className="fa-solid fa-trash"></i>
-                      </button>
+                      <div className="vault-card-actions">
+                        <button className="add-to-playlist-btn" onClick={() => alert("Synthesizing audio clip via Kokoro-82M ONNX...")}>
+                          <i className="fa-solid fa-play"></i> Play DJ Commentary
+                        </button>
+                        <button className="remove-saved-btn" onClick={() => handleRemoveVaultItem(item.id)} title="Remove from Vault">
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </div>
