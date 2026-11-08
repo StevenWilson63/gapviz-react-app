@@ -46,6 +46,29 @@ export default function Dj() {
   const [enableTimelineTrivia, setEnableTimelineTrivia] = useState(true);
   const [timelineFrequency, setTimelineFrequency] = useState(2); // "Occasional"
 
+  // Handler for Tier 1 Persona Card Click (Auto-Syncs Tier 2 Delivery Style Default)
+  const handlePersonaSelect = (personaKey) => {
+    setSelectedPersona(personaKey);
+    
+    // Auto-sync matching baseline Radio Delivery Style in Tier 2
+    switch (personaKey) {
+      case "Curator":
+        setDeliveryStyle("Documentary Narrator");
+        break;
+      case "Cool":
+        setDeliveryStyle("Best Friend");
+        break;
+      case "Rock":
+        setDeliveryStyle("Rock DJ");
+        break;
+      case "Late":
+        setDeliveryStyle("Late Night Host");
+        break;
+      default:
+        break;
+    }
+  };
+
   const getTimelineFrequencyLabel = (val) => {
     switch (val) {
       case 1:
@@ -71,7 +94,7 @@ export default function Dj() {
     if (target) {
       setActiveDjId(target.id);
       setCustomDjName(target.name);
-      setSelectedPersona(target.style);
+      handlePersonaSelect(target.style);
       setGender(target.gender);
       setLanguage(target.language);
       triggerToast(`Loaded DJ Profile: "${target.name}"`);
@@ -208,7 +231,7 @@ export default function Dj() {
             <div className="persona-grid">
               <div
                 className={`persona-card ${selectedPersona === "Curator" ? "active" : ""}`}
-                onClick={() => setSelectedPersona("Curator")}
+                onClick={() => handlePersonaSelect("Curator")}
               >
                 <div className="persona-emoji">🎓</div>
                 <h4>The Curator</h4>
@@ -217,7 +240,7 @@ export default function Dj() {
 
               <div
                 className={`persona-card ${selectedPersona === "Cool" ? "active" : ""}`}
-                onClick={() => setSelectedPersona("Cool")}
+                onClick={() => handlePersonaSelect("Cool")}
               >
                 <div className="persona-emoji">😎</div>
                 <h4>The Cool Friend</h4>
@@ -226,7 +249,7 @@ export default function Dj() {
 
               <div
                 className={`persona-card ${selectedPersona === "Rock" ? "active" : ""}`}
-                onClick={() => setSelectedPersona("Rock")}
+                onClick={() => handlePersonaSelect("Rock")}
               >
                 <div className="persona-emoji">🎸</div>
                 <h4>The Rock Jock</h4>
@@ -235,7 +258,7 @@ export default function Dj() {
 
               <div
                 className={`persona-card ${selectedPersona === "Late" ? "active" : ""}`}
-                onClick={() => setSelectedPersona("Late")}
+                onClick={() => handlePersonaSelect("Late")}
               >
                 <div className="persona-emoji">🌙</div>
                 <h4>Late Night Spinner</h4>
