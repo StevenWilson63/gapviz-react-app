@@ -203,10 +203,10 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         {/* HTML5 Canvas Teleprompter (No DOM Text Nodes) */}
         <CanvasTeleprompter text={currentScriptText} fontSize={commentaryFontSize} />
         
-        {/* Attribution Pill Box */}
+        {/* Attribution Pill Box (Clean Source Name) */}
         <div className="commentary-attribution-wrapper">
           <span className="commentary-attribution-pill">
-            Metadata via Spotify / MusicBrainz
+            MusicBrainz
           </span>
         </div>
       </div>
