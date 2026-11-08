@@ -33,7 +33,7 @@ export default function Dj() {
   const [commentaryLength, setCommentaryLength] = useState("Standard Bridge");
   const [commentaryTiming, setCommentaryTiming] = useState("Bridge (End & Beginning)");
 
-  // Fine-Tuning Matrix (Tier 2)
+  // Fine-Tuning Matrix (Tier 2 - Performance & Emotional Delivery Trait Additions)
   const [voiceTone, setVoiceTone] = useState("Crisp");
   const [energyLevel, setEnergyLevel] = useState("Energetic");
   const [deliveryStyle, setDeliveryStyle] = useState("Rock DJ");
@@ -41,6 +41,8 @@ export default function Dj() {
   const [commentaryFocus, setCommentaryFocus] = useState("Storyteller");
   const [formality, setFormality] = useState("Casual");
   const [genreAdaptability, setGenreAdaptability] = useState("Dynamic Flex");
+  const [performanceVibe, setPerformanceVibe] = useState("Deep Storyteller"); // Conversational, Storyteller, Theatrical & Wry
+  const [expressionDynamics, setExpressionDynamics] = useState("Standard Radio Punch"); // Mellow, Standard, High Octane
 
   // Persona Shuffle & Timeline Trivia (Tier 2)
   const [enablePersonaShuffle, setEnablePersonaShuffle] = useState(false);
@@ -48,11 +50,11 @@ export default function Dj() {
   const [enableTimelineTrivia, setEnableTimelineTrivia] = useState(true);
   const [timelineFrequency, setTimelineFrequency] = useState(2);
 
-  // Studio Pro Controls (Tier 3 - B2B & Technophobe Warm Fuzzy Suite)
+  // Studio Pro Controls (Tier 3 - B2B & Technophobe Suite)
   const [duckingLevel, setDuckingLevel] = useState(30); // Music Bed Ducking %
-  const [masterCompressor, setMasterCompressor] = useState("Broadcast Safe"); // Compressor preset
-  const [studioAcoustics, setStudioAcoustics] = useState("Dead Studio (Dry)"); // Reverb profile
-  const [vumeterActive, setVumeterActive] = useState(true); // Simulated LED Meter Toggle
+  const [masterCompressor, setMasterCompressor] = useState("Broadcast Safe");
+  const [studioAcoustics, setStudioAcoustics] = useState("Dead Studio (Dry)");
+  const [vumeterActive, setVumeterActive] = useState(true);
 
   // Handler for Tier 1 Persona Card Click (Auto-Syncs Tier 2 Delivery Style Default)
   const handlePersonaSelect = (personaKey) => {
@@ -60,15 +62,21 @@ export default function Dj() {
     switch (personaKey) {
       case "Curator":
         setDeliveryStyle("Documentary Narrator");
+        setPerformanceVibe("Deep Storyteller");
         break;
       case "Cool":
         setDeliveryStyle("Best Friend");
+        setPerformanceVibe("Pure Conversational");
         break;
       case "Rock":
         setDeliveryStyle("Rock DJ");
+        setPerformanceVibe("High Theatrical & Wry");
+        setExpressionDynamics("High Octane & Dynamic");
         break;
       case "Late":
         setDeliveryStyle("Late Night Host");
+        setPerformanceVibe("Pure Conversational");
+        setExpressionDynamics("Mellow & Laid Back");
         break;
       default:
         break;
@@ -437,6 +445,34 @@ export default function Dj() {
           <div className="dj-card">
             <div className="dj-card-title">FINE-TUNING MATRIX</div>
 
+            {/* Performance Delivery Vibe (Conversational vs. Theatrical & Sarcasm) */}
+            <div className="form-group">
+              <label className="form-label">Performance Delivery Vibe</label>
+              <select
+                className="form-select"
+                value={performanceVibe}
+                onChange={(e) => setPerformanceVibe(e.target.value)}
+              >
+                <option value="Pure Conversational">Pure Conversational (Unscripted, natural, relaxed)</option>
+                <option value="Deep Storyteller">Deep Storyteller (Immersive lore & narrative pacing)</option>
+                <option value="High Theatrical & Wry">High Theatrical & Wry (Dramatized, dry humor & sarcasm)</option>
+              </select>
+            </div>
+
+            {/* Expression & Dynamics (Excitement, Emphasis & Pauses) */}
+            <div className="form-group">
+              <label className="form-label">Expression & Dynamics</label>
+              <select
+                className="form-select"
+                value={expressionDynamics}
+                onChange={(e) => setExpressionDynamics(e.target.value)}
+              >
+                <option value="Mellow & Laid Back">Mellow & Laid Back (Soft tone, minimal emphasis)</option>
+                <option value="Standard Radio Punch">Standard Radio Punch (Balanced energy & natural pauses)</option>
+                <option value="High Octane & Dynamic">High Octane & Dynamic (Explosive excitement & dramatic pauses)</option>
+              </select>
+            </div>
+
             <div className="form-group">
               <label className="form-label">Energy Level</label>
               <select
@@ -616,7 +652,6 @@ export default function Dj() {
       {/* ================= TIER 3: STUDIO PRO (B2B & TECHNOPHOBE SUITE) ================= */}
       {activeTier === 3 && (
         <div className="tier-content">
-          {/* 1. Real-Time VU Meter Monitor */}
           <div className="dj-card">
             <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>📡 LIVE BROADCAST VU MONITOR</span>
@@ -648,7 +683,7 @@ export default function Dj() {
                   <span style={{ color: "#22c55e" }}>-12 dB (ACTIVE)</span>
                 </div>
                 <div style={{ height: "6px", background: "#1a1a1a", borderRadius: "3px", overflow: "hidden", marginBottom: "8px" }}>
-                  <div style={{ width: "72%_animation", height: "100%", background: "linear-gradient(90deg, #22c55e, #eab308, #ef4444)" }}></div>
+                  <div style={{ width: "72%", height: "100%", background: "linear-gradient(90deg, #22c55e, #eab308, #ef4444)" }}></div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#666", marginBottom: "4px" }}>
                   <span>CH 2 (KOKORO TTS HOST)</span>
@@ -661,7 +696,6 @@ export default function Dj() {
             )}
           </div>
 
-          {/* 2. Web Audio Ducking Control */}
           <div className="dj-card">
             <div className="dj-card-title">REAL-TIME WEB AUDIO DUCKING</div>
             <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 12px 0", lineHeight: "1.4" }}>
@@ -685,7 +719,6 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* 3. Broadcast Mastering Limiter (Compressor Preset) */}
           <div className="dj-card">
             <div className="dj-card-title">MASTER COMPRESSOR / LIMITER</div>
             <div className="form-group">
@@ -703,7 +736,6 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* 4. Studio Room Acoustics (Reverb) */}
           <div className="dj-card">
             <div className="dj-card-title">STUDIO ROOM ACOUSTICS</div>
             <div className="form-group">
@@ -720,7 +752,6 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* 5. Manual Station Sound Drops */}
           <div className="dj-card">
             <div className="dj-card-title">MANUAL STATION SOUND DROPS</div>
             <div className="soundboard-grid">
