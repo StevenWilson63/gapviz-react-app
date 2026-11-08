@@ -286,9 +286,9 @@ export default function Dj() {
                 value={commentaryLength}
                 onChange={(e) => setCommentaryLength(e.target.value)}
               >
-                <option value="Quick Tag">Quick Tag (~10s station mention)</option>
-                <option value="Standard Bridge">Standard Bridge (~20-30s intro/outro)</option>
-                <option value="Deep Dive Story">Deep Dive Story (~45s+ backstory & trivia)</option>
+                <option value="Quick Tag">Quick Tag (~10 seconds)</option>
+                <option value="Standard Bridge">Standard Bridge (~20-30 seconds)</option>
+                <option value="Deep Dive Story">Deep Dive Story (~30-45 seconds)</option>
                 <option value="Random">Random (Dynamic mix of lengths)</option>
               </select>
             </div>
