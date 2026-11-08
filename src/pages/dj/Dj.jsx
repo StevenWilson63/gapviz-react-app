@@ -22,24 +22,30 @@ export default function Dj() {
   const [customDjName, setCustomDjName] = useState("DJ Rude Boy");
   const [selectedPersona, setSelectedPersona] = useState("Rock");
   const [gender, setGender] = useState("Male");
+  const [ageStyle, setAgeStyle] = useState("Mature Adult");
   const [language, setLanguage] = useState("UK Scottish");
 
   // User Profile Phonetics
   const [userName, setUserName] = useState("Steven");
   const [userPhonetic, setUserPhonetic] = useState("Stee-ven");
 
-  // Dynamic Trait Sliders (Tier 2)
-  const [energy, setEnergy] = useState(75);
-  const [speed, setSpeed] = useState(1.0);
-  const [depth, setDepth] = useState(50);
-  const [formality, setFormality] = useState(40);
-  const [focusStyle, setFocusStyle] = useState("Random");
+  // 10-Trait Customization Matrix (Tiers 1 & 2)
+  const [voiceTone, setVoiceTone] = useState("Crisp");
+  const [energyLevel, setEnergyLevel] = useState("Energetic");
+  const [deliveryStyle, setDeliveryStyle] = useState("Rock DJ");
+  const [speakingSpeed, setSpeakingSpeed] = useState("Standard");
+  const [commentaryFocus, setCommentaryFocus] = useState("Storyteller");
+  const [formality, setFormality] = useState("Casual");
+  const [genreAdaptability, setGenreAdaptability] = useState("Dynamic Flex");
+
+  // Persona Shuffle Feature (Tier 2 / Premium)
+  const [enablePersonaShuffle, setEnablePersonaShuffle] = useState(false);
+  const [shuffleMode, setShuffleMode] = useState("Per Track");
 
   // "Also in this year..." Timeline Trivia Feature State (Tier 2)
   const [enableTimelineTrivia, setEnableTimelineTrivia] = useState(true);
-  const [timelineFrequency, setTimelineFrequency] = useState(2); // Default to "Occasional"
+  const [timelineFrequency, setTimelineFrequency] = useState(2); // "Occasional"
 
-  // Descriptive Label Generator for Timeline Frequency
   const getTimelineFrequencyLabel = (val) => {
     switch (val) {
       case 1:
@@ -55,13 +61,11 @@ export default function Dj() {
     }
   };
 
-  // Trigger Toast Notifications
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2200);
   };
 
-  // Select Saved DJ Profile
   const handleSelectDj = (djId) => {
     const target = savedDjs.find((item) => item.id === djId);
     if (target) {
@@ -74,12 +78,10 @@ export default function Dj() {
     }
   };
 
-  // Save or Overwrite DJ DNA Profile
   const handleSaveDj = () => {
     const existingIndex = savedDjs.findIndex((item) => item.id === activeDjId);
 
     if (existingIndex >= 0 && !savedDjs[existingIndex].isPreset) {
-      // Overwrite existing user DJ
       const updated = [...savedDjs];
       updated[existingIndex] = {
         ...updated[existingIndex],
@@ -91,7 +93,6 @@ export default function Dj() {
       setSavedDjs(updated);
       triggerToast(`Updated DJ DNA: "${customDjName}"`);
     } else {
-      // Save as New DJ
       const newDj = {
         id: "u_" + Date.now(),
         name: customDjName || "My Custom DJ",
@@ -106,16 +107,14 @@ export default function Dj() {
     }
   };
 
-  // Delete User DJ
   const handleDeleteDj = (id) => {
     setSavedDjs(savedDjs.filter((item) => item.id !== id));
     if (activeDjId === id) {
-      handleSelectDj("p3"); // Fallback to Rock Jock
+      handleSelectDj("p3");
     }
     triggerToast("Deleted DJ Profile from Vault");
   };
 
-  // TTS Phonetic Sample
   const handlePlayPhoneticSample = () => {
     triggerToast(`▶ Kokoro TTS: "Hey ${userName}, welcome back to Gapviz!"`);
     if ("speechSynthesis" in window) {
@@ -126,7 +125,7 @@ export default function Dj() {
   };
 
   return (
-    <div className="dj-screen">
+    <div className="dj-screen user-select-none">
       {/* Toast Feedback */}
       {toastMessage && <div className="dj-toast">{toastMessage}</div>}
 
@@ -245,16 +244,16 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* Voice Identity & Language Architecture */}
+          {/* Voice Identity & Languages */}
           <div className="dj-card">
             <div className="dj-card-title">
               VOICE IDENTITY & LANGUAGES
               <span className="sync-badge">✓ Two-Way Account Sync</span>
             </div>
 
-            {/* Gender Toggle */}
+            {/* Trait 1: Gender Toggle */}
             <div className="form-group">
-              <label className="form-label">Voice Gender</label>
+              <label className="form-label">1. Voice Gender</label>
               <div className="gender-pill-group">
                 <button
                   className={`gender-btn ${gender === "Male" ? "active" : ""}`}
@@ -272,41 +271,76 @@ export default function Dj() {
                   className={`gender-btn ${gender === "Neutral" ? "active" : ""}`}
                   onClick={() => setGender("Neutral")}
                 >
-                  Neutral
+                  Neutral / Androgynous
                 </button>
               </div>
             </div>
 
-            {/* Language & Regional Accent Selection */}
+            {/* Trait 2: Age Style */}
             <div className="form-group">
-              <label className="form-label">Language & Regional Dialect</label>
+              <label className="form-label">2. Age Style</label>
+              <select
+                className="form-select"
+                value={ageStyle}
+                onChange={(e) => setAgeStyle(e.target.value)}
+              >
+                <option value="Young Adult">Young Adult (Spotify Presenter)</option>
+                <option value="Mature Adult">Mature Adult</option>
+                <option value="Veteran Host">Veteran Radio Host (Classic FM)</option>
+                <option value="Senior Broadcaster">Senior Broadcaster</option>
+              </select>
+            </div>
+
+            {/* Trait 3: Regional Accent */}
+            <div className="form-group">
+              <label className="form-label">3. Regional Accent</label>
               <select
                 className="form-select"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
               >
-                <optgroup label="Default Account Language">
-                  <option value="UK Default">🌐 Account Default (English - UK)</option>
-                </optgroup>
-                <optgroup label="Regional Accents (Native)">
+                <optgroup label="UK Accents">
+                  <option value="UK Standard">🇬🇧 UK Standard</option>
                   <option value="UK Scottish">🇬🇧 UK Scottish (Glasgow / Edinburgh)</option>
                   <option value="UK Welsh">🇬🇧 UK Welsh (Cardiff)</option>
-                  <option value="UK Northern Irish">🇬🇧 UK Northern Irish (Belfast)</option>
+                  <option value="UK Northern">🇬🇧 UK Northern</option>
+                  <option value="UK Southern">🇬🇧 UK Southern</option>
+                  <option value="UK London">🇬🇧 UK London / RP</option>
+                </optgroup>
+                <optgroup label="USA Accents">
+                  <option value="US East Coast">🇺🇸 US East Coast</option>
+                  <option value="US West Coast">🇺🇸 US West Coast</option>
+                  <option value="US Southern">🇺🇸 US Southern</option>
+                  <option value="US Midwestern">🇺🇸 US Midwestern</option>
+                  <option value="US New York">🇺🇸 US New York</option>
+                </optgroup>
+                <optgroup label="Global Accents">
                   <option value="Irish">🇮🇪 Irish (Dublin Accent)</option>
-                  <option value="UK RP">🇬🇧 UK London / RP Broadcaster</option>
-                </optgroup>
-                <optgroup label="Global English Variants">
-                  <option value="US East Coast">🇺🇸 US East Coast (Radio Host)</option>
-                  <option value="US West Coast">🇺🇸 US West Coast (Chill)</option>
-                  <option value="Australian">🇦🇺 Australian (Sydney)</option>
+                  <option value="Australian">🇦🇺 Australian</option>
+                  <option value="New Zealand">🇳🇿 New Zealand</option>
                   <option value="Canadian">🇨🇦 Canadian</option>
+                  <option value="South African">🇿🇦 South African</option>
                 </optgroup>
-                <optgroup label="Global Languages">
-                  <option value="Spanish">🇪🇸 Spanish (Castilian)</option>
-                  <option value="French">🇫🇷 French</option>
-                  <option value="German">🇩🇪 German</option>
-                  <option value="Japanese">🇯🇵 Japanese</option>
-                </optgroup>
+              </select>
+            </div>
+
+            {/* Trait 6: Voice Tone */}
+            <div className="form-group">
+              <label className="form-label">6. Voice Tone</label>
+              <select
+                className="form-select"
+                value={voiceTone}
+                onChange={(e) => setVoiceTone(e.target.value)}
+              >
+                <option value="Warm">Warm</option>
+                <option value="Cool">Cool</option>
+                <option value="Deep">Deep</option>
+                <option value="Smooth">Smooth</option>
+                <option value="Bright">Bright</option>
+                <option value="Rich">Rich</option>
+                <option value="Soft">Soft</option>
+                <option value="Crisp">Crisp</option>
+                <option value="Authoritative">Authoritative</option>
               </select>
             </div>
 
@@ -362,70 +396,146 @@ export default function Dj() {
       {activeTier === 2 && (
         <div className="tier-content">
           <div className="dj-card">
-            <div className="dj-card-title">DYNAMIC TRAIT SLIDERS</div>
+            <div className="dj-card-title">10-TRAIT FINE-TUNING MATRIX</div>
 
+            {/* Trait 4: Energy Level */}
             <div className="form-group">
-              <div className="slider-header">
-                <span className="slider-label">Energy Level</span>
-                <span className="trait-badge">{energy}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={energy}
-                onChange={(e) => setEnergy(Number(e.target.value))}
-                className="form-slider"
-              />
+              <label className="form-label">4. Energy Level</label>
+              <select
+                className="form-select"
+                value={energyLevel}
+                onChange={(e) => setEnergyLevel(e.target.value)}
+              >
+                <option value="Calm">Calm</option>
+                <option value="Relaxed">Relaxed</option>
+                <option value="Conversational">Conversational</option>
+                <option value="Energetic">Energetic</option>
+                <option value="High Energy">High Energy</option>
+                <option value="Party Mode">Party Mode</option>
+              </select>
             </div>
 
+            {/* Trait 5: Radio Delivery Style */}
             <div className="form-group">
-              <div className="slider-header">
-                <span className="slider-label">Speaking Speed</span>
-                <span className="trait-badge">{speed}x</span>
-              </div>
-              <input
-                type="range"
-                min="0.8"
-                max="1.3"
-                step="0.05"
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-                className="form-slider"
-              />
+              <label className="form-label">5. Radio Delivery Style</label>
+              <select
+                className="form-select"
+                value={deliveryStyle}
+                onChange={(e) => setDeliveryStyle(e.target.value)}
+              >
+                <option value="Classic Radio DJ">Classic Radio DJ</option>
+                <option value="Music Curator">Music Curator</option>
+                <option value="Best Friend">Best Friend</option>
+                <option value="Club Host">Club Host</option>
+                <option value="Late Night Host">Late Night Host</option>
+                <option value="Documentary Narrator">Documentary Narrator</option>
+                <option value="Rock DJ">Rock DJ</option>
+                <option value="Festival MC">Festival MC</option>
+              </select>
+            </div>
+
+            {/* Trait 7: Speaking Speed */}
+            <div className="form-group">
+              <label className="form-label">7. Speaking Speed</label>
+              <select
+                className="form-select"
+                value={speakingSpeed}
+                onChange={(e) => setSpeakingSpeed(e.target.value)}
+              >
+                <option value="Slow">Slow</option>
+                <option value="Standard">Standard</option>
+                <option value="Fast">Fast</option>
+              </select>
+            </div>
+
+            {/* Trait 8: Commentary Focus */}
+            <div className="form-group">
+              <label className="form-label">8. Commentary Focus</label>
+              <select
+                className="form-select"
+                value={commentaryFocus}
+                onChange={(e) => setCommentaryFocus(e.target.value)}
+              >
+                <option value="Fact Expert">Fact Expert (Stats & Dates)</option>
+                <option value="Storyteller">Storyteller (Backstage Lore)</option>
+                <option value="Music Nerd">Music Nerd (Gear & Production)</option>
+                <option value="Pop Culture Host">Pop Culture Host</option>
+                <option value="Superfan">Superfan</option>
+              </select>
+            </div>
+
+            {/* Trait 9: Formality */}
+            <div className="form-group">
+              <label className="form-label">9. Formality</label>
+              <select
+                className="form-select"
+                value={formality}
+                onChange={(e) => setFormality(e.target.value)}
+              >
+                <option value="Professional">Professional</option>
+                <option value="Casual">Casual</option>
+                <option value="Very Casual">Very Casual</option>
+              </select>
+            </div>
+
+            {/* Trait 10: Genre Adaptability */}
+            <div className="form-group">
+              <label className="form-label">10. Genre Adaptability</label>
+              <select
+                className="form-select"
+                value={genreAdaptability}
+                onChange={(e) => setGenreAdaptability(e.target.value)}
+              >
+                <option value="Strict Identity">Strict Identity (Keep exact tone)</option>
+                <option value="Dynamic Flex">Dynamic Flex (Flex delivery to track genre)</option>
+                <option value="Chameleon Mode">Chameleon Mode (Full genre adaptation)</option>
+              </select>
             </div>
           </div>
 
+          {/* Persona Shuffle (Premium Feature) */}
           <div className="dj-card">
-            <div className="dj-card-title">COMMENTARY FOCUS MATRIX</div>
-            <div className="matrix-grid">
-              <button
-                className={`matrix-btn ${focusStyle === "Fact" ? "active" : ""}`}
-                onClick={() => setFocusStyle("Fact")}
-              >
-                <h5>Fact Expert</h5>
-                <p>Chart dates & stats</p>
-              </button>
-
-              <button
-                className={`matrix-btn ${focusStyle === "Story" ? "active" : ""}`}
-                onClick={() => setFocusStyle("Story")}
-              >
-                <h5>Storyteller</h5>
-                <p>Backstage lore</p>
-              </button>
-
-              <button
-                className={`matrix-btn full-width ${focusStyle === "Random" ? "active" : ""}`}
-                onClick={() => setFocusStyle("Random")}
-              >
-                <h5>🔀 Random (Weave All)</h5>
-                <p>Blends trivia, storytelling, gear & culture across tracks</p>
-              </button>
+            <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>🔀 PERSONA SHUFFLE (STATION LINEUP)</span>
+              <label className="switch-container" style={{ position: "relative", display: "inline-block", width: "40px", height: "22px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={enablePersonaShuffle}
+                  onChange={() => setEnablePersonaShuffle(!enablePersonaShuffle)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: "absolute", inset: 0, backgroundColor: enablePersonaShuffle ? "#ff1a1a" : "#222",
+                  borderRadius: "22px", transition: "0.3s", border: "1px solid rgba(255, 26, 26, 0.4)"
+                }}>
+                  <span style={{
+                    position: "absolute", content: "''", height: "16px", width: "16px", left: enablePersonaShuffle ? "20px" : "3px",
+                    bottom: "2px", backgroundColor: "white", borderRadius: "50%", transition: "0.3s"
+                  }}></span>
+                </span>
+              </label>
             </div>
+            <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 12px 0", lineHeight: "1.4" }}>
+              Rotates through your saved DJ library to give your station a dynamic cast of presenters.
+            </p>
+
+            {enablePersonaShuffle && (
+              <div className="form-group">
+                <label className="form-label">Rotation Mode</label>
+                <select
+                  className="form-select"
+                  value={shuffleMode}
+                  onChange={(e) => setShuffleMode(e.target.value)}
+                >
+                  <option value="Per Track">Rotate Per Track</option>
+                  <option value="Genre Shift">Rotate on Genre Shift</option>
+                  <option value="Time of Day">Rotate by Time of Day</option>
+                </select>
+              </div>
+            )}
           </div>
 
-          {/* "Also in this year..." Historical Timeline Trivia Module with Toggle Switch */}
+          {/* "Also in this year..." Timeline Trivia Module */}
           <div className="dj-card">
             <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>"ALSO IN THIS YEAR..." TIMELINE</span>
@@ -448,7 +558,7 @@ export default function Dj() {
               </label>
             </div>
             <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 12px 0", lineHeight: "1.4" }}>
-              Weaves unrelated cultural, cinematic, or historical events from the track's release year into the AI host commentary.
+              Weaves unrelated cultural, cinematic, or historical events from the track's release year into host commentary.
             </p>
 
             {enableTimelineTrivia && (
