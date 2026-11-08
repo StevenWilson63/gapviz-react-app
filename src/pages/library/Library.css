@@ -94,6 +94,112 @@
   box-shadow: 0 4px 12px rgba(255, 26, 26, 0.3);
 }
 
+/* --- Commentary Vault Filter Bar --- */
+.vault-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.vault-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #121212;
+  border: 1px solid #262626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-group label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a3a3a3;
+  text-transform: uppercase;
+}
+
+.vault-select {
+  background: #181818;
+  border: 1px solid #262626;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+.vault-select:focus {
+  border-color: #ff1a1a;
+}
+
+.empty-vault-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #737373;
+  font-size: 14px;
+  border: 1px dashed #262626;
+  border-radius: 12px;
+}
+
+/* Inbox Decisions Row */
+.inbox-card-decisions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 26, 26, 0.15);
+  align-items: center;
+}
+
+.inbox-action-chip {
+  background: transparent;
+  border: 1px solid rgba(255, 26, 26, 0.4);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inbox-action-chip:hover {
+  border-color: #ff1a1a;
+  background: rgba(255, 26, 26, 0.1);
+  color: #ff1a1a;
+}
+
+.inbox-action-chip.primary {
+  background: #ff1a1a;
+  border-color: #ff1a1a;
+}
+
+.inbox-action-chip.primary:hover {
+  background: #d41414;
+  color: #ffffff;
+}
+
+.inbox-action-chip.danger {
+  border-color: #333333;
+  color: #737373;
+  margin-left: auto;
+}
+
+.inbox-action-chip.danger:hover {
+  border-color: #ff1a1a;
+  color: #ff1a1a;
+  background: transparent;
+}
+
 /* --- New Playlist Action & Creator Card --- */
 .playlists-wrapper {
   display: flex;
@@ -273,7 +379,6 @@
   transform: scale(0.99);
 }
 
-/* Ensure inner card text doesn't turn red on hover unless desired, or stays crisp */
 .library-card:hover h3 {
   color: #ff1a1a;
 }
@@ -453,37 +558,12 @@
   border-left: 4px solid #ff1a1a;
 }
 
-.saved-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.saved-play-action-btn {
-  background: #ff1a1a;
-  border: none;
-  color: #ffffff;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.saved-play-action-btn:hover {
-  background: #d41414;
-}
-
 .saved-footer-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid #1a1a1a;
 }
 
@@ -492,10 +572,13 @@
   color: #737373;
 }
 
-.inbox-action-group {
+.vault-card-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 26, 26, 0.15);
 }
 
 .add-to-playlist-btn {
@@ -510,13 +593,12 @@
   align-items: center;
   gap: 5px;
   cursor: pointer;
-  transition: border 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  transition: all 0.18s ease;
 }
 
 .add-to-playlist-btn:hover {
   border-color: #ff1a1a;
-  box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
-  transform: scale(0.99);
+  background: rgba(255, 26, 26, 0.1);
   color: #ff1a1a;
 }
 

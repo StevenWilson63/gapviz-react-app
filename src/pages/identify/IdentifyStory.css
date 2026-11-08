@@ -9,7 +9,6 @@
   font-family: Arial, sans-serif;
 }
 
-/* Top Nav Deck */
 .story-top-nav {
   display: flex;
   justify-content: space-between;
@@ -45,7 +44,6 @@
   border-radius: 6px;
 }
 
-/* Hero Metadata Card — Matches Profile Row Interaction */
 .story-hero-card {
   background: transparent;
   border: 2px solid rgba(255, 26, 26, 0.35);
@@ -85,7 +83,6 @@
   margin: 0;
 }
 
-/* Core Commentary Card — Matches Profile Row Interaction */
 .story-container {
   display: flex;
   flex-direction: column;
@@ -189,7 +186,6 @@
   font-weight: 600;
 }
 
-/* Action Suite Buttons — Matches Profile Row Interaction */
 .actions-container {
   display: flex;
   flex-direction: column;

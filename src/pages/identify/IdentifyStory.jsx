@@ -9,7 +9,6 @@ export default function IdentifyStory() {
   const [isSaved, setIsSaved] = useState(false);
   const [fontSize, setFontSize] = useState("normal"); // 'normal' or 'large'
 
-  // Mock identified track data (will later be supplied via route state or RAG engine)
   const trackData = {
     title: "Dreams",
     artist: "Fleetwood Mac",
@@ -29,7 +28,7 @@ export default function IdentifyStory() {
 
   const handleSaveForLater = () => {
     setIsSaved(true);
-    // Automatically logs to Identify Inbox & Identified history
+    // Automatically bundles and drops into Identify Inbox for later decision
   };
 
   return (
@@ -53,7 +52,7 @@ export default function IdentifyStory() {
         </div>
       </div>
 
-      {/* Main RAG Commentary Card (Mirrors SoundBooth layout) */}
+      {/* Main RAG Commentary Card */}
       <div className="story-container">
         <div className="story-card-header">
           <div className="host-tag-group">
