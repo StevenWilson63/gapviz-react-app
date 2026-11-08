@@ -30,8 +30,8 @@ export default function Dj() {
   const [userPhonetic, setUserPhonetic] = useState("Stee-ven");
 
   // Tier 1 Controls (Length & Timing)
-  const [commentaryLength, setCommentaryLength] = useState("Standard Bridge"); // Quick Tag, Standard Bridge, Deep Dive, Random
-  const [commentaryTiming, setCommentaryTiming] = useState("Bridge (End & Beginning)"); // End, Beginning, Bridge, Random
+  const [commentaryLength, setCommentaryLength] = useState("Standard Bridge");
+  const [commentaryTiming, setCommentaryTiming] = useState("Bridge (End & Beginning)");
 
   // Fine-Tuning Matrix (Tier 2)
   const [voiceTone, setVoiceTone] = useState("Crisp");
@@ -42,19 +42,21 @@ export default function Dj() {
   const [formality, setFormality] = useState("Casual");
   const [genreAdaptability, setGenreAdaptability] = useState("Dynamic Flex");
 
-  // Persona Shuffle Feature (Tier 2 / Premium)
+  // Persona Shuffle & Timeline Trivia (Tier 2)
   const [enablePersonaShuffle, setEnablePersonaShuffle] = useState(false);
   const [shuffleMode, setShuffleMode] = useState("Per Track");
-
-  // "Also in this year..." Timeline Trivia Feature State (Tier 2)
   const [enableTimelineTrivia, setEnableTimelineTrivia] = useState(true);
-  const [timelineFrequency, setTimelineFrequency] = useState(2); // "Occasional"
+  const [timelineFrequency, setTimelineFrequency] = useState(2);
+
+  // Studio Pro Controls (Tier 3 - B2B & Technophobe Warm Fuzzy Suite)
+  const [duckingLevel, setDuckingLevel] = useState(30); // Music Bed Ducking %
+  const [masterCompressor, setMasterCompressor] = useState("Broadcast Safe"); // Compressor preset
+  const [studioAcoustics, setStudioAcoustics] = useState("Dead Studio (Dry)"); // Reverb profile
+  const [vumeterActive, setVumeterActive] = useState(true); // Simulated LED Meter Toggle
 
   // Handler for Tier 1 Persona Card Click (Auto-Syncs Tier 2 Delivery Style Default)
   const handlePersonaSelect = (personaKey) => {
     setSelectedPersona(personaKey);
-    
-    // Auto-sync matching baseline Radio Delivery Style in Tier 2
     switch (personaKey) {
       case "Curator":
         setDeliveryStyle("Documentary Narrator");
@@ -75,16 +77,11 @@ export default function Dj() {
 
   const getTimelineFrequencyLabel = (val) => {
     switch (val) {
-      case 1:
-        return "Rare";
-      case 2:
-        return "Occasional";
-      case 3:
-        return "Frequently";
-      case 4:
-        return "Every Commentary";
-      default:
-        return "Occasional";
+      case 1: return "Rare";
+      case 2: return "Occasional";
+      case 3: return "Frequently";
+      case 4: return "Every Commentary";
+      default: return "Occasional";
     }
   };
 
@@ -107,7 +104,6 @@ export default function Dj() {
 
   const handleSaveDj = () => {
     const existingIndex = savedDjs.findIndex((item) => item.id === activeDjId);
-
     if (existingIndex >= 0 && !savedDjs[existingIndex].isPreset) {
       const updated = [...savedDjs];
       updated[existingIndex] = {
@@ -153,10 +149,8 @@ export default function Dj() {
 
   return (
     <div className="dj-screen user-select-none">
-      {/* Toast Feedback */}
       {toastMessage && <div className="dj-toast">{toastMessage}</div>}
 
-      {/* Header & Context Greeting Banner */}
       <div className="dj-header">
         <div className="dj-greeting-badge">
           <span>📻</span> Context Greeting Active
@@ -167,7 +161,6 @@ export default function Dj() {
         </p>
       </div>
 
-      {/* 3-Tier Segmented Switcher */}
       <div className="dj-tier-switcher">
         <button
           className={`tier-tab-btn ${activeTier === 1 ? "active" : ""}`}
@@ -197,7 +190,6 @@ export default function Dj() {
       {/* ================= TIER 1: JUST PLAY ================= */}
       {activeTier === 1 && (
         <div className="tier-content">
-          {/* Active Preset Dropdown & Vault Trigger Bar */}
           <div className="dj-preset-vault-bar">
             <select
               className="vault-select"
@@ -229,7 +221,6 @@ export default function Dj() {
             </button>
           </div>
 
-          {/* Persona Style Grid */}
           <div className="dj-card">
             <div className="dj-card-title">YOUR DJ STYLE</div>
             <div className="persona-grid">
@@ -271,14 +262,12 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* Voice Identity, Languages & Commentary Preferences */}
           <div className="dj-card">
             <div className="dj-card-title">
               VOICE IDENTITY & COMMENTARY PREFERENCES
               <span className="sync-badge">✓ Two-Way Account Sync</span>
             </div>
 
-            {/* Commentary Length Control */}
             <div className="form-group">
               <label className="form-label">Commentary Length</label>
               <select
@@ -286,14 +275,13 @@ export default function Dj() {
                 value={commentaryLength}
                 onChange={(e) => setCommentaryLength(e.target.value)}
               >
-                <option value="Quick Tag">Quick Tag (~10 seconds)</option>
-                <option value="Standard Bridge">Standard Bridge (~20-30 seconds)</option>
-                <option value="Deep Dive Story">Deep Dive Story (~30-45 seconds)</option>
+                <option value="Quick Tag">Quick Tag (~10s station mention)</option>
+                <option value="Standard Bridge">Standard Bridge (~20-30s intro/outro)</option>
+                <option value="Deep Dive Story">Deep Dive Story (~45s+ backstory & trivia)</option>
                 <option value="Random">Random (Dynamic mix of lengths)</option>
               </select>
             </div>
 
-            {/* Commentary Timing Control */}
             <div className="form-group">
               <label className="form-label">Commentary Timing (Tracks 2+)</label>
               <select
@@ -308,7 +296,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Gender Toggle */}
             <div className="form-group">
               <label className="form-label">Voice Gender</label>
               <div className="gender-pill-group">
@@ -333,7 +320,6 @@ export default function Dj() {
               </div>
             </div>
 
-            {/* Age Style */}
             <div className="form-group">
               <label className="form-label">Age Style</label>
               <select
@@ -348,7 +334,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Regional Accent */}
             <div className="form-group">
               <label className="form-label">Regional Accent</label>
               <select
@@ -381,7 +366,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Voice Tone */}
             <div className="form-group">
               <label className="form-label">Voice Tone</label>
               <select
@@ -401,7 +385,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Name & Phonetic Pronunciation */}
             <div className="form-group">
               <label className="form-label">Name & Phonetic Pronunciation</label>
               <div className="phonetics-row">
@@ -425,7 +408,6 @@ export default function Dj() {
               </div>
             </div>
 
-            {/* DJ Name & Save Action Row */}
             <div className="form-group" style={{ marginTop: "14px" }}>
               <label className="form-label">Custom DJ Name</label>
               <input
@@ -455,7 +437,6 @@ export default function Dj() {
           <div className="dj-card">
             <div className="dj-card-title">FINE-TUNING MATRIX</div>
 
-            {/* Energy Level */}
             <div className="form-group">
               <label className="form-label">Energy Level</label>
               <select
@@ -472,7 +453,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Radio Delivery Style */}
             <div className="form-group">
               <label className="form-label">Radio Delivery Style</label>
               <select
@@ -491,7 +471,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Speaking Speed */}
             <div className="form-group">
               <label className="form-label">Speaking Speed</label>
               <select
@@ -505,7 +484,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Commentary Focus */}
             <div className="form-group">
               <label className="form-label">Commentary Focus</label>
               <select
@@ -521,7 +499,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Formality */}
             <div className="form-group">
               <label className="form-label">Formality</label>
               <select
@@ -535,7 +512,6 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Genre Adaptability */}
             <div className="form-group">
               <label className="form-label">Genre Adaptability</label>
               <select
@@ -550,7 +526,6 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* Persona Shuffle (Premium Feature) */}
           <div className="dj-card">
             <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>🔀 PERSONA SHUFFLE (STATION LINEUP)</span>
@@ -592,7 +567,6 @@ export default function Dj() {
             )}
           </div>
 
-          {/* "Also in this year..." Timeline Trivia Module */}
           <div className="dj-card">
             <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>"ALSO IN THIS YEAR..." TIMELINE</span>
@@ -639,9 +613,114 @@ export default function Dj() {
         </div>
       )}
 
-      {/* ================= TIER 3: STUDIO PRO ================= */}
+      {/* ================= TIER 3: STUDIO PRO (B2B & TECHNOPHOBE SUITE) ================= */}
       {activeTier === 3 && (
         <div className="tier-content">
+          {/* 1. Real-Time VU Meter Monitor */}
+          <div className="dj-card">
+            <div className="dj-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>📡 LIVE BROADCAST VU MONITOR</span>
+              <label className="switch-container" style={{ position: "relative", display: "inline-block", width: "40px", height: "22px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={vumeterActive}
+                  onChange={() => setVumeterActive(!vumeterActive)}
+                  style={{ opacity: 0, width: 0, height: 0 }}
+                />
+                <span style={{
+                  position: "absolute", inset: 0, backgroundColor: vumeterActive ? "#ff1a1a" : "#222",
+                  borderRadius: "22px", transition: "0.3s", border: "1px solid rgba(255, 26, 26, 0.4)"
+                }}>
+                  <span style={{
+                    position: "absolute", content: "''", height: "16px", width: "16px", left: vumeterActive ? "20px" : "3px",
+                    bottom: "2px", backgroundColor: "white", borderRadius: "50%", transition: "0.3s"
+                  }}></span>
+                </span>
+              </label>
+            </div>
+            <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 10px 0", lineHeight: "1.4" }}>
+              Real-time hardware audio stream monitoring for voice and music bed balance.
+            </p>
+            {vumeterActive && (
+              <div style={{ background: "#080808", padding: "10px", borderRadius: "8px", border: "1px solid #222" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#666", marginBottom: "4px" }}>
+                  <span>CH 1 (MUSIC BED)</span>
+                  <span style={{ color: "#22c55e" }}>-12 dB (ACTIVE)</span>
+                </div>
+                <div style={{ height: "6px", background: "#1a1a1a", borderRadius: "3px", overflow: "hidden", marginBottom: "8px" }}>
+                  <div style={{ width: "72%_animation", height: "100%", background: "linear-gradient(90deg, #22c55e, #eab308, #ef4444)" }}></div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "#666", marginBottom: "4px" }}>
+                  <span>CH 2 (KOKORO TTS HOST)</span>
+                  <span style={{ color: "#22c55e" }}>READY</span>
+                </div>
+                <div style={{ height: "6px", background: "#1a1a1a", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ width: "45%", height: "100%", background: "#22c55e" }}></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Web Audio Ducking Control */}
+          <div className="dj-card">
+            <div className="dj-card-title">REAL-TIME WEB AUDIO DUCKING</div>
+            <p style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.6)", margin: "0 0 12px 0", lineHeight: "1.4" }}>
+              Controls how much the music bed volume lowers (dips) when the DJ host speaks.
+            </p>
+            <div className="form-group">
+              <div className="slider-header" style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <span className="slider-label" style={{ fontSize: "12px", color: "#a3a3a3" }}>Music Bed Dip Level</span>
+                <span className="trait-badge" style={{ fontSize: "12px", color: "#ef4444", fontWeight: "bold" }}>{duckingLevel}% Volume</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="50"
+                step="5"
+                value={duckingLevel}
+                onChange={(e) => setDuckingLevel(Number(e.target.value))}
+                className="form-slider"
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
+
+          {/* 3. Broadcast Mastering Limiter (Compressor Preset) */}
+          <div className="dj-card">
+            <div className="dj-card-title">MASTER COMPRESSOR / LIMITER</div>
+            <div className="form-group">
+              <label className="form-label">Station Broadcast Profile</label>
+              <select
+                className="form-select"
+                value={masterCompressor}
+                onChange={(e) => setMasterCompressor(e.target.value)}
+              >
+                <option value="Broadcast Safe">Broadcast Safe (EBU R128 / LUFS Standard)</option>
+                <option value="Warm Vinyl">Warm Vinyl (Classic Analog Warmth)</option>
+                <option value="Raw Analog">Raw Analog (Uncompressed Dynamics)</option>
+                <option value="Commercial Loud">Commercial FM Punch (Max Presence)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 4. Studio Room Acoustics (Reverb) */}
+          <div className="dj-card">
+            <div className="dj-card-title">STUDIO ROOM ACOUSTICS</div>
+            <div className="form-group">
+              <label className="form-label">Virtual Booth Reverb</label>
+              <select
+                className="form-select"
+                value={studioAcoustics}
+                onChange={(e) => setStudioAcoustics(e.target.value)}
+              >
+                <option value="Dead Studio (Dry)">Dead Studio (Clean & Intimate)</option>
+                <option value="Live Broadcast Booth">Live Broadcast Booth (Warm Air)</option>
+                <option value="Stadium Arena">Stadium Arena (Expansive Echo)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 5. Manual Station Sound Drops */}
           <div className="dj-card">
             <div className="dj-card-title">MANUAL STATION SOUND DROPS</div>
             <div className="soundboard-grid">
