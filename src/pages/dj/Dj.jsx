@@ -29,7 +29,11 @@ export default function Dj() {
   const [userName, setUserName] = useState("Steven");
   const [userPhonetic, setUserPhonetic] = useState("Stee-ven");
 
-  // 10-Trait Customization Matrix (Tiers 1 & 2)
+  // Tier 1 Controls (Length & Timing)
+  const [commentaryLength, setCommentaryLength] = useState("Standard Bridge"); // Quick Tag, Standard Bridge, Deep Dive, Random
+  const [commentaryTiming, setCommentaryTiming] = useState("Bridge (End & Beginning)"); // End, Beginning, Bridge, Random
+
+  // Fine-Tuning Matrix (Tier 2)
   const [voiceTone, setVoiceTone] = useState("Crisp");
   const [energyLevel, setEnergyLevel] = useState("Energetic");
   const [deliveryStyle, setDeliveryStyle] = useState("Rock DJ");
@@ -37,7 +41,6 @@ export default function Dj() {
   const [commentaryFocus, setCommentaryFocus] = useState("Storyteller");
   const [formality, setFormality] = useState("Casual");
   const [genreAdaptability, setGenreAdaptability] = useState("Dynamic Flex");
-  const [commentaryLength, setCommentaryLength] = useState("Standard Bridge"); // Quick Tag, Standard Bridge, Deep Dive
 
   // Persona Shuffle Feature (Tier 2 / Premium)
   const [enablePersonaShuffle, setEnablePersonaShuffle] = useState(false);
@@ -268,16 +271,46 @@ export default function Dj() {
             </div>
           </div>
 
-          {/* Voice Identity & Languages */}
+          {/* Voice Identity, Languages & Commentary Preferences */}
           <div className="dj-card">
             <div className="dj-card-title">
-              VOICE IDENTITY & LANGUAGES
+              VOICE IDENTITY & COMMENTARY PREFERENCES
               <span className="sync-badge">✓ Two-Way Account Sync</span>
             </div>
 
-            {/* Trait 1: Gender Toggle */}
+            {/* Commentary Length Control */}
             <div className="form-group">
-              <label className="form-label">1. Voice Gender</label>
+              <label className="form-label">Commentary Length</label>
+              <select
+                className="form-select"
+                value={commentaryLength}
+                onChange={(e) => setCommentaryLength(e.target.value)}
+              >
+                <option value="Quick Tag">Quick Tag (~10s station mention)</option>
+                <option value="Standard Bridge">Standard Bridge (~20-30s intro/outro)</option>
+                <option value="Deep Dive Story">Deep Dive Story (~45s+ backstory & trivia)</option>
+                <option value="Random">Random (Dynamic mix of lengths)</option>
+              </select>
+            </div>
+
+            {/* Commentary Timing Control */}
+            <div className="form-group">
+              <label className="form-label">Commentary Timing (Tracks 2+)</label>
+              <select
+                className="form-select"
+                value={commentaryTiming}
+                onChange={(e) => setCommentaryTiming(e.target.value)}
+              >
+                <option value="End of Track">End of Track (Outro bridge)</option>
+                <option value="Beginning of Track">Beginning of Track (Intro banter)</option>
+                <option value="Bridge (End & Beginning)">Bridge (Both Outro & Intro)</option>
+                <option value="Random">Random (Dynamic timing per track)</option>
+              </select>
+            </div>
+
+            {/* Gender Toggle */}
+            <div className="form-group">
+              <label className="form-label">Voice Gender</label>
               <div className="gender-pill-group">
                 <button
                   className={`gender-btn ${gender === "Male" ? "active" : ""}`}
@@ -300,9 +333,9 @@ export default function Dj() {
               </div>
             </div>
 
-            {/* Trait 2: Age Style */}
+            {/* Age Style */}
             <div className="form-group">
-              <label className="form-label">2. Age Style</label>
+              <label className="form-label">Age Style</label>
               <select
                 className="form-select"
                 value={ageStyle}
@@ -315,9 +348,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 3: Regional Accent */}
+            {/* Regional Accent */}
             <div className="form-group">
-              <label className="form-label">3. Regional Accent</label>
+              <label className="form-label">Regional Accent</label>
               <select
                 className="form-select"
                 value={language}
@@ -348,9 +381,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 6: Voice Tone */}
+            {/* Voice Tone */}
             <div className="form-group">
-              <label className="form-label">6. Voice Tone</label>
+              <label className="form-label">Voice Tone</label>
               <select
                 className="form-select"
                 value={voiceTone}
@@ -420,25 +453,11 @@ export default function Dj() {
       {activeTier === 2 && (
         <div className="tier-content">
           <div className="dj-card">
-            <div className="dj-card-title">10-TRAIT FINE-TUNING MATRIX</div>
+            <div className="dj-card-title">FINE-TUNING MATRIX</div>
 
-            {/* Commentary Length (Duration Control) */}
+            {/* Energy Level */}
             <div className="form-group">
-              <label className="form-label">Commentary Length</label>
-              <select
-                className="form-select"
-                value={commentaryLength}
-                onChange={(e) => setCommentaryLength(e.target.value)}
-              >
-                <option value="Quick Tag">Quick Tag (~10s station mention)</option>
-                <option value="Standard Bridge">Standard Bridge (~20-30s intro/outro)</option>
-                <option value="Deep Dive Story">Deep Dive Story (~45s+ backstory & trivia)</option>
-              </select>
-            </div>
-
-            {/* Trait 4: Energy Level */}
-            <div className="form-group">
-              <label className="form-label">4. Energy Level</label>
+              <label className="form-label">Energy Level</label>
               <select
                 className="form-select"
                 value={energyLevel}
@@ -453,9 +472,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 5: Radio Delivery Style */}
+            {/* Radio Delivery Style */}
             <div className="form-group">
-              <label className="form-label">5. Radio Delivery Style</label>
+              <label className="form-label">Radio Delivery Style</label>
               <select
                 className="form-select"
                 value={deliveryStyle}
@@ -472,9 +491,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 7: Speaking Speed */}
+            {/* Speaking Speed */}
             <div className="form-group">
-              <label className="form-label">7. Speaking Speed</label>
+              <label className="form-label">Speaking Speed</label>
               <select
                 className="form-select"
                 value={speakingSpeed}
@@ -486,9 +505,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 8: Commentary Focus */}
+            {/* Commentary Focus */}
             <div className="form-group">
-              <label className="form-label">8. Commentary Focus</label>
+              <label className="form-label">Commentary Focus</label>
               <select
                 className="form-select"
                 value={commentaryFocus}
@@ -502,9 +521,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 9: Formality */}
+            {/* Formality */}
             <div className="form-group">
-              <label className="form-label">9. Formality</label>
+              <label className="form-label">Formality</label>
               <select
                 className="form-select"
                 value={formality}
@@ -516,9 +535,9 @@ export default function Dj() {
               </select>
             </div>
 
-            {/* Trait 10: Genre Adaptability */}
+            {/* Genre Adaptability */}
             <div className="form-group">
-              <label className="form-label">10. Genre Adaptability</label>
+              <label className="form-label">Genre Adaptability</label>
               <select
                 className="form-select"
                 value={genreAdaptability}
