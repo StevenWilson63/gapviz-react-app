@@ -37,6 +37,7 @@ export default function Dj() {
   const [commentaryFocus, setCommentaryFocus] = useState("Storyteller");
   const [formality, setFormality] = useState("Casual");
   const [genreAdaptability, setGenreAdaptability] = useState("Dynamic Flex");
+  const [commentaryLength, setCommentaryLength] = useState("Standard Bridge"); // Quick Tag, Standard Bridge, Deep Dive
 
   // Persona Shuffle Feature (Tier 2 / Premium)
   const [enablePersonaShuffle, setEnablePersonaShuffle] = useState(false);
@@ -420,6 +421,20 @@ export default function Dj() {
         <div className="tier-content">
           <div className="dj-card">
             <div className="dj-card-title">10-TRAIT FINE-TUNING MATRIX</div>
+
+            {/* Commentary Length (Duration Control) */}
+            <div className="form-group">
+              <label className="form-label">Commentary Length</label>
+              <select
+                className="form-select"
+                value={commentaryLength}
+                onChange={(e) => setCommentaryLength(e.target.value)}
+              >
+                <option value="Quick Tag">Quick Tag (~10s station mention)</option>
+                <option value="Standard Bridge">Standard Bridge (~20-30s intro/outro)</option>
+                <option value="Deep Dive Story">Deep Dive Story (~45s+ backstory & trivia)</option>
+              </select>
+            </div>
 
             {/* Trait 4: Energy Level */}
             <div className="form-group">
