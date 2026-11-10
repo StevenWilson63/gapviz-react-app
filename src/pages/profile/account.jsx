@@ -395,22 +395,22 @@ export default function Account() {
           {nicknameError && <div className="error-text">{nicknameError}</div>}
         </div>
 
-        <div className="phonetic-row">
-          <div className="phonetic-input-wrapper hover-box">
-            <label>Phonetic Name</label>
-            <input
-              type="text"
-              value={phonetic}
-              onChange={handlePhoneticChange}
-              autoComplete="new-password"
-            />
-            {phoneticError && <div className="error-text">{phoneticError}</div>}
-          </div>
+        <div className="account-field hover-box phonetic-row">
+  <div className="phonetic-input-wrapper">
+    <label>Phonetic Name</label>
+    <input
+      type="text"
+      value={phonetic}
+      onChange={handlePhoneticChange}
+      autoComplete="new-password"
+    />
+    {phoneticError && <div className="error-text">{phoneticError}</div>}
+  </div>
 
-          <button className="play-sample-button hover-box" type="button" onClick={playSample}>
-            ▶️ Play Sample
-          </button>
-        </div>
+  <button className="play-sample-button" type="button" onClick={playSample}>
+    ▶️ Play
+  </button>
+</div>
 
         <div className="account-field hover-box">
           <label>Email</label>
