@@ -3,16 +3,17 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100dvh; /* Dynamic viewport height prevents mobile browser chrome clipping */
+  height: 100dvh;
   background-color: #0b0b0b;
   z-index: 999999;
   display: flex;
   flex-direction: column;
-  padding: 20px 20px 40px 20px; /* Extra bottom padding so buttons clear mobile edges */
+  padding: 20px 20px 50px 20px; /* Generous bottom padding keeps the button fully in view */
   box-sizing: border-box;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch; /* Native iOS fluid momentum scrolling */
+  overscroll-behavior-y: auto;     /* Allows a natural bounce without locking up */
+  touch-action: pan-y;
   font-family: Arial, sans-serif;
   color: #ffffff;
 }
