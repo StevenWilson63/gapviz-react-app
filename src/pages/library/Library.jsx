@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { MusicApiService } from "../../services/musicApi";
 import "./Library.css";
 
 export default function Library() {
@@ -16,72 +17,60 @@ export default function Library() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
 
-  // Mock data for each tab including Commentary Vault & Inbox items with both song & lore
+  // Master Library Data State (Initialized with placeholders, updated live via useEffect)
   const [libraryData, setLibraryData] = useState({
     playlists: [
-      { id: 1, name: "Massive Guitar Solos", count: 24, platforms: ["🟢", "🟦", "🍎"], curator: "Gapviz Curated" },
-      { id: 2, name: "70s Vinyl Goldmine", count: 42, platforms: ["🟢", "🍎"], curator: "DJ Rude Boy" },
-      { id: 3, name: "Late Night Studio Outtakes", count: 18, platforms: ["🟦", "𝑄"], curator: "Archivist AI" },
-      { id: 4, name: "Sausalito Sessions", count: 31, platforms: ["🟢", "🟦", "🍎", "☁️"], curator: "Gapviz Curated" }
+      { id: 1, name: "Loading real playlists...", count: 0, platforms: ["🟢"], curator: "Spotify Sync" }
     ],
     albums: [
-      { id: 1, title: "Rumours", artist: "Fleetwood Mac", year: 1977, platform: "🟢", tracks: 11, albumMode: true },
-      { id: 2, title: "The Dark Side of the Moon", artist: "Pink Floyd", year: 1973, platform: "🟦", tracks: 10, albumMode: true },
-      { id: 3, title: "Dire Straits", artist: "Dire Straits", year: 1978, platform: "🍎", tracks: 9, albumMode: false },
-      { id: 4, title: "Hotel California", artist: "Eagles", year: 1976, platform: "🟢", tracks: 9, albumMode: true }
+      { id: 1, title: "Rumours", artist: "Fleetwood Mac", year: 1977, platform: "🟢", tracks: 11, albumMode: true }
     ],
     songs: [
-      { id: 1, title: "Dreams", artist: "Fleetwood Mac", album: "Rumours", platform: "🟢", duration: "4:17" },
-      { id: 2, title: "Sultans of Swing", artist: "Dire Straits", album: "Dire Straits", platform: "🟦", duration: "5:48" },
-      { id: 3, title: "Comfortably Numb", artist: "Pink Floyd", album: "The Wall", platform: "🍎", duration: "6:23" },
-      { id: 4, title: "Go Your Own Way", artist: "Fleetwood Mac", album: "Rumours", platform: "🟢", duration: "3:43" }
+      { id: 1, title: "Loading live tracks...", artist: "Syncing...", album: "Spotify", platform: "🟢", duration: "--:--" }
     ],
-    identified: [
-      { id: 1, title: "Dreams", artist: "Fleetwood Mac", date: "Today, 2:15 PM", platform: "🟢", storySnippet: "Written by Stevie Nicks in just 10 minutes..." }
-    ],
-    inbox: [
-      { 
-        id: 1, 
-        title: "Dreams", 
-        artist: "Fleetwood Mac", 
-        album: "Rumours", 
-        year: 1977,
-        genre: "Classic Rock",
-        savedDate: "Captured in Cafe • 2 hrs ago", 
-        platform: "🟢", 
-        djPersonaName: "DJ Rude Boy",
-        focus: "Backstage & Band History",
-        storySnippet: "Written by Stevie Nicks in just 10 minutes at the Record Plant studio in Sausalito during a break from tense recording sessions." 
-      },
-      { 
-        id: 2, 
-        title: "Money for Nothing", 
-        artist: "Dire Straits", 
-        album: "Dire Straits", 
-        year: 1985,
-        genre: "Rock",
-        savedDate: "Captured in Store • Yesterday", 
-        platform: "🟦", 
-        djPersonaName: "The Curator",
-        focus: "Gear & Studio Lore",
-        storySnippet: "Mark Knopfler overheard appliance store workers complaining about MTV royalties and used their exact dialogue as lyrics." 
-      }
-    ],
-    commentaryVault: [
-      {
-        id: 101,
-        title: "Comfortably Numb",
-        artist: "Pink Floyd",
-        year: 1979,
-        decade: "1970s",
-        genre: "Progressive Rock",
-        djPersonaName: "DJ Rude Boy",
-        focus: "Gear & Studio Lore",
-        savedDate: "Saved 3 days ago",
-        storySnippet: "Recorded during bitter creative friction between Roger Waters and David Gilmour, resulting in one of rock history's greatest improvised guitar solos."
-      }
-    ]
+    identified: [],
+    inbox: [],
+    commentaryVault: []
   });
+
+  // Fetch live Spotify data on mount
+  useEffect(() => {
+    async function loadLiveMusic() {
+      try {
+        console.log(">>> [Library] Fetching live Spotify playlists and tracks...");
+        const spotifyData = await MusicApiService.fetchUserPlaylists("spotify");
+        
+        if (spotifyData) {
+          console.log(">>> [Library] Live Spotify data received:", spotifyData);
+          setLibraryData(prev => ({
+            ...prev,
+            playlists: [
+              {
+                id: "live_spotify_1",
+                name: spotifyData.name,
+                count: spotifyData.tracks?.length || 0,
+                platforms: ["🟢"],
+                curator: "Connected Spotify Account"
+              },
+              ...prev.playlists
+            ],
+            songs: spotifyData.tracks ? spotifyData.tracks.map((t, idx) => ({
+              id: t.id || idx,
+              title: t.title,
+              artist: t.artist,
+              album: spotifyData.name,
+              platform: "🟢",
+              duration: "3:30"
+            })) : prev.songs
+          }));
+        }
+      } catch (err) {
+        console.error(">>> [Library] Failed to load live Spotify data:", err);
+      }
+    }
+
+    loadLiveMusic();
+  }, []);
 
   const togglePlatformSelection = (icon) => {
     if (selectedPlatforms.includes(icon)) {
@@ -97,9 +86,7 @@ export default function Library() {
     setNewPlaylistName("");
   };
 
-  // Inbox Action Handlers
   const handleMoveSongToPlaylist = (item) => {
-    // Moves song to playlists & removes from inbox
     setLibraryData(prev => ({
       ...prev,
       songs: [...prev.songs, { id: Date.now(), title: item.title, artist: item.artist, album: item.album || "Unknown", platform: item.platform, duration: "3:45" }],
@@ -108,7 +95,6 @@ export default function Library() {
   };
 
   const handleFileLoreToVault = (item) => {
-    // Files commentary to vault & removes from inbox
     setLibraryData(prev => ({
       ...prev,
       commentaryVault: [...prev.commentaryVault, {
@@ -128,7 +114,6 @@ export default function Library() {
   };
 
   const handleKeepBoth = (item) => {
-    // Adds song to playlist AND commentary to vault, removes from inbox
     setLibraryData(prev => ({
       ...prev,
       songs: [...prev.songs, { id: Date.now(), title: item.title, artist: item.artist, album: item.album || "Unknown", platform: item.platform, duration: "3:45" }],
@@ -291,7 +276,7 @@ export default function Library() {
                 <div key={item.id} className="library-card">
                   <div className="card-top-row">
                     <span className="card-badge-label">PLAYLIST</span>
-                    <div className="platform-badges">{item.platforms.join(" ")}</div>
+                    <div className="platform-badges">{Array.isArray(item.platforms) ? item.platforms.join(" ") : item.platforms}</div>
                   </div>
                   <h3>{item.name}</h3>
                   <p className="card-subtext">{item.curator} • {item.count} Tracks</p>
@@ -301,7 +286,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* IDENTIFY INBOX TAB (Decision Later Workflow) */}
+        {/* IDENTIFY INBOX TAB */}
         {activeTab === "inbox" && (
           <div className="library-list-stack">
             <div className="saved-tab-banner">
@@ -394,25 +379,30 @@ export default function Library() {
         {/* IDENTIFIED HISTORY TAB */}
         {activeTab === "identified" && (
           <div className="library-list-stack">
-            {libraryData.identified.map((item) => (
-              <div key={item.id} className="library-identified-card">
-                <div className="identified-header-row">
-                  <div className="identified-title-group">
-                    <h4>{item.title}</h4>
-                    <span className="identified-artist">{item.artist}</span>
-                  </div>
-                  <span className="identified-date">{item.date} {item.platform}</span>
-                </div>
-                <p className="identified-story">"{item.storySnippet}"</p>
+            {libraryData.identified.length === 0 ? (
+              <div className="empty-vault-state">
+                <p>No recently identified songs yet.</p>
               </div>
-            ))}
+            ) : (
+              libraryData.identified.map((item) => (
+                <div key={item.id} className="library-identified-card">
+                  <div className="identified-header-row">
+                    <div className="identified-title-group">
+                      <h4>{item.title}</h4>
+                      <span className="identified-artist">{item.artist}</span>
+                    </div>
+                    <span className="identified-date">{item.date} {item.platform}</span>
+                  </div>
+                  <p className="identified-story">"{item.storySnippet}"</p>
+                </div>
+              ))
+            )}
           </div>
         )}
 
         {/* COMMENTARY VAULT TAB */}
         {activeTab === "commentary" && (
           <div className="vault-wrapper">
-            {/* Rich Filtering Bar */}
             <div className="vault-filter-bar">
               <div className="filter-group">
                 <label>Sort:</label>
@@ -455,63 +445,34 @@ export default function Library() {
               </div>
             </div>
 
-            {/* Commentary Vault List with Active Filters & Sorters */}
             <div className="library-list-stack">
-              {libraryData.commentaryVault
-                .filter(item => {
-                  if (vaultEra !== "all" && item.decade !== vaultEra) return false;
-                  if (vaultHost !== "all" && item.djPersonaName !== vaultHost) return false;
-                  if (vaultFocus !== "all" && item.focus !== vaultFocus) return false;
-                  if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase()) && !item.artist.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-                  return true;
-                })
-                .sort((a, b) => {
-                  if (vaultSort === "year-desc") return b.year - a.year;
-                  if (vaultSort === "year-asc") return a.year - b.year;
-                  if (vaultSort === "artist") return a.artist.localeCompare(b.artist);
-                  return 0; // "recent" default
-                })
-                .length === 0 ? (
+              {libraryData.commentaryVault.length === 0 ? (
                 <div className="empty-vault-state">
-                  <p>No commentary items match your current filter criteria.</p>
+                  <p>Your Commentary Vault is empty. Save stories from the Identify or DJ screens!</p>
                 </div>
               ) : (
-                libraryData.commentaryVault
-                  .filter(item => {
-                    if (vaultEra !== "all" && item.decade !== vaultEra) return false;
-                    if (vaultHost !== "all" && item.djPersonaName !== vaultHost) return false;
-                    if (vaultFocus !== "all" && item.focus !== vaultFocus) return false;
-                    if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase()) && !item.artist.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-                    return true;
-                  })
-                  .sort((a, b) => {
-                    if (vaultSort === "year-desc") return b.year - a.year;
-                    if (vaultSort === "year-asc") return a.year - b.year;
-                    if (vaultSort === "artist") return a.artist.localeCompare(b.artist);
-                    return 0;
-                  })
-                  .map((item) => (
-                    <div key={item.id} className="library-identified-card vault-card">
-                      <div className="identified-header-row">
-                        <div className="identified-title-group">
-                          <h4>🎙️ {item.title} — {item.artist} ({item.year})</h4>
-                          <span className="identified-artist">Delivered by: {item.djPersonaName} | {item.focus}</span>
-                        </div>
-                        <span className="identified-date">{item.savedDate}</span>
+                libraryData.commentaryVault.map((item) => (
+                  <div key={item.id} className="library-identified-card vault-card">
+                    <div className="identified-header-row">
+                      <div className="identified-title-group">
+                        <h4>🎙️ {item.title} — {item.artist} ({item.year})</h4>
+                        <span className="identified-artist">Delivered by: {item.djPersonaName} | {item.focus}</span>
                       </div>
-
-                      <p className="identified-story">"{item.storySnippet}"</p>
-
-                      <div className="vault-card-actions">
-                        <button className="add-to-playlist-btn" onClick={() => alert("Synthesizing audio clip via Kokoro-82M ONNX...")}>
-                          <i className="fa-solid fa-play"></i> Play DJ Commentary
-                        </button>
-                        <button className="remove-saved-btn" onClick={() => handleRemoveVaultItem(item.id)} title="Remove from Vault">
-                          <i className="fa-solid fa-trash"></i>
-                        </button>
-                      </div>
+                      <span className="identified-date">{item.savedDate}</span>
                     </div>
-                  ))
+
+                    <p className="identified-story">"{item.storySnippet}"</p>
+
+                    <div className="vault-card-actions">
+                      <button className="add-to-playlist-btn" onClick={() => alert("Synthesizing audio clip via Kokoro-82M ONNX...")}>
+                        <i className="fa-solid fa-play"></i> Play DJ Commentary
+                      </button>
+                      <button className="remove-saved-btn" onClick={() => handleRemoveVaultItem(item.id)} title="Remove from Vault">
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
