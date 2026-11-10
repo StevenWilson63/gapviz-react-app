@@ -3,26 +3,26 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
-  background-color: #0b0b0b; /* Solid opaque background */
+  height: 100dvh; /* Dynamic viewport height prevents mobile browser chrome clipping */
+  background-color: #0b0b0b;
   z-index: 999999;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 20px 20px 40px 20px; /* Extra bottom padding so buttons clear mobile edges */
   box-sizing: border-box;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
-  overscroll-behavior-y: none;     /* Stops Safari rubber-band bounce / scroll locks */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
   font-family: Arial, sans-serif;
   color: #ffffff;
 }
 
 /* Anti-Copy / Script Protection Utility */
 .user-select-none {
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none;    /* Firefox */
-  -ms-user-select: none;    /* Internet Explorer/Edge */
-  user-select: none;         /* Standard Syntax */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* Header Deck */
@@ -70,9 +70,9 @@
   text-transform: uppercase;
 }
 
-/* --- Interactive Top Playlist Bar (Profile Screen Theme) --- */
+/* --- Interactive Top Playlist Bar --- */
 .soundbooth-playlist-bar {
-  background-color: #0b0b0b; /* Matches screen background */
+  background-color: #0b0b0b;
   border: 1px solid rgba(239, 68, 68, 0.4);
   border-radius: 10px;
   padding: 10px 14px;
@@ -86,8 +86,8 @@
 }
 
 .soundbooth-playlist-bar:hover {
-  border-color: #ef4444; /* Brighter red border on hover */
-  background-color: rgba(239, 68, 68, 0.05); /* Subtle red tint on hover matching profile cards */
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.05);
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
 }
 
@@ -336,7 +336,7 @@
   pointer-events: none;
 }
 
-/* Control Room Button */
+/* Control Room Button - Flows naturally in scroll instead of margin-top: auto clipping */
 .soundbooth-control-room-btn {
   width: 100%;
   padding: 14px;
@@ -353,7 +353,8 @@
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
   transition: background-color 0.2s ease;
-  margin-top: auto;
+  margin-top: 10px;
+  margin-bottom: 20px;
   flex-shrink: 0;
 }
 
@@ -442,12 +443,10 @@
   transition: all 0.2s ease;
 }
 
-/* Played Tracks (Faded out) */
 .queue-track-item.track-played {
   opacity: 0.45;
 }
 
-/* Current Playing Track */
 .queue-track-item.track-current {
   background: rgba(239, 68, 68, 0.12);
   border-color: rgba(239, 68, 68, 0.5);
@@ -458,7 +457,6 @@
   font-weight: 700;
 }
 
-/* Upcoming Tracks */
 .queue-track-item.track-upcoming {
   opacity: 0.85;
 }
