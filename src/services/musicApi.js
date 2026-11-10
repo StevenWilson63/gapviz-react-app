@@ -138,20 +138,25 @@ export const MusicApiService = {
           console.log(">>> [Spotify API] Fetched playlists payload:", data);
 
           if (data.items && data.items.length > 0) {
-            // Map ALL real user playlists from Spotify
             const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
               let tracksList = [];
               try {
-                const trRes = await fetch(pl.tracks.href, {
+                // Determine the correct tracks endpoint url (.href or fallback construction)
+                const tracksUrl = pl.tracks?.href || `https://api.spotify.com/v1/playlists/${pl.id}/tracks`;
+                
+                const trRes = await fetch(tracksUrl, {
                   headers: { Authorization: `Bearer ${token}` }
                 });
-                const trData = await trRes.json();
-                tracksList = trData.items?.map((item, idx) => ({
-                  id: item.track?.id || idx,
-                  title: item.track?.name || "Unknown Track",
-                  artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-                  status: idx === 0 ? "current" : "upcoming"
-                })) || [];
+                
+                if (trRes.ok) {
+                  const trData = await trRes.json();
+                  tracksList = trData.items?.map((item, idx) => ({
+                    id: item.track?.id || idx,
+                    title: item.track?.name || "Unknown Track",
+                    artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                    status: idx === 0 ? "current" : "upcoming"
+                  })) || [];
+                }
               } catch (e) {
                 console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
               }
@@ -166,9 +171,7 @@ export const MusicApiService = {
               };
             }));
 
-            // Return the first playlist as primary, or let's wrap them cleanly
-            // (If your Library component expects a single object or list, let's look at how Library handles it)
-            return mappedPlaylists; 
+            return mappedPlaylists;
           }
         } catch (err) {
           console.error(">>> [Spotify API] Failed to fetch live Spotify playlists:", err);
