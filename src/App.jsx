@@ -33,10 +33,13 @@ import About from "./pages/profile/about";
 // Helper component to handle Spotify OAuth callback on app load
 function SpotifyAuthListener() {
   useEffect(() => {
-    const success = MusicApiService.handleAuthCallback();
-    if (success) {
-      console.log("Spotify authentication token captured successfully!");
+    async function checkAuth() {
+      const success = await MusicApiService.handleAuthCallback();
+      if (success) {
+        console.log("Spotify authentication token captured successfully!");
+      }
     }
+    checkAuth();
   }, []);
   return null;
 }
