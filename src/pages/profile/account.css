@@ -51,6 +51,7 @@ html {
   padding: 20px;
   box-sizing: border-box;
   width: 100%;
+  position: relative; /* Allows absolute centering if needed, or use block auto-margins */
 }
 
 .account-avatar {
@@ -60,7 +61,6 @@ html {
   gap: 8px;
 }
 
-/* Avatar Wrapper for Positioning */
 .avatar-wrapper {
   position: relative;
   display: inline-block;
@@ -118,27 +118,6 @@ html {
   z-index: 1001;
 }
 
-.avatar-links {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.avatar-link {
-  background: none;
-  border: none;
-  color: #ff1a1a;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0;
-  transition: opacity 0.15s ease;
-}
-
-.avatar-link:hover {
-  opacity: 0.8;
-}
-
 .account-field {
   display: flex;
   flex-direction: column;
@@ -187,10 +166,10 @@ html {
   border-color: #ff1a1a;
 }
 
-/* --- FIXED PHONETIC ROW LAYOUT --- */
+/* --- FIXED PHONETIC ROW LAYOUT (Removes double border/padding conflicts) --- */
 .phonetic-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
   width: 100%;
   box-sizing: border-box;
@@ -202,6 +181,15 @@ html {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 26, 26, 0.35);
+  padding: 12px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.phonetic-input-wrapper:hover {
+  border-color: #ff1a1a;
 }
 
 .phonetic-input-wrapper input {
@@ -212,7 +200,7 @@ html {
   text-align: left;
   background: transparent;
   color: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 2px solid rgba(255, 26, 26, 0.35);
   transition: border-color 0.15s ease;
   outline: none;
@@ -227,15 +215,20 @@ html {
   background: transparent;
   border: 2px solid rgba(255, 26, 26, 0.35);
   border-radius: 12px;
-  padding: 11px 16px;
+  padding: 0 16px;
   color: #fff;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   box-sizing: border-box;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: border-color 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
+  align-self: flex-end;
+  height: 52px; /* Matches the input container height seamlessly */
 }
 
 .play-sample-button:hover {
@@ -303,8 +296,8 @@ html {
   color: #ff1a1a;
 }
 
-/* Centered block-level toast notification directly under the button */
-.changes-saved-alert, .save-success-toast {
+/* Directly targets .save-confirm-box from your JSX and centers it dead-center */
+.save-confirm-box {
   display: block;
   width: fit-content;
   max-width: 100%;
