@@ -35,27 +35,22 @@ export default function Library() {
     async function loadLiveMusic() {
       try {
         console.log(">>> [Library] Fetching live Spotify playlists and tracks...");
-        const spotifyData = await MusicApiService.fetchUserPlaylists("spotify");
+        const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify");
         
-        if (spotifyData) {
-          console.log(">>> [Library] Live Spotify data received:", spotifyData);
+        if (spotifyPlaylists && spotifyPlaylists.length > 0) {
+          console.log(">>> [Library] Live Spotify playlists received:", spotifyPlaylists);
+          
+          // Flatten tracks from the first playlist or all playlists into the songs tab as well
+          const allTracks = spotifyPlaylists.flatMap(pl => pl.tracks || []);
+
           setLibraryData(prev => ({
             ...prev,
-            playlists: [
-              {
-                id: "live_spotify_1",
-                name: spotifyData.name,
-                count: spotifyData.tracks?.length || 0,
-                platforms: ["🟢"],
-                curator: "Connected Spotify Account",
-                tracks: spotifyData.tracks || []
-              }
-            ],
-            songs: spotifyData.tracks ? spotifyData.tracks.map((t, idx) => ({
+            playlists: spotifyPlaylists,
+            songs: allTracks.length > 0 ? allTracks.map((t, idx) => ({
               id: t.id || idx,
               title: t.title,
               artist: t.artist,
-              album: spotifyData.name,
+              album: "Spotify Library",
               platform: "🟢",
               duration: "3:30"
             })) : prev.songs
@@ -258,7 +253,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* Other tabs remain as standard */}
+        {/* Other tabs */}
         {activeTab === "albums" && (
           <div className="library-grid">
             {libraryData.albums.map((item) => (

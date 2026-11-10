@@ -115,7 +115,7 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks from Spotify API or fall back safely
+ // Fetch live playlists and tracks from Spotify API or fall back safely
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
@@ -123,87 +123,86 @@ export const MusicApiService = {
 
       if (token) {
         try {
-          // 1. Fetch user profile for display name
-          const userRes = await fetch("https://api.spotify.com/v1/me", {
+          const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
             headers: { Authorization: `Bearer ${token}` }
           });
-          const userData = await userRes.json();
-          const userName = userData.display_name || "Spotify User";
+          
+          console.log(">>> [Spotify API] Playlists response status:", response.status);
+          if (!response.ok) {
+            const errText = await response.text();
+            console.error(">>> [Spotify API Error Details]:", errText);
+            throw new Error(`Spotify API error: ${response.status}`);
+          }
 
-          // 2. Fetch user's playlists
-          const response = await fetch("https://api.spotify.com/v1/me/playlists", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
           const data = await response.json();
+          console.log(">>> [Spotify API] Fetched playlists payload:", data);
 
           if (data.items && data.items.length > 0) {
-            const firstPlaylist = data.items[0];
-            const tracksResponse = await fetch(firstPlaylist.tracks.href, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const tracksData = await tracksResponse.json();
-
-            const formattedTracks = tracksData.items?.map((item, idx) => ({
-              id: item.track?.id || idx,
-              title: item.track?.name || "Unknown Track",
-              artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-              status: idx === 0 ? "current" : "upcoming"
-            })) || [];
-
-            return {
-              name: firstPlaylist.name,
-              platform: "Spotify",
-              tracks: formattedTracks
-            };
-          } else {
-            // 3. Fallback to user's Saved/Liked Songs if playlists array is empty
-            console.log(">>> [Spotify API] 0 playlists found. Fetching user's Liked Songs...");
-            const savedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=20", {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const savedData = await savedRes.json();
-
-            if (savedData.items && savedData.items.length > 0) {
-              const formattedTracks = savedData.items.map((item, idx) => ({
-                id: item.track?.id || idx,
-                title: item.track?.name || "Unknown Track",
-                artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-                status: idx === 0 ? "current" : "upcoming"
-              }));
+            // Map ALL real user playlists from Spotify
+            const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
+              let tracksList = [];
+              try {
+                const trRes = await fetch(pl.tracks.href, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                const trData = await trRes.json();
+                tracksList = trData.items?.map((item, idx) => ({
+                  id: item.track?.id || idx,
+                  title: item.track?.name || "Unknown Track",
+                  artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                  status: idx === 0 ? "current" : "upcoming"
+                })) || [];
+              } catch (e) {
+                console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
+              }
 
               return {
-                name: `${userName}'s Liked Songs`,
-                platform: "Spotify",
-                tracks: formattedTracks
+                id: pl.id || index,
+                name: pl.name,
+                count: pl.tracks?.total || tracksList.length,
+                platforms: ["🟢"],
+                curator: pl.owner?.display_name || "Spotify User",
+                tracks: tracksList
               };
-            }
+            }));
+
+            // Return the first playlist as primary, or let's wrap them cleanly
+            // (If your Library component expects a single object or list, let's look at how Library handles it)
+            return mappedPlaylists; 
           }
         } catch (err) {
-          console.error("Failed to fetch live Spotify data", err);
+          console.error(">>> [Spotify API] Failed to fetch live Spotify playlists:", err);
         }
       }
 
-      // Final fallback if account has no liked songs or token is invalid
-      return {
-        name: "My Spotify Heavy Rotation",
-        platform: "Spotify",
-        tracks: [
-          { id: 1, title: "Live Track Alpha", artist: "Spotify Artist One", status: "played" },
-          { id: 2, title: "Live Track Beta", artist: "Spotify Artist Two", status: "current" },
-          { id: 3, title: "Live Track Gamma", artist: "Spotify Artist Three", status: "upcoming" }
-        ]
-      };
+      // Fallback mock if token missing or fetch failed
+      return [
+        {
+          id: 1,
+          name: "My Spotify Heavy Rotation (Fallback)",
+          platform: "Spotify",
+          curator: "Fallback Mock",
+          count: 3,
+          tracks: [
+            { id: 1, title: "Live Track Alpha", artist: "Spotify Artist One", status: "played" },
+            { id: 2, title: "Live Track Beta", artist: "Spotify Artist Two", status: "current" },
+            { id: 3, title: "Live Track Gamma", artist: "Spotify Artist Three", status: "upcoming" }
+          ]
+        }
+      ];
     } else if (platformKey === "tidal") {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      return {
+      return [{
         name: "Tidal Master Quality Stream",
         platform: "Tidal",
+        curator: "Tidal HiFi",
+        count: 2,
         tracks: [
           { id: 101, title: "HiFi Mastercut 1", artist: "Tidal Audiophile", status: "current" },
           { id: 102, title: "HiFi Mastercut 2", artist: "Tidal Audiophile", status: "upcoming" }
         ]
-      };
+      }];
     }
-    return null;
+    return [];
   }
 };
