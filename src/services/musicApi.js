@@ -119,19 +119,27 @@ export const MusicApiService = {
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
+      console.log(">>> [Spotify API] Checking stored token:", token ? "Token found (" + token.substring(0, 10) + "...)" : "No token found!");
+
       if (token) {
         try {
           const response = await fetch("https://api.spotify.com/v1/me/playlists", {
             headers: { Authorization: `Bearer ${token}` }
           });
-          const data = await response.json();
           
+          console.log(">>> [Spotify API] /me/playlists response status:", response.status);
+          const data = await response.json();
+          console.log(">>> [Spotify API] /me/playlists full payload data:", data);
+
           if (data.items && data.items.length > 0) {
             const firstPlaylist = data.items[0];
+            console.log(">>> [Spotify API] Found playlist:", firstPlaylist.name, "- Fetching tracks from:", firstPlaylist.tracks.href);
+
             const tracksResponse = await fetch(firstPlaylist.tracks.href, {
               headers: { Authorization: `Bearer ${token}` }
             });
             const tracksData = await tracksResponse.json();
+            console.log(">>> [Spotify API] Tracks data payload:", tracksData);
 
             const formattedTracks = tracksData.items?.map((item, idx) => ({
               id: item.track?.id || idx,
@@ -145,13 +153,16 @@ export const MusicApiService = {
               platform: "Spotify",
               tracks: formattedTracks
             };
+          } else {
+            console.warn(">>> [Spotify API] Account returned 0 playlists! Falling back to placeholder tracks.");
           }
         } catch (err) {
-          console.error("Failed to fetch live Spotify playlists", err);
+          console.error(">>> [Spotify API] Failed to fetch live Spotify playlists due to error:", err);
         }
       }
 
-      // Fallback mock view if token isn't active yet
+      // Fallback mock view if token isn't active yet or playlists are empty
+      console.log(">>> [Spotify API] Falling back to mock heavy rotation view.");
       return {
         name: "My Spotify Heavy Rotation",
         platform: "Spotify",
@@ -174,4 +185,3 @@ export const MusicApiService = {
     }
     return null;
   }
-};
