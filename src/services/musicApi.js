@@ -8,6 +8,27 @@ const CLIENT_IDS = {
   tidal: "mock_tidal_client_id"
 };
 
+// Helper to generate random string for PKCE verifier
+const generateRandomString = (length) => {
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const values = crypto.getRandomValues(new Uint8Array(length));
+  return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+};
+
+// Helper to hash code verifier for PKCE code_challenge (S256)
+const sha256 = async (plain) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  return window.crypto.subtle.digest('SHA-256', data);
+};
+
+const base64encode = (input) => {
+  return btoa(String.fromCharCode(...new Uint8Array(input)))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+};
+
 export const MusicApiService = {
   getConnectedTokens() {
     try {
@@ -24,29 +45,69 @@ export const MusicApiService = {
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
   },
 
-  // Captures token from URL hash after Spotify redirects back
-  handleAuthCallback() {
-    const hash = window.location.hash;
-    if (hash && hash.includes("access_token")) {
-      const token = hash.split("&").find(item => item.startsWith("#access_token"))?.split("=")[1];
-      if (token) {
-        localStorage.setItem(SPOTIFY_TOKEN_KEY, token);
-        this.setPlatformConnection("spotify", true);
-        window.location.hash = ""; // Clean URL hash
-        return true;
+  // Handles callback code exchange after Spotify redirects back
+  async handleAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("code");
+
+    if (code) {
+      const codeVerifier = localStorage.getItem("spotify_code_verifier");
+      const clientId = CLIENT_IDS.spotify;
+      const redirectUri = window.location.origin + window.location.pathname;
+
+      try {
+        const response = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: clientId,
+            grant_type: "authorization_code",
+            code: code,
+            redirect_uri: window.location.origin, // Must match original redirect
+            code_verifier: codeVerifier,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.access_token) {
+          localStorage.setItem(SPOTIFY_TOKEN_KEY, data.access_token);
+          this.setPlatformConnection("spotify", true);
+          
+          // Clear query params from browser URL cleanly
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return true;
+        }
+      } catch (err) {
+        console.error("Failed to exchange Spotify authorization code for token", err);
       }
     }
     return false;
   },
 
-  // Initiate real OAuth redirect flow
-  initiateAuth(platformKey) {
+  // Initiate PKCE OAuth redirect flow with response_type=code
+  async initiateAuth(platformKey) {
     if (platformKey === "spotify") {
       const clientId = CLIENT_IDS.spotify;
-      const redirectUri = window.location.origin; // Uses https://gapviz-react.pages.dev
+      const redirectUri = window.location.origin; // e.g. https://gapviz-react.pages.dev
       const scopes = "user-read-private user-read-email playlist-read-private";
 
-      window.location.href = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+      // Generate PKCE verifier and challenge
+      const codeVerifier = generateRandomString(64);
+      localStorage.setItem("spotify_code_verifier", codeVerifier);
+      const hashed = await sha256(codeVerifier);
+      const codeChallenge = base64encode(hashed);
+
+      const authUrl = new URL("https://accounts.spotify.com/authorize");
+      authUrl.searchParams.append("client_id", clientId);
+      authUrl.searchParams.append("response_type", "code"); // Updated to code requirement
+      authUrl.searchParams.append("redirect_uri", redirectUri);
+      authUrl.searchParams.append("code_challenge_method", "S256");
+      authUrl.searchParams.append("code_challenge", codeChallenge);
+      authUrl.searchParams.append("scope", scopes);
+
+      window.location.href = authUrl.toString();
     } else {
       this.setPlatformConnection(platformKey, true);
     }
