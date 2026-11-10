@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { MusicApiService } from "../../services/musicApi";
 import "../connected-services.css";
 
+console.log(">>> ConnectedServicesHandler file is successfully running!");
+
 export default function ConnectedServicesHandler({ onBack }) {
   const [connections, setConnections] = useState({
     spotify: false,
