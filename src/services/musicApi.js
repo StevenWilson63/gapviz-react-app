@@ -123,12 +123,18 @@ export const MusicApiService = {
 
       if (token) {
         try {
+          // 1. Fetch user profile for display name
+          const userRes = await fetch("https://api.spotify.com/v1/me", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const userData = await userRes.json();
+          const userName = userData.display_name || "Spotify User";
+
+          // 2. Fetch user's playlists
           const response = await fetch("https://api.spotify.com/v1/me/playlists", {
             headers: { Authorization: `Bearer ${token}` }
           });
-          
           const data = await response.json();
-          console.log(">>> [Spotify API] /me/playlists payload:", data);
 
           if (data.items && data.items.length > 0) {
             const firstPlaylist = data.items[0];
@@ -149,13 +155,35 @@ export const MusicApiService = {
               platform: "Spotify",
               tracks: formattedTracks
             };
+          } else {
+            // 3. Fallback to user's Saved/Liked Songs if playlists array is empty
+            console.log(">>> [Spotify API] 0 playlists found. Fetching user's Liked Songs...");
+            const savedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=20", {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const savedData = await savedRes.json();
+
+            if (savedData.items && savedData.items.length > 0) {
+              const formattedTracks = savedData.items.map((item, idx) => ({
+                id: item.track?.id || idx,
+                title: item.track?.name || "Unknown Track",
+                artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                status: idx === 0 ? "current" : "upcoming"
+              }));
+
+              return {
+                name: `${userName}'s Liked Songs`,
+                platform: "Spotify",
+                tracks: formattedTracks
+              };
+            }
           }
         } catch (err) {
-          console.error("Failed to fetch live Spotify playlists", err);
+          console.error("Failed to fetch live Spotify data", err);
         }
       }
 
-      // Fallback mock view if token isn't active yet or playlists are empty
+      // Final fallback if account has no liked songs or token is invalid
       return {
         name: "My Spotify Heavy Rotation",
         platform: "Spotify",
