@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./connectedServices.css";
 import { useNavigate } from "react-router-dom";
+import { MusicApiService } from "../../services/musicApi"; // Added musicApi import
 
 export default function ConnectedServices() {
   const navigate = useNavigate();
@@ -18,16 +19,30 @@ export default function ConnectedServices() {
   const [savedMessage, setSavedMessage] = useState(false);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("gv_connectedServices") || "{}");
-    setAmazonMusicConnected(stored.amazonMusic || false);
-    setAppleMusicConnected(stored.appleMusic || false);
-    setDeezerConnected(stored.deezer || false);
-    setQobuzConnected(stored.qobuz || false);
-    setSoundcloudConnected(stored.soundcloud || false);
-    setSpotifyConnected(stored.spotify || false);
-    setTidalConnected(stored.tidal || false);
-    setYoutubeMusicConnected(stored.youtubeMusic || false);
+    // Check tokens or fallback to localStorage
+    const storedTokens = MusicApiService.getConnectedTokens ? MusicApiService.getConnectedTokens() : {};
+    const storedLocal = JSON.parse(localStorage.getItem("gv_connectedServices") || "{}");
+    
+    setAmazonMusicConnected(storedLocal.amazonMusic || false);
+    setAppleMusicConnected(storedLocal.appleMusic || false);
+    setDeezerConnected(storedLocal.deezer || false);
+    setQobuzConnected(storedLocal.qobuz || false);
+    setSoundcloudConnected(storedLocal.soundcloud || false);
+    setSpotifyConnected(storedTokens.spotify || storedLocal.spotify || false);
+    setTidalConnected(storedLocal.tidal || false);
+    setYoutubeMusicConnected(storedLocal.youtubeMusic || false);
   }, []);
+
+  const handleSpotifyClick = () => {
+    if (!spotifyConnected) {
+      // Trigger the real Spotify Developer App OAuth flow
+      MusicApiService.initiateAuth("spotify");
+    } else {
+      // Allow disconnecting if already connected
+      setSpotifyConnected(false);
+      MusicApiService.setPlatformConnection("spotify", false);
+    }
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -135,7 +150,7 @@ export default function ConnectedServices() {
           </button>
         </div>
 
-        {/* SPOTIFY */}
+        {/* SPOTIFY (Wired to OAuth) */}
         <div className="service-row hover-box">
           <div className="service-info">
             <span className="service-name">Spotify</span>
@@ -144,7 +159,7 @@ export default function ConnectedServices() {
           <button
             type="button"
             className={`service-toggle-btn ${spotifyConnected ? "connected" : ""}`}
-            onClick={() => setSpotifyConnected(!spotifyConnected)}
+            onClick={handleSpotifyClick}
           >
             {spotifyConnected ? "Connected ✓" : "Connect"}
           </button>
