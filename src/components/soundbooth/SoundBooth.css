@@ -11,6 +11,8 @@
   padding: 20px;
   box-sizing: border-box;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+  overscroll-behavior-y: none;     /* Stops Safari rubber-band bounce / scroll locks */
   font-family: Arial, sans-serif;
   color: #ffffff;
 }
@@ -30,6 +32,7 @@
   justify-content: space-between;
   width: 100%;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .soundbooth-icon-btn {
@@ -78,6 +81,7 @@
   justify-content: space-between;
   cursor: pointer;
   margin-bottom: 20px;
+  flex-shrink: 0;
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -148,6 +152,7 @@
   align-items: center;
   text-align: center;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-art {
@@ -183,6 +188,7 @@
 .soundbooth-progress-container {
   width: 100%;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-progress-bar {
@@ -213,6 +219,7 @@
   justify-content: center;
   gap: 20px;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-sub-control-btn {
@@ -259,6 +266,7 @@
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .soundbooth-commentary-header {
@@ -346,6 +354,7 @@
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
   transition: background-color 0.2s ease;
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 .soundbooth-control-room-btn:hover {
@@ -414,6 +423,7 @@
 
 .queue-tracks-list {
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 8px;
