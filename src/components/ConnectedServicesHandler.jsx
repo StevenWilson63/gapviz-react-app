@@ -1,7 +1,7 @@
 // src/components/ConnectedServicesHandler.jsx
 
 import React, { useState, useEffect } from "react";
-import { MusicApiService } from "../../services/musicApi"; // Adjust path if needed to reach services/
+import { MusicApiService } from "../../services/musicApi";
 import "../connected-services.css";
 
 export default function ConnectedServicesHandler({ onBack }) {
@@ -18,6 +18,8 @@ export default function ConnectedServicesHandler({ onBack }) {
   }, []);
 
   const handleToggle = (platformKey) => {
+    console.log("Button clicked for platform:", platformKey);
+
     // If connecting Spotify, trigger the auth / redirect flow
     if (platformKey === "spotify" && !connections.spotify) {
       MusicApiService.initiateAuth("spotify");
