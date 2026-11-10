@@ -1,8 +1,8 @@
 // src/components/ConnectedServicesHandler.jsx
 
 import React, { useState, useEffect } from "react";
-import { MusicApiService } from "../services/musicApi";
-import "../connected-services.css"; // Uses your updated CSS
+import { MusicApiService } from "../../services/musicApi"; // Adjust path if needed to reach services/
+import "../connected-services.css";
 
 export default function ConnectedServicesHandler({ onBack }) {
   const [connections, setConnections] = useState({
@@ -13,12 +13,18 @@ export default function ConnectedServicesHandler({ onBack }) {
   const [saveStatus, setSaveStatus] = useState(false);
 
   useEffect(() => {
-    // Load persisted connection states on mount
     const saved = MusicApiService.getConnectedTokens();
     setConnections(saved);
   }, []);
 
   const handleToggle = (platformKey) => {
+    // If connecting Spotify, trigger the auth / redirect flow
+    if (platformKey === "spotify" && !connections.spotify) {
+      MusicApiService.initiateAuth("spotify");
+      return;
+    }
+
+    // Otherwise, toggle normally for other platforms or disconnecting
     const updatedState = !connections[platformKey];
     setConnections((prev) => ({ ...prev, [platformKey]: updatedState }));
     MusicApiService.setPlatformConnection(platformKey, updatedState);

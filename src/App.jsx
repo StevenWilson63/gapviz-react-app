@@ -1,7 +1,10 @@
-import React from "react";
+// src/App.jsx
+
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { UserProvider } from "./context/UserContext";
+import { MusicApiService } from "./services/musicApi";
 
 import Splash from "./components/Splash/Splash";
 import Join from "./pages/join/Join";
@@ -27,10 +30,22 @@ import PrivacyData from "./pages/profile/privacyData";
 import HelpSupport from "./pages/profile/helpSupport";
 import About from "./pages/profile/about";
 
+// Helper component to handle Spotify OAuth callback on app load
+function SpotifyAuthListener() {
+  useEffect(() => {
+    const success = MusicApiService.handleAuthCallback();
+    if (success) {
+      console.log("Spotify authentication token captured successfully!");
+    }
+  }, []);
+  return null;
+}
+
 export default function App() {
   return (
     <UserProvider>
       <BrowserRouter>
+        <SpotifyAuthListener />
         <Routes>
 
           {/* Splash screen & Join (No footer / mini-player) */}
