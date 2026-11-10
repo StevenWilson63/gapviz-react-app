@@ -1,10 +1,16 @@
 .your-djs-screen {
-  padding: 30px 20px;
+  padding: 30px 20px 80px 20px; /* Added bottom padding */
   max-width: 500px;
   margin: 0 auto;
   color: #fff;
   font-family: Arial, sans-serif;
   box-sizing: border-box;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: scroll !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: auto !important;
+  touch-action: pan-y !important;
   position: relative;
 }
 
@@ -208,6 +214,7 @@
   cursor: pointer;
   width: 100%;
   margin-top: 10px;
+  margin-bottom: 20px;
   transition: background 0.2s;
 }
 
