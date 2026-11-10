@@ -45,7 +45,7 @@ export const MusicApiService = {
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
   },
 
-  // Handles callback code exchange after Spotify redirects back
+ // Handles callback code exchange after Spotify redirects back
   async handleAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
@@ -53,7 +53,7 @@ export const MusicApiService = {
     if (code) {
       const codeVerifier = localStorage.getItem("spotify_code_verifier");
       const clientId = CLIENT_IDS.spotify;
-      const redirectUri = window.location.origin + window.location.pathname;
+      const redirectUri = window.location.origin;
 
       try {
         const response = await fetch("https://accounts.spotify.com/api/token", {
@@ -65,7 +65,7 @@ export const MusicApiService = {
             client_id: clientId,
             grant_type: "authorization_code",
             code: code,
-            redirect_uri: window.location.origin, // Must match original redirect
+            redirect_uri: redirectUri,
             code_verifier: codeVerifier,
           }),
         });
@@ -78,6 +78,8 @@ export const MusicApiService = {
           // Clear query params from browser URL cleanly
           window.history.replaceState({}, document.title, window.location.pathname);
           return true;
+        } else {
+          console.error("Spotify token exchange failed data:", data);
         }
       } catch (err) {
         console.error("Failed to exchange Spotify authorization code for token", err);
