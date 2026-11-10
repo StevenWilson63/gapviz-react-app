@@ -166,7 +166,7 @@ html {
   border-color: #ff1a1a;
 }
 
-/* --- FIXED PHONETIC ROW LAYOUT (Removes double border/padding conflicts) --- */
+/* --- MATCHING PHONETIC ROW LAYOUT --- */
 .phonetic-row {
   display: flex;
   align-items: stretch;
@@ -186,36 +186,43 @@ html {
   padding: 12px;
   box-sizing: border-box;
   transition: border-color 0.15s ease;
+  background: transparent;
 }
 
 .phonetic-input-wrapper:hover {
   border-color: #ff1a1a;
 }
 
-.phonetic-input-wrapper input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
+.phonetic-input-wrapper label {
   font-size: 16px;
-  text-align: left;
-  background: transparent;
   color: #fff;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 26, 26, 0.35);
-  transition: border-color 0.15s ease;
-  outline: none;
+}
+
+.phonetic-input-wrapper input {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 10px 12px !important;
+  font-size: 16px !important;
+  text-align: left !important;
+  background: transparent !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  border: 2px solid rgba(255, 26, 26, 0.35) !important;
+  outline: none !important;
+  transition: border-color 0.15s ease !important;
 }
 
 .phonetic-input-wrapper input:hover,
 .phonetic-input-wrapper input:focus {
-  border-color: #ff1a1a;
+  border-color: #ff1a1a !important;
 }
 
 .play-sample-button {
   background: transparent;
   border: 2px solid rgba(255, 26, 26, 0.35);
   border-radius: 12px;
-  padding: 0 16px;
+  padding: 0 20px;
   color: #fff;
   cursor: pointer;
   font-size: 14px;
@@ -228,7 +235,7 @@ html {
   transition: border-color 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
   align-self: flex-end;
-  height: 52px; /* Matches the input container height seamlessly */
+  height: 84px; /* Matches the total height of the phonetic input box container */
 }
 
 .play-sample-button:hover {
