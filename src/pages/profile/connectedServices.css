@@ -1,10 +1,17 @@
 .connected-services-screen {
-  padding: 40px 20px;
+  padding: 40px 20px 80px 20px; /* Added generous bottom padding */
   max-width: 600px;
   margin: 0 auto;
   color: #fff;
   font-family: Arial, sans-serif;
   box-sizing: border-box;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: scroll !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: auto !important;
+  touch-action: pan-y !important;
+  position: relative;
 }
 
 .back-profile-btn {
@@ -101,6 +108,7 @@
   font-weight: bold;
   cursor: pointer;
   margin-top: 10px;
+  margin-bottom: 30px;
   transition: background 0.2s;
 }
 
