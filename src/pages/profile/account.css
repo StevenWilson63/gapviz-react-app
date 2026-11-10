@@ -1,11 +1,11 @@
 /* Force vertical scrollbar gutter to prevent layout shifting on hover/resize */
 html {
   overflow-y: scroll;
-  overscroll-behavior-y: none; /* Prevents mobile rubber-band scrolling */
+  overscroll-behavior-y: none;
 }
 
 .account-screen {
-  padding: 20px 20px 100px; /* Added bottom padding to account for fixed mini player */
+  padding: 20px 20px 100px;
   color: #fff;
   position: relative;
   max-width: 600px;
@@ -89,25 +89,17 @@ html {
   object-fit: cover;
 }
 
-/* Pulsing Red Halo for Notifications (Active only when unread) */
 .avatar-circle.has-unread {
-  border-color: #ffffff; /* Crisp white separation ring */
+  border-color: #ffffff;
   animation: accountAvatarPulse 2.2s infinite ease-in-out;
 }
 
 @keyframes accountAvatarPulse {
-  0% {
-    box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 0 2px #000000, 0 0 0 7px #ff1a1a, 0 0 16px rgba(255, 26, 26, 0.9);
-  }
-  100% {
-    box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5);
-  }
+  0% { box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5); }
+  50% { box-shadow: 0 0 0 2px #000000, 0 0 0 7px #ff1a1a, 0 0 16px rgba(255, 26, 26, 0.9); }
+  100% { box-shadow: 0 0 0 2px #000000, 0 0 0 4px rgba(255, 26, 26, 0.5); }
 }
 
-/* --- CUSTOM HOVER TOOLTIP ("New notifications") --- */
 .avatar-notification-tooltip {
   position: absolute;
   top: 90px;
@@ -147,35 +139,6 @@ html {
   opacity: 0.8;
 }
 
-.avatar-menu {
-  position: absolute;
-  margin-top: 12px;
-  background: #111;
-  border: 1px solid #333;
-  border-radius: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 160px;
-  z-index: 20;
-}
-
-.avatar-menu button {
-  background: #222;
-  color: white;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  text-align: left;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.avatar-menu button:hover {
-  background: #ff1a1a;
-}
-
 .account-field {
   display: flex;
   flex-direction: column;
@@ -189,7 +152,6 @@ html {
   color: #fff;
 }
 
-/* --- HOVER BOX (STABLE - BORDER COLOR CHANGE ONLY, NO JITTERS) --- */
 .hover-box {
   border-radius: 12px;
   border: 2px solid rgba(255, 26, 26, 0.35);
@@ -225,19 +187,12 @@ html {
   border-color: #ff1a1a;
 }
 
-/* Fix for mobile Date of Birth container / input overflow */
-.dob-container, .account-dob-wrapper {
-  width: 100%;
-  box-sizing: border-box;
-}
-
+/* --- FIXED PHONETIC ROW LAYOUT (Restores normal box shape and alignment) --- */
 .phonetic-row {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  border: none !important;
-  padding: 0 !important;
   box-sizing: border-box;
 }
 
@@ -252,7 +207,7 @@ html {
 .phonetic-input-wrapper input {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-size: 16px;
   text-align: left;
   background: transparent;
@@ -260,6 +215,7 @@ html {
   border-radius: 12px;
   border: 2px solid rgba(255, 26, 26, 0.35);
   transition: border-color 0.15s ease;
+  outline: none;
 }
 
 .phonetic-input-wrapper input:hover,
@@ -271,13 +227,15 @@ html {
   background: transparent;
   border: 2px solid rgba(255, 26, 26, 0.35);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 11px 16px;
   color: #fff;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 600;
   box-sizing: border-box;
   white-space: nowrap;
   transition: border-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .play-sample-button:hover {
@@ -324,13 +282,11 @@ html {
   cursor: default;
 }
 
-/* Save Container & Centered Notification Toast Fix */
+/* --- SAVE BUTTON & CENTERED NOTIFICATION TOAST WRAPPER --- */
 .account-save-container {
   position: relative;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  margin-top: 10px;
 }
 
 .account-save {
@@ -344,6 +300,8 @@ html {
   cursor: pointer;
   box-sizing: border-box;
   transition: border-color 0.15s ease, color 0.15s ease;
+  display: block;
+  text-align: center;
 }
 
 .account-save:hover {
@@ -351,21 +309,21 @@ html {
   color: #ff1a1a;
 }
 
-/* Centered Changes Saved Notification Popup */
+/* Perfectly centered notification badge directly under the Save Changes button */
 .changes-saved-alert, .save-success-toast {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  background-color: #161616;
-  color: #ff1a1a;
-  border: 1px solid #ff1a1a;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  background-color: #0b0b0b;
+  color: #22c55e;
+  border: 2px solid #22c55e;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 10px rgba(34, 197, 94, 0.3);
   z-index: 100;
 }
 
