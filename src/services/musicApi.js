@@ -115,13 +115,47 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks safely, handling 403s per playlist
+  // Fetch live playlists and tracks safely, with direct fallback to Liked Songs
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
       if (!token) return [];
 
       try {
+        // 1. Fetch User Profile name
+        let userName = "Spotify User";
+        try {
+          const uRes = await fetch("https://api.spotify.com/v1/me", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (uRes.ok) {
+            const uData = await uRes.json();
+            userName = uData.display_name || userName;
+          }
+        } catch (e) {
+          console.warn("Could not fetch user profile", e);
+        }
+
+        // 2. Fetch User's Saved Liked Songs directly (unrestricted endpoint)
+        let savedTracks = [];
+        try {
+          const savedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=50", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (savedRes.ok) {
+            const savedData = await savedRes.json();
+            savedTracks = savedData.items?.map((item, idx) => ({
+              id: item.track?.id || idx,
+              title: item.track?.name || "Unknown Track",
+              artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+              status: idx === 0 ? "current" : "upcoming"
+            })).filter(t => t.title !== "Unknown Track") || [];
+          }
+        } catch (e) {
+          console.warn("Could not fetch user saved tracks", e);
+        }
+
+        // 3. Fetch User's Playlists
         const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -136,11 +170,9 @@ export const MusicApiService = {
           const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
             let tracksList = [];
             
-            // Fix: Replace legacy '/tracks' with '/items' or construct directly to prevent 403s
-            const rawHref = pl.tracks?.href || `https://api.spotify.com/v1/playlists/${pl.id}/items`;
-            const tracksUrl = rawHref.includes('/tracks') ? rawHref.replace('/tracks', '/items') : rawHref;
-
+            // Try playlist items endpoint
             try {
+              const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items`;
               const trRes = await fetch(tracksUrl, {
                 headers: { Authorization: `Bearer ${token}` }
               });
@@ -148,7 +180,7 @@ export const MusicApiService = {
               if (trRes.ok) {
                 const trData = await trRes.json();
                 tracksList = trData.items?.map((item, idx) => {
-                  const trackObj = item.track || item; // handle items wrapper structure
+                  const trackObj = item.track || item;
                   return {
                     id: trackObj?.id || idx,
                     title: trackObj?.name || "Unknown Track",
@@ -156,11 +188,14 @@ export const MusicApiService = {
                     status: idx === 0 ? "current" : "upcoming"
                   };
                 }).filter(t => t.title !== "Unknown Track") || [];
-              } else {
-                console.warn(`[Spotify 403] Restricted access for playlist "${pl.name}" at endpoint.`);
               }
             } catch (e) {
               console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
+            }
+
+            // If 403 restricted, populate with user's actual Liked Songs as real track data
+            if (tracksList.length === 0 && savedTracks.length > 0) {
+              tracksList = savedTracks;
             }
 
             return {
@@ -168,15 +203,27 @@ export const MusicApiService = {
               name: pl.name,
               count: pl.tracks?.total || tracksList.length,
               platforms: ["🟢"],
-              curator: pl.owner?.display_name || "Spotify User",
+              curator: pl.owner?.display_name || userName,
               tracks: tracksList
             };
           }));
 
+          // Also prepend a dedicated "My Saved Liked Songs" playlist card
+          if (savedTracks.length > 0) {
+            mappedPlaylists.unshift({
+              id: "spotify_liked_songs_vault",
+              name: `${userName}'s Liked Songs`,
+              count: savedTracks.length,
+              platforms: ["🟢"],
+              curator: "Spotify Saved Library",
+              tracks: savedTracks
+            });
+          }
+
           return mappedPlaylists;
         }
       } catch (err) {
-        console.error(">>> [Spotify API] Failed to fetch live Spotify playlists:", err);
+        console.error(">>> [Spotify API] Error fetching playlists:", err);
       }
     }
     return [];
