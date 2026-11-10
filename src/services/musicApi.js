@@ -45,7 +45,7 @@ export const MusicApiService = {
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
   },
 
- // Handles callback code exchange after Spotify redirects back
+  // Handles callback code exchange after Spotify redirects back
   async handleAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
@@ -92,7 +92,7 @@ export const MusicApiService = {
   async initiateAuth(platformKey) {
     if (platformKey === "spotify") {
       const clientId = CLIENT_IDS.spotify;
-      const redirectUri = window.location.origin; // e.g. https://gapviz-react.pages.dev
+      const redirectUri = window.location.origin;
       const scopes = "user-read-private user-read-email playlist-read-private";
 
       // Generate PKCE verifier and challenge
@@ -103,7 +103,7 @@ export const MusicApiService = {
 
       const authUrl = new URL("https://accounts.spotify.com/authorize");
       authUrl.searchParams.append("client_id", clientId);
-      authUrl.searchParams.append("response_type", "code"); // Updated to code requirement
+      authUrl.searchParams.append("response_type", "code");
       authUrl.searchParams.append("redirect_uri", redirectUri);
       authUrl.searchParams.append("code_challenge_method", "S256");
       authUrl.searchParams.append("code_challenge", codeChallenge);
@@ -119,7 +119,7 @@ export const MusicApiService = {
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
-      console.log(">>> [Spotify API] Checking stored token:", token ? "Token found (" + token.substring(0, 10) + "...)" : "No token found!");
+      console.log(">>> [Spotify API] Checking stored token:", token ? "Token found!" : "No token found!");
 
       if (token) {
         try {
@@ -127,19 +127,15 @@ export const MusicApiService = {
             headers: { Authorization: `Bearer ${token}` }
           });
           
-          console.log(">>> [Spotify API] /me/playlists response status:", response.status);
           const data = await response.json();
-          console.log(">>> [Spotify API] /me/playlists full payload data:", data);
+          console.log(">>> [Spotify API] /me/playlists payload:", data);
 
           if (data.items && data.items.length > 0) {
             const firstPlaylist = data.items[0];
-            console.log(">>> [Spotify API] Found playlist:", firstPlaylist.name, "- Fetching tracks from:", firstPlaylist.tracks.href);
-
             const tracksResponse = await fetch(firstPlaylist.tracks.href, {
               headers: { Authorization: `Bearer ${token}` }
             });
             const tracksData = await tracksResponse.json();
-            console.log(">>> [Spotify API] Tracks data payload:", tracksData);
 
             const formattedTracks = tracksData.items?.map((item, idx) => ({
               id: item.track?.id || idx,
@@ -153,16 +149,13 @@ export const MusicApiService = {
               platform: "Spotify",
               tracks: formattedTracks
             };
-          } else {
-            console.warn(">>> [Spotify API] Account returned 0 playlists! Falling back to placeholder tracks.");
           }
         } catch (err) {
-          console.error(">>> [Spotify API] Failed to fetch live Spotify playlists due to error:", err);
+          console.error("Failed to fetch live Spotify playlists", err);
         }
       }
 
       // Fallback mock view if token isn't active yet or playlists are empty
-      console.log(">>> [Spotify API] Falling back to mock heavy rotation view.");
       return {
         name: "My Spotify Heavy Rotation",
         platform: "Spotify",
@@ -185,3 +178,4 @@ export const MusicApiService = {
     }
     return null;
   }
+};
