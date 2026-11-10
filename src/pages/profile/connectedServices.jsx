@@ -33,12 +33,16 @@ export default function ConnectedServices() {
     setYoutubeMusicConnected(storedLocal.youtubeMusic || false);
   }, []);
 
-  const handleSpotifyClick = () => {
+ const handleSpotifyClick = () => {
+    console.log(">>> Spotify connect clicked! Current connected state:", spotifyConnected);
+    
     if (!spotifyConnected) {
       // Trigger the real Spotify Developer App OAuth flow
+      console.log(">>> Initiating Spotify Auth redirect...");
       MusicApiService.initiateAuth("spotify");
     } else {
       // Allow disconnecting if already connected
+      console.log(">>> Disconnecting Spotify...");
       setSpotifyConnected(false);
       MusicApiService.setPlatformConnection("spotify", false);
     }
