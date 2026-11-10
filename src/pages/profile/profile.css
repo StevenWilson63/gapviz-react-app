@@ -2,18 +2,19 @@
    PROFILE PAGE LAYOUT
 ---------------------------------------------------------- */
 .profile-screen {
-  padding: 20px 20px 60px 20px; /* Generous bottom padding keeps the logout button fully cleared */
+  padding: 20px 20px 70px 20px;       /* Generous bottom padding keeps the logout button fully cleared */
   color: #fff;
   position: relative;
   max-width: 600px;
   margin: 0 auto;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   box-sizing: border-box;
-  min-height: 100dvh;            /* Uses dynamic viewport height for mobile browsers */
-  overflow-y: auto;              /* Enables scrolling directly within the profile view */
-  -webkit-overflow-scrolling: touch; /* Native iOS fluid momentum scrolling */
-  overscroll-behavior-y: auto;     /* Natural bounce without sticky locking */
-  touch-action: pan-y;           /* Exclusive vertical touch handling for mobile */
+  min-height: 100dvh;                 /* Uses dynamic viewport height for mobile browsers */
+  height: 100dvh;                     /* Locks the container height to the screen viewport */
+  overflow-y: scroll !important;      /* Forces internal vertical scrolling */
+  -webkit-overflow-scrolling: touch !important; /* Native iOS fluid momentum scrolling */
+  overscroll-behavior-y: auto !important;       /* Natural bounce without sticky locking */
+  touch-action: pan-y !important;     /* Exclusive vertical touch handling for mobile */
 }
 
 /* Back to Home */
@@ -83,7 +84,7 @@
   border-radius: 12px;
   padding: 18px;
   margin-top: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
   text-align: center;
   cursor: pointer;
   box-sizing: border-box;
