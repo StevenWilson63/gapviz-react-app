@@ -135,22 +135,29 @@ export const MusicApiService = {
         if (data.items && data.items.length > 0) {
           const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
             let tracksList = [];
+            
+            // Fix: Replace legacy '/tracks' with '/items' or construct directly to prevent 403s
+            const rawHref = pl.tracks?.href || `https://api.spotify.com/v1/playlists/${pl.id}/items`;
+            const tracksUrl = rawHref.includes('/tracks') ? rawHref.replace('/tracks', '/items') : rawHref;
+
             try {
-              const tracksUrl = pl.tracks?.href || `https://api.spotify.com/v1/playlists/${pl.id}/tracks`;
               const trRes = await fetch(tracksUrl, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               
               if (trRes.ok) {
                 const trData = await trRes.json();
-                tracksList = trData.items?.map((item, idx) => ({
-                  id: item.track?.id || idx,
-                  title: item.track?.name || "Unknown Track",
-                  artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-                  status: idx === 0 ? "current" : "upcoming"
-                })) || [];
+                tracksList = trData.items?.map((item, idx) => {
+                  const trackObj = item.track || item; // handle items wrapper structure
+                  return {
+                    id: trackObj?.id || idx,
+                    title: trackObj?.name || "Unknown Track",
+                    artist: trackObj?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                    status: idx === 0 ? "current" : "upcoming"
+                  };
+                }).filter(t => t.title !== "Unknown Track") || [];
               } else {
-                console.warn(`Skipped tracks for playlist "${pl.name}" due to status ${trRes.status}`);
+                console.warn(`[Spotify 403] Restricted access for playlist "${pl.name}" at endpoint.`);
               }
             } catch (e) {
               console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
