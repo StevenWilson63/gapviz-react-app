@@ -187,7 +187,7 @@ html {
   border-color: #ff1a1a;
 }
 
-/* --- FIXED PHONETIC ROW LAYOUT (Restores normal box shape and alignment) --- */
+/* --- FIXED PHONETIC ROW LAYOUT --- */
 .phonetic-row {
   display: flex;
   align-items: center;
@@ -282,13 +282,7 @@ html {
   cursor: default;
 }
 
-/* --- SAVE BUTTON & CENTERED NOTIFICATION TOAST WRAPPER --- */
-.account-save-container {
-  position: relative;
-  width: 100%;
-  margin-top: 10px;
-}
-
+/* --- SAVE BUTTON & BULLETPROOF CENTERED NOTIFICATION TOAST --- */
 .account-save {
   width: 100%;
   padding: 14px;
@@ -309,20 +303,21 @@ html {
   color: #ff1a1a;
 }
 
-/* Perfectly centered notification badge directly under the Save Changes button */
+/* Centered block-level toast notification directly under the button */
 .changes-saved-alert, .save-success-toast {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 12px auto 0 auto;
   background-color: #0b0b0b;
   color: #22c55e;
   border: 2px solid #22c55e;
-  padding: 10px 20px;
+  padding: 10px 24px;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 700;
-  white-space: nowrap;
+  text-align: center;
+  box-sizing: border-box;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 10px rgba(34, 197, 94, 0.3);
   z-index: 100;
 }
