@@ -77,12 +77,34 @@ export const MusicApiService = {
           localStorage.setItem(SPOTIFY_TOKEN_KEY, data.access_token);
           this.setPlatformConnection("spotify", true);
           
-          console.log(">>> [Spotify OAuth] Token acquired successfully! Triggering background vault sync...");
+          console.log(">>> [Spotify OAuth] Token acquired successfully! Fetching tracks for vault sync...");
           
-          // Automatically trigger background chunked sync into local IndexedDB vault
+          // Automatically fetch user playlists/tracks and run the chunked sync engine
           try {
-            await runChunkedVaultSync();
-            console.log(">>> [Vault Sync] Background ingestion completed successfully.");
+            const fetchedPlaylists = await this.fetchUserPlaylists("spotify");
+            const allTracks = [];
+            fetchedPlaylists.forEach(pl => {
+              if (pl.tracks) {
+                pl.tracks.forEach(tr => {
+                  allTracks.push({
+                    id: tr.id,
+                    title: tr.title,
+                    artist: tr.artist,
+                    playlistId: pl.id
+                  });
+                });
+              }
+            });
+
+            if (allTracks.length > 0) {
+              console.log(`>>> [Vault Sync] Ingesting ${allTracks.length} tracks into local IndexedDB...`);
+              await runChunkedVaultSync({
+                platform: "spotify",
+                rawTracks: allTracks,
+                onProgress: (p) => console.log(`Sync progress: ${p.percent}%`)
+              });
+              console.log(">>> [Vault Sync] Background ingestion completed successfully.");
+            }
           } catch (syncErr) {
             console.error(">>> [Vault Sync] Error running background sync after auth:", syncErr);
           }
