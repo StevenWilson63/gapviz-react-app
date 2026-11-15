@@ -1,7 +1,7 @@
 // src/App.jsx
 
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import { UserProvider } from "./context/UserContext";
 import { MusicApiService } from "./services/musicApi";
@@ -32,15 +32,20 @@ import About from "./pages/profile/about";
 
 // Helper component to handle Spotify OAuth callback on app load
 function SpotifyAuthListener() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     async function checkAuth() {
       const success = await MusicApiService.handleAuthCallback();
       if (success) {
         console.log("Spotify authentication token captured successfully!");
+        // Navigate cleanly back to connected services so it doesn't drop on splash/home
+        navigate("/profile/connected-services", { replace: true });
       }
     }
     checkAuth();
-  }, []);
+  }, [navigate]);
+
   return null;
 }
 
