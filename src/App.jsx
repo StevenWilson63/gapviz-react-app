@@ -39,7 +39,7 @@ function SpotifyAuthListener() {
       const success = await MusicApiService.handleAuthCallback();
       if (success) {
         console.log("Spotify authentication token captured successfully!");
-        // Navigate cleanly back to connected services so it doesn't drop on splash/home
+        // Instantly route away from the root/splash screen to your connected services page
         navigate("/profile/connected-services", { replace: true });
       }
     }
