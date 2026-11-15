@@ -202,3 +202,36 @@ export const MusicApiService = {
             }
 
             if (tracksList.length === 0 && savedTracks.length > 0) {
+              tracksList = savedTracks;
+            }
+
+            return {
+              id: pl.id || index,
+              name: pl.name,
+              count: pl.tracks?.total || tracksList.length,
+              platforms: ["🟢"],
+              curator: pl.owner?.display_name || userName,
+              tracks: tracksList
+            };
+          }));
+
+          if (savedTracks.length > 0) {
+            mappedPlaylists.unshift({
+              id: "spotify_liked_songs_vault",
+              name: `${userName}'s Liked Songs`,
+              count: savedTracks.length,
+              platforms: ["🟢"],
+              curator: "Spotify Saved Library",
+              tracks: savedTracks
+            });
+          }
+
+          return mappedPlaylists;
+        }
+      } catch (err) {
+        console.error(">>> [Spotify API] Error fetching playlists:", err);
+      }
+    }
+    return [];
+  }
+};
