@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MusicApiService } from "../../services/musicApi";
+import { vaultDb, getAllVaultTracks } from "../../services/vaultDb";
 import "./Library.css";
 
 export default function Library() {
@@ -30,38 +31,36 @@ export default function Library() {
     commentaryVault: []
   });
 
-  // Fetch live Spotify data on mount
+  // Load tracks from local IndexedDB Vault on mount
   useEffect(() => {
-    async function loadLiveMusic() {
+    async function loadLocalVault() {
       try {
-        console.log(">>> [Library] Fetching live Spotify playlists and tracks...");
-        const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify");
+        console.log(">>> [Library] Loading local vault tracks...");
+        const localTracks = await getAllVaultTracks();
         
-        if (spotifyPlaylists && spotifyPlaylists.length > 0) {
-          console.log(">>> [Library] Live Spotify playlists received:", spotifyPlaylists);
+        if (localTracks && localTracks.length > 0) {
+          console.log(">>> [Library] Loaded tracks from local vault:", localTracks.length);
           
-          // Flatten tracks from the first playlist or all playlists into the songs tab as well
-          const allTracks = spotifyPlaylists.flatMap(pl => pl.tracks || []);
-
           setLibraryData(prev => ({
             ...prev,
-            playlists: spotifyPlaylists,
-            songs: allTracks.length > 0 ? allTracks.map((t, idx) => ({
-              id: t.id || idx,
+            songs: localTracks.map((t, idx) => ({
+              id: t.id || t.trackKey || idx,
               title: t.title,
               artist: t.artist,
-              album: "Spotify Library",
-              platform: "🟢",
+              album: t.album || "Master Vault",
+              platform: t.platform === "spotify" ? "🟢" : (t.platform || "🟢"),
               duration: "3:30"
-            })) : prev.songs
+            }))
           }));
+        } else {
+          console.log(">>> [Library] Vault is currently empty. Ready for sync.");
         }
       } catch (err) {
-        console.error(">>> [Library] Failed to load live Spotify data:", err);
+        console.error(">>> [Library] Failed to load local vault:", err);
       }
     }
 
-    loadLiveMusic();
+    loadLocalVault();
   }, []);
 
   const togglePlatformSelection = (icon) => {
@@ -183,7 +182,7 @@ export default function Library() {
 
             <div className="library-grid">
               {libraryData.playlists.length === 0 ? (
-                <p style={{ color: "#aaa", padding: "20px" }}>Loading your Spotify playlists...</p>
+                <p style={{ color: "#aaa", padding: "20px" }}>No playlists saved in your local vault yet.</p>
               ) : (
                 libraryData.playlists.map((item) => (
                   <div 
@@ -197,7 +196,7 @@ export default function Library() {
                       <div className="platform-badges">{Array.isArray(item.platforms) ? item.platforms.join(" ") : item.platforms}</div>
                     </div>
                     <h3>{item.name}</h3>
-                    <p className="card-subtext">{item.curator} • {item.count} Tracks</p>
+                    <p className="card-subtext">{item.curator} {item.count} Tracks</p>
                   </div>
                 ))
               )}
@@ -212,7 +211,7 @@ export default function Library() {
               <i className="fa-solid fa-arrow-left"></i> Back to Playlists
             </button>
             <h2>{selectedPlaylist.name}</h2>
-            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || 0} Tracks</p>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} {selectedPlaylist.tracks?.length || 0} Tracks</p>
             
             <div className="library-list-stack">
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
@@ -238,18 +237,22 @@ export default function Library() {
         {/* SONGS TAB */}
         {activeTab === "songs" && (
           <div className="library-list-stack">
-            {libraryData.songs.map((item) => (
-              <div key={item.id} className="library-row-item">
-                <div className="row-item-left">
-                  <span className="row-platform">{item.platform}</span>
-                  <div className="row-text-group">
-                    <span className="row-song-title">{item.title}</span>
-                    <span className="row-song-artist">{item.artist} • {item.album}</span>
+            {libraryData.songs.length === 0 ? (
+              <p style={{ color: "#aaa", padding: "20px" }}>Your Master Vault songs list is empty. Run a sync to populate your music.</p>
+            ) : (
+              libraryData.songs.map((item) => (
+                <div key={item.id} className="library-row-item">
+                  <div className="row-item-left">
+                    <span className="row-platform">{item.platform}</span>
+                    <div className="row-text-group">
+                      <span className="row-song-title">{item.title}</span>
+                      <span className="row-song-artist">{item.artist} • {item.album}</span>
+                    </div>
                   </div>
+                  <span className="row-duration">{item.duration}</span>
                 </div>
-                <span className="row-duration">{item.duration}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
@@ -263,7 +266,7 @@ export default function Library() {
                   <span className="platform-badge">{item.platform}</span>
                 </div>
                 <h3>{item.title}</h3>
-                <p className="card-subtext">{item.artist} • {item.tracks} Tracks</p>
+                <p className="card-subtext">{item.artist} {item.tracks} Tracks</p>
               </div>
             ))}
           </div>

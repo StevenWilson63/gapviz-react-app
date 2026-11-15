@@ -1,5 +1,7 @@
 // src/services/musicApi.js
 
+import { runChunkedVaultSync } from "./syncEngine";
+
 const TOKEN_STORAGE_KEY = "gapviz_connected_services_tokens";
 const SPOTIFY_TOKEN_KEY = "gapviz_spotify_access_token";
 
@@ -75,6 +77,16 @@ export const MusicApiService = {
           localStorage.setItem(SPOTIFY_TOKEN_KEY, data.access_token);
           this.setPlatformConnection("spotify", true);
           
+          console.log(">>> [Spotify OAuth] Token acquired successfully! Triggering background vault sync...");
+          
+          // Automatically trigger background chunked sync into local IndexedDB vault
+          try {
+            await runChunkedVaultSync();
+            console.log(">>> [Vault Sync] Background ingestion completed successfully.");
+          } catch (syncErr) {
+            console.error(">>> [Vault Sync] Error running background sync after auth:", syncErr);
+          }
+
           // Clear query params from browser URL cleanly
           window.history.replaceState({}, document.title, window.location.pathname);
           return true;
@@ -122,7 +134,6 @@ export const MusicApiService = {
       if (!token) return [];
 
       try {
-        // 1. Fetch User Profile name
         let userName = "Spotify User";
         try {
           const uRes = await fetch("https://api.spotify.com/v1/me", {
@@ -136,7 +147,6 @@ export const MusicApiService = {
           console.warn("Could not fetch user profile", e);
         }
 
-        // 2. Fetch User's Saved Liked Songs directly (unrestricted endpoint)
         let savedTracks = [];
         try {
           const savedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=50", {
@@ -152,10 +162,9 @@ export const MusicApiService = {
             })).filter(t => t.title !== "Unknown Track") || [];
           }
         } catch (e) {
-          console.warn("Could not fetch user saved tracks", e);
+            console.warn("Could not fetch user saved tracks", e);
         }
 
-        // 3. Fetch User's Playlists
         const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -170,7 +179,6 @@ export const MusicApiService = {
           const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
             let tracksList = [];
             
-            // Try playlist items endpoint
             try {
               const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items`;
               const trRes = await fetch(tracksUrl, {
@@ -193,39 +201,4 @@ export const MusicApiService = {
               console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
             }
 
-            // If 403 restricted, populate with user's actual Liked Songs as real track data
             if (tracksList.length === 0 && savedTracks.length > 0) {
-              tracksList = savedTracks;
-            }
-
-            return {
-              id: pl.id || index,
-              name: pl.name,
-              count: pl.tracks?.total || tracksList.length,
-              platforms: ["🟢"],
-              curator: pl.owner?.display_name || userName,
-              tracks: tracksList
-            };
-          }));
-
-          // Also prepend a dedicated "My Saved Liked Songs" playlist card
-          if (savedTracks.length > 0) {
-            mappedPlaylists.unshift({
-              id: "spotify_liked_songs_vault",
-              name: `${userName}'s Liked Songs`,
-              count: savedTracks.length,
-              platforms: ["🟢"],
-              curator: "Spotify Saved Library",
-              tracks: savedTracks
-            });
-          }
-
-          return mappedPlaylists;
-        }
-      } catch (err) {
-        console.error(">>> [Spotify API] Error fetching playlists:", err);
-      }
-    }
-    return [];
-  }
-};

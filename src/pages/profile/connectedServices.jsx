@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./connectedServices.css";
 import { useNavigate } from "react-router-dom";
-import { MusicApiService } from "../../services/musicApi"; // Added musicApi import
+import { MusicApiService } from "../../services/musicApi";
 
 export default function ConnectedServices() {
   const navigate = useNavigate();
@@ -33,11 +33,11 @@ export default function ConnectedServices() {
     setYoutubeMusicConnected(storedLocal.youtubeMusic || false);
   }, []);
 
- const handleSpotifyClick = () => {
+  const handleSpotifyClick = () => {
     console.log(">>> Spotify connect clicked! Current connected state:", spotifyConnected);
     
     if (!spotifyConnected) {
-      // Trigger the real Spotify Developer App OAuth flow
+      // Trigger the real Spotify Developer App OAuth flow to securely pull tracks
       console.log(">>> Initiating Spotify Auth redirect...");
       MusicApiService.initiateAuth("spotify");
     } else {
