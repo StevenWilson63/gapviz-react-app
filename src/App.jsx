@@ -1,94 +1,88 @@
-// src/App.jsx
+// src/services/syncEngine.js
 
-import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { vaultDb, buildTrackKey } from './vaultDb';
 
-import { UserProvider } from "./context/UserContext";
-import { MusicApiService } from "./services/musicApi";
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-import Splash from "./components/Splash/Splash";
-import Join from "./pages/join/Join";
-import MainLayout from "./components/layout/MainLayout";
+export async function enrichTrackMetadata(title, artist) {
+  try {
+    const query = encodeURIComponent(`${title || ""} ${artist || ""}`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=song&limit=1`);
+    if (!res.ok) return {};
+    const data = await res.json();
+    const match = data.results?.[0];
+    if (!match) return {};
 
-import Home from "./pages/home/home";
-import Profile from "./pages/profile/profile";
-import Dj from "./pages/dj/Dj";
-import Library from "./pages/library/Library";
-
-// Identify screens
-import Identify from "./pages/identify/Identify";
-import IdentifyStory from "./pages/identify/IdentifyStory";
-
-// Profile sub-pages
-import Account from "./pages/profile/account";
-import Subscription from "./pages/profile/Subscription";
-import DjSettings from "./pages/profile/dj";
-import ConnectedServices from "./pages/profile/connectedServices";
-import Notifications from "./pages/profile/notifications";
-import Appearance from "./pages/profile/appearance";
-import PrivacyData from "./pages/profile/privacyData";
-import HelpSupport from "./pages/profile/helpSupport";
-import About from "./pages/profile/about";
-
-// Helper component to handle Spotify OAuth callback on app load
-// Inside src/App.jsx
-function SpotifyAuthListener() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    async function checkAuth() {
-      const success = await MusicApiService.handleAuthCallback();
-      if (success) {
-        console.log("Spotify authentication token captured successfully!");
-        // This is what brings you back to Connected Services with your green tick and synced tracks!
-        navigate("/profile/connected-services", { replace: true });
-      }
-    }
-    checkAuth();
-  }, [navigate]);
-
-  return null;
+    return {
+      artworkUrl: match.artworkUrl100?.replace('100x100bb', '600x600bb') || '',
+      genre: match.primaryGenreName || 'Unknown',
+      previewUrl: match.previewUrl || '',
+      releaseYear: match.releaseDate ? new Date(match.releaseDate).getFullYear() : null
+    };
+  } catch (err) {
+    // Gracefully catch network or rate-limit errors without crashing sync
+    return {};
+  }
 }
 
-export default function App() {
-  return (
-    <UserProvider>
-      <BrowserRouter>
-        <SpotifyAuthListener />
-        <Routes>
+export async function runChunkedVaultSync({ platform, rawTracks, onProgress, signal }) {
+  const BATCH_SIZE = 50;
+  const total = rawTracks.length;
+  let processed = 0;
 
-          {/* Splash screen & Join (No footer / mini-player) */}
-          <Route path="/" element={<Splash />} />
-          <Route path="/join" element={<Join />} />
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    if (signal?.aborted) break;
 
-          {/* Main App Layout (Includes MiniPlayer & MobileFooter automatically) */}
-          <Route element={<MainLayout />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/dj" element={<Dj />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/identify" element={<Identify />} />
-            <Route path="/identify-story" element={<IdentifyStory />} />
+    const batch = rawTracks.slice(i, i + BATCH_SIZE);
+    const enrichedRecords = [];
 
-            {/* Profile screen & sub-pages */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/account" element={<Account />} />
-            <Route path="/profile/subscription" element={<Subscription />} />
-            <Route path="/profile/dj" element={<DjSettings />} />
-            <Route path="/profile/connected-services" element={<ConnectedServices />} />
-            <Route path="/profile/notifications" element={<Notifications />} />
-            <Route path="/profile/app" element={<div>App Settings Page</div>} />
-            <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
-            <Route path="/profile/appearance" element={<Appearance />} />
-            <Route path="/profile/privacy-data" element={<PrivacyData />} />
-            <Route path="/profile/help-support" element={<HelpSupport />} />
-            <Route path="/profile/about" element={<About />} />
-          </Route>
+    for (const item of batch) {
+      try {
+        const trackKey = buildTrackKey(platform, item.id, item.title, item.artist);
+        const existing = await vaultDb.tracks.get({ trackKey });
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/home" replace />} />
+        const enrichment = existing?.artworkUrl
+          ? {
+              artworkUrl: existing.artworkUrl,
+              genre: existing.genre,
+              previewUrl: existing.previewUrl,
+              releaseYear: existing.releaseYear
+            }
+          : await enrichTrackMetadata(item.title, item.artist);
 
-        </Routes>
-      </BrowserRouter>
-    </UserProvider>
-  );
+        enrichedRecords.push({
+          trackKey,
+          title: item.title || "Unknown Track",
+          artist: item.artist || "Unknown Artist",
+          album: item.album || 'Single',
+          durationMs: item.durationMs || 0,
+          platform,
+          platformUri: item.uri || '',
+          playlistId: item.playlistId || 'liked',
+          addedAt: item.addedAt || Date.now(),
+          isArchived: existing ? existing.isArchived : 0,
+          ...enrichment
+        });
+      } catch (itemErr) {
+        console.warn(`Skipping track due to error: ${item?.title}`, itemErr);
+      }
+
+      processed += 1;
+      onProgress?.({
+        platform,
+        processed,
+        total,
+        percent: Math.round((processed / total) * 100),
+        currentTrack: `'${item.title}' - ${item.artist}`
+      });
+    }
+
+    if (enrichedRecords.length > 0) {
+      await vaultDb.tracks.bulkPut(enrichedRecords);
+    }
+
+    if (i + BATCH_SIZE < total) {
+      await sleep(300); // Slightly increased delay to respect API limits
+    }
+  }
 }
