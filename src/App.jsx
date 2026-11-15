@@ -1,6 +1,6 @@
 // src/services/syncEngine.js
 
-import { vaultDb, buildTrackKey } from './vaultDb';
+import { vaultDb, buildTrackKey } from './services/vaultDb';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
