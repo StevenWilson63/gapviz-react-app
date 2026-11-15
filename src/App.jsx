@@ -31,6 +31,7 @@ import HelpSupport from "./pages/profile/helpSupport";
 import About from "./pages/profile/about";
 
 // Helper component to handle Spotify OAuth callback on app load
+// Inside src/App.jsx
 function SpotifyAuthListener() {
   const navigate = useNavigate();
 
@@ -39,7 +40,7 @@ function SpotifyAuthListener() {
       const success = await MusicApiService.handleAuthCallback();
       if (success) {
         console.log("Spotify authentication token captured successfully!");
-        // Instantly route away from the root/splash screen to your connected services page
+        // This is what brings you back to Connected Services with your green tick and synced tracks!
         navigate("/profile/connected-services", { replace: true });
       }
     }
