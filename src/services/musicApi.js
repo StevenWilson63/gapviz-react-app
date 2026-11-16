@@ -30,6 +30,8 @@ const base64encode = (input) => {
     .replace(/\//g, '_');
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const MusicApiService = {
   getConnectedTokens() {
     try {
@@ -75,34 +77,6 @@ export const MusicApiService = {
           localStorage.setItem(SPOTIFY_TOKEN_KEY, data.access_token);
           this.setPlatformConnection("spotify", true);
           
-          try {
-            const fetchedPlaylists = await this.fetchUserPlaylists("spotify");
-            const allTracks = [];
-            fetchedPlaylists.forEach(pl => {
-              if (pl.tracks && Array.isArray(pl.tracks)) {
-                pl.tracks.forEach(tr => {
-                  allTracks.push({
-                    id: tr.id,
-                    title: tr.title,
-                    artist: tr.artist,
-                    album: tr.album || "Single",
-                    playlistId: pl.id
-                  });
-                });
-              }
-            });
-
-            if (allTracks.length > 0) {
-              await runChunkedVaultSync({
-                platform: "spotify",
-                rawTracks: allTracks,
-                onProgress: (p) => {}
-              });
-            }
-          } catch (syncErr) {
-            console.error(">>> [Vault Sync] Error running background sync after auth:", syncErr);
-          }
-
           window.history.replaceState({}, document.title, window.location.pathname);
           return true;
         }
@@ -141,67 +115,88 @@ export const MusicApiService = {
     }
   },
 
+  // Fetch live playlists with built-in rate-limit (429) backoff & local caching
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
       if (!token) return [];
 
+      // Check cache first to avoid hitting Spotify rate limits (429)
+      const cached = localStorage.getItem("gapviz_spotify_playlists_cache");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.length > 0) {
+            console.log(">>> [Spotify API] Returning playlists from local cache (preventing 429 rate limit).");
+            return parsed;
+          }
+        } catch (e) {
+          // invalid cache, proceed to fetch
+        }
+      }
+
       try {
         let currentUserId = "";
         let userName = "Spotify User";
-        try {
-          const uRes = await fetch("https://api.spotify.com/v1/me", {
+        
+        const uRes = await fetch("https://api.spotify.com/v1/me", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (uRes.ok) {
+          const uData = await uRes.json();
+          currentUserId = uData.id || "";
+          userName = uData.display_name || userName;
+        }
+
+        // Fetch Liked Songs with rate-limit handling
+        let savedTracks = [];
+        let savedUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
+        while (savedUrl) {
+          const savedRes = await fetch(savedUrl, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          if (uRes.ok) {
-            const uData = await uRes.json();
-            currentUserId = uData.id || "";
-            userName = uData.display_name || userName;
+          
+          if (savedRes.status === 429) {
+            console.warn(">>> [Spotify API] Rate limited (429). Waiting 2 seconds before retry...");
+            await sleep(2000);
+            continue;
           }
-        } catch (e) {
-          console.warn("Could not fetch user profile", e);
+          if (!savedRes.ok) break;
+          
+          const savedData = await savedRes.json();
+          const batch = (savedData.items || []).map((item, idx) => {
+            const tr = item.track;
+            if (!tr || !tr.name) return null;
+            return {
+              id: tr.id || idx,
+              title: tr.name,
+              artist: tr.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+              album: tr.album?.name || "Single",
+              status: "upcoming"
+            };
+          }).filter(Boolean);
+
+          savedTracks.push(...batch);
+          savedUrl = savedData.next;
+          if (savedUrl) await sleep(150); // Small polite delay between pagination requests
         }
 
-        // Fetch user's actual Saved/Liked Songs library
-        let savedTracks = [];
-        try {
-          let savedUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
-          while (savedUrl) {
-            const savedRes = await fetch(savedUrl, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!savedRes.ok) break;
-            const savedData = await savedRes.json();
-            
-            const batch = (savedData.items || []).map((item, idx) => {
-              const tr = item.track;
-              if (!tr || !tr.name) return null;
-              return {
-                id: tr.id || idx,
-                title: tr.name,
-                artist: tr.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-                album: tr.album?.name || "Single",
-                status: "upcoming"
-              };
-            }).filter(Boolean);
-
-            savedTracks.push(...batch);
-            savedUrl = savedData.next;
-          }
-        } catch (e) {
-            console.warn("Could not fetch user saved tracks", e);
-        }
-
-        // Fetch all playlists container metadata
+        // Fetch Playlists with rate-limit handling
         const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        if (response.status === 429) {
+          console.error(">>> [Spotify API] Rate limited (429) on playlists endpoint.");
+          return [];
+        }
         if (!response.ok) return [];
 
         const data = await response.json();
         if (data.items && data.items.length > 0) {
-          const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
+          const mappedPlaylists = [];
+
+          for (const [index, pl] of data.items.entries()) {
             let tracksList = [];
             const isOwner = pl.owner?.id === currentUserId;
             
@@ -213,6 +208,11 @@ export const MusicApiService = {
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 
+                if (trRes.status === 429) {
+                  await sleep(2000);
+                  continue;
+                }
+
                 if (!trRes.ok) {
                   // Fallback container check for restricted playlists
                   const fallbackRes = await fetch(`https://api.spotify.com/v1/playlists/${pl.id}`, {
@@ -253,19 +253,17 @@ export const MusicApiService = {
 
                 tracksList.push(...batch);
                 nextUrl = trData.next;
+                if (nextUrl) await sleep(150); // Polite delay
               }
             } catch (e) {
               console.warn(`Could not fetch items for playlist ${pl.name}`, e);
             }
 
-            // SMART CATALOG MATCHING FOR THIRD-PARTY PLAYLISTS:
-            // If it's a third-party/followed playlist and direct fetch returned empty,
-            // match against local vault/library tracks instead of dumping Liked Songs.
+            // Smart Catalog Matching for third-party playlists if empty
             if (tracksList.length === 0 && !isOwner) {
               try {
                 const allVaultTracks = await vaultDb.tracks.toArray();
                 if (allVaultTracks && allVaultTracks.length > 0) {
-                  // Pull a sensible subset or sample of catalog tracks for demonstration metadata
                   tracksList = allVaultTracks.slice(0, Math.min(pl.tracks?.total || 20, 30)).map((t, idx) => ({
                     id: t.trackKey || idx,
                     title: t.title,
@@ -279,17 +277,19 @@ export const MusicApiService = {
               }
             }
 
-            return {
+            mappedPlaylists.push({
               id: pl.id || index,
               name: pl.name,
               count: pl.tracks?.total || tracksList.length,
               platforms: ["🟢"],
               curator: pl.owner?.display_name || userName,
               tracks: tracksList
-            };
-          }));
+            });
 
-          // Prepend dedicated Liked Songs card
+            // Brief pause between playlist fetches to prevent 429 rate limit triggers
+            await sleep(100);
+          }
+
           if (savedTracks.length > 0) {
             mappedPlaylists.unshift({
               id: "spotify_liked_songs_vault",
@@ -301,6 +301,8 @@ export const MusicApiService = {
             });
           }
 
+          // Cache the successfully fetched playlists permanently in localStorage
+          localStorage.setItem("gapviz_spotify_playlists_cache", JSON.stringify(mappedPlaylists));
           return mappedPlaylists;
         }
       } catch (err) {
