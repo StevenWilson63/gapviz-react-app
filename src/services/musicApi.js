@@ -84,12 +84,13 @@ export const MusicApiService = {
             const fetchedPlaylists = await this.fetchUserPlaylists("spotify");
             const allTracks = [];
             fetchedPlaylists.forEach(pl => {
-              if (pl.tracks) {
+              if (pl.tracks && Array.isArray(pl.tracks)) {
                 pl.tracks.forEach(tr => {
                   allTracks.push({
                     id: tr.id,
                     title: tr.title,
                     artist: tr.artist,
+                    album: tr.album || "Single",
                     playlistId: pl.id
                   });
                 });
@@ -149,7 +150,7 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks safely, with direct fallback to Liked Songs
+  // Fetch live playlists and tracks safely
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
@@ -180,6 +181,7 @@ export const MusicApiService = {
               id: item.track?.id || idx,
               title: item.track?.name || "Unknown Track",
               artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+              album: item.track?.album?.name || "Single",
               status: idx === 0 ? "current" : "upcoming"
             })).filter(t => t.title !== "Unknown Track") || [];
           }
@@ -202,7 +204,8 @@ export const MusicApiService = {
             let tracksList = [];
             
             try {
-              const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items`;
+              // FIXED: Correct Spotify API endpoint uses '/tracks' instead of '/items'
+              const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100`;
               const trRes = await fetch(tracksUrl, {
                 headers: { Authorization: `Bearer ${token}` }
               });
@@ -210,21 +213,19 @@ export const MusicApiService = {
               if (trRes.ok) {
                 const trData = await trRes.json();
                 tracksList = trData.items?.map((item, idx) => {
-                  const trackObj = item.track || item;
+                  const trackObj = item.track;
+                  if (!trackObj) return null;
                   return {
-                    id: trackObj?.id || idx,
-                    title: trackObj?.name || "Unknown Track",
-                    artist: trackObj?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                    id: trackObj.id || idx,
+                    title: trackObj.name || "Unknown Track",
+                    artist: trackObj.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                    album: trackObj.album?.name || "Single",
                     status: idx === 0 ? "current" : "upcoming"
                   };
-                }).filter(t => t.title !== "Unknown Track") || [];
+                }).filter(Boolean) || [];
               }
             } catch (e) {
               console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
-            }
-
-            if (tracksList.length === 0 && savedTracks.length > 0) {
-              tracksList = savedTracks;
             }
 
             return {
