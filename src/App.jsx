@@ -30,20 +30,35 @@ import PrivacyData from "./pages/profile/privacyData";
 import HelpSupport from "./pages/profile/helpSupport";
 import About from "./pages/profile/about";
 
-// Helper component to handle Spotify OAuth callback on app load
 function SpotifyAuthListener() {
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(
+    new URLSearchParams(window.location.search).has("code")
+  );
 
   useEffect(() => {
     async function checkAuth() {
-      const success = await MusicApiService.handleAuthCallback();
-      if (success) {
-        console.log("Spotify authentication token captured successfully!");
-        navigate("/profile/connected-services", { replace: true });
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("code")) {
+        setIsProcessing(true);
+        const success = await MusicApiService.handleAuthCallback();
+        if (success) {
+          navigate("/profile/connected-services", { replace: true });
+        }
+        setIsProcessing(false);
       }
     }
     checkAuth();
   }, [navigate]);
+
+  // If processing OAuth code, show a seamless loading screen instead of flashing Splash
+  if (isProcessing) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#121212', color: '#fff' }}>
+        <h2>Connecting to Spotify & syncing your vault...</h2>
+      </div>
+    );
+  }
 
   return null;
 }
