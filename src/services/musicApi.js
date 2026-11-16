@@ -79,7 +79,6 @@ export const MusicApiService = {
           
           console.log(">>> [Spotify OAuth] Token acquired successfully! Fetching tracks for vault sync...");
           
-          // Automatically fetch user playlists/tracks and run the chunked sync engine
           try {
             const fetchedPlaylists = await this.fetchUserPlaylists("spotify");
             const allTracks = [];
@@ -110,7 +109,6 @@ export const MusicApiService = {
             console.error(">>> [Vault Sync] Error running background sync after auth:", syncErr);
           }
 
-          // Clear query params from browser URL cleanly
           window.history.replaceState({}, document.title, window.location.pathname);
           return true;
         } else {
@@ -130,10 +128,8 @@ export const MusicApiService = {
       const redirectUri = window.location.origin;
       const scopes = "user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email";
 
-      // Clear old token to force fresh permission grant
       localStorage.removeItem(SPOTIFY_TOKEN_KEY);
 
-      // Generate PKCE verifier and challenge
       const codeVerifier = generateRandomString(64);
       localStorage.setItem("spotify_code_verifier", codeVerifier);
       const hashed = await sha256(codeVerifier);
@@ -154,7 +150,7 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks using the correct /items endpoint
+  // Fetch live playlists and tracks with full pagination loop & robust parsing
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
@@ -176,18 +172,28 @@ export const MusicApiService = {
 
         let savedTracks = [];
         try {
-          const savedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=50", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (savedRes.ok) {
+          let savedUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
+          while (savedUrl) {
+            const savedRes = await fetch(savedUrl, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!savedRes.ok) break;
             const savedData = await savedRes.json();
-            savedTracks = savedData.items?.map((item, idx) => ({
-              id: item.track?.id || idx,
-              title: item.track?.name || "Unknown Track",
-              artist: item.track?.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-              album: item.track?.album?.name || "Single",
-              status: idx === 0 ? "current" : "upcoming"
-            })).filter(t => t.title !== "Unknown Track") || [];
+            
+            const batch = (savedData.items || []).map((item, idx) => {
+              const tr = item.track;
+              if (!tr || !tr.name) return null;
+              return {
+                id: tr.id || idx,
+                title: tr.name,
+                artist: tr.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                album: tr.album?.name || "Single",
+                status: "upcoming"
+              };
+            }).filter(Boolean);
+
+            savedTracks.push(...batch);
+            savedUrl = savedData.next; // Follow pagination
           }
         } catch (e) {
             console.warn("Could not fetch user saved tracks", e);
@@ -208,27 +214,33 @@ export const MusicApiService = {
             let tracksList = [];
             
             try {
-              // Updated to use the correct /items endpoint mandated by Spotify API changes
-              const itemsUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items?limit=100`;
-              const trRes = await fetch(itemsUrl, {
-                headers: { Authorization: `Bearer ${token}` }
-              });
+              // Follow pagination loop so playlists > 100 tracks (like New York Minute) load completely
+              let nextUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items?limit=100`;
               
-              if (trRes.ok) {
+              while (nextUrl) {
+                const trRes = await fetch(nextUrl, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (!trRes.ok) break;
                 const trData = await trRes.json();
-                tracksList = trData.items?.map((item, idx) => {
-                  const trackObj = item.track || item;
-                  if (!trackObj) return null;
+                
+                const batch = (trData.items || []).map((item, idx) => {
+                  // Safely extract track object regardless of nesting structure
+                  const trackObj = item.track || item.item || item;
+                  if (!trackObj || !trackObj.name) return null;
+
                   return {
                     id: trackObj.id || idx,
-                    title: trackObj.name || "Unknown Track",
-                    artist: trackObj.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                    title: trackObj.name,
+                    artist: trackObj.artists?.map(a => a.name).join(", ") || trackObj.artist || "Unknown Artist",
                     album: trackObj.album?.name || "Single",
                     status: idx === 0 ? "current" : "upcoming"
                   };
-                }).filter(Boolean) || [];
-              } else {
-                console.warn(`>>> [Spotify API] Failed items fetch for [${pl.name}]. Status: ${trRes.status}`);
+                }).filter(Boolean);
+
+                tracksList.push(...batch);
+                nextUrl = trData.next; // Move to next pagination page if available
               }
             } catch (e) {
               console.warn(`Could not fetch items for playlist ${pl.name}`, e);
