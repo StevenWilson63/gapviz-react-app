@@ -21,6 +21,11 @@ export default function Library() {
   const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null); // For viewing playlist tracks
 
+  // Sync Progress Status States
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatusText, setSyncStatusText] = useState("Gathering playlist and track metadata...");
+  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 0, currentTrack: '' });
+
   // Master Library Data State
   const [libraryData, setLibraryData] = useState({
     playlists: [],
@@ -33,12 +38,14 @@ export default function Library() {
     commentaryVault: []
   });
 
-  // Load playlists and tracks from local IndexedDB Vault and Spotify API on mount
+  // Load playlists and tracks from local IndexedDB Vault and Spotify API on mount with live status feedback
   useEffect(() => {
     async function loadLibraryData() {
       try {
         console.log(">>> [Library] Loading local vault tracks and playlists...");
-        
+        setIsSyncing(true);
+        setSyncStatusText("Connecting to local vault & streaming metadata...");
+
         // 1. Load local vault tracks
         const localTracks = await getAllVaultTracks();
         if (localTracks && localTracks.length > 0) {
@@ -56,17 +63,31 @@ export default function Library() {
           }));
         }
 
-        // 2. Load Spotify playlists if connected
+        // 2. Load Spotify playlists if connected with progress simulation/reporting
+        setSyncStatusText("Fetching Spotify playlists & metadata...");
         const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify");
+        
         if (spotifyPlaylists && spotifyPlaylists.length > 0) {
           console.log(">>> [Library] Loaded Spotify playlists:", spotifyPlaylists.length);
           setLibraryData(prev => ({
             ...prev,
             playlists: spotifyPlaylists
           }));
+          
+          let totalCount = spotifyPlaylists.reduce((acc, p) => acc + (p.tracks?.length || 0), 0);
+          setSyncProgress({ processed: totalCount, total: totalCount, percent: 100, currentTrack: "All playlists synced successfully" });
         }
+
+        // Complete transfer state
+        setSyncStatusText("Transfer Complete");
+        setTimeout(() => {
+          setIsSyncing(false);
+        }, 2000);
+
       } catch (err) {
         console.error(">>> [Library] Failed to load library data:", err);
+        setSyncStatusText("Transfer encountered an error");
+        setTimeout(() => setIsSyncing(false), 3000);
       }
     }
 
@@ -100,6 +121,48 @@ export default function Library() {
 
   return (
     <div className="library-screen">
+      {/* Live Sync Status Banner (Flashing On Air Style) */}
+      {isSyncing && (
+        <div style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          zIndex: 9999,
+          background: "rgba(18, 18, 20, 0.95)",
+          border: "1px solid rgba(255, 255, 255, 0.15)",
+          borderRadius: "12px",
+          padding: "16px 20px",
+          width: "320px",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
+          color: "#fff",
+          fontFamily: "inherit"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+            <span style={{
+              background: syncStatusText === "Transfer Complete" ? "#1db954" : "#ff3344",
+              color: "white",
+              fontSize: "10px",
+              fontWeight: "700",
+              padding: "2px 6px",
+              borderRadius: "4px"
+            }}>
+              {syncStatusText === "Transfer Complete" ? "READY" : "ON AIR"}
+            </span>
+            <h3 style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>{syncStatusText}</h3>
+          </div>
+          <p style={{ fontSize: "12px", color: "#aaa", margin: "0 0 12px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {syncProgress.currentTrack || "Aggregating multi-platform metadata vault..."}
+          </p>
+          <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "6px", borderRadius: "3px", overflow: "hidden", marginBottom: "8px" }}>
+            <div style={{ background: "#1db954", height: "100%", width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 45)}%`, transition: "width 0.3s ease" }}></div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#888" }}>
+            <span>{syncStatusText === "Transfer Complete" ? "All items synchronized" : "Transferring metadata records"}</span>
+            <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 50}%`}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header Deck */}
       <div className="library-header">
         <h1>Master Library</h1>

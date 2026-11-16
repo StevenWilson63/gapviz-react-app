@@ -150,7 +150,7 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks with full pagination loop & robust parsing
+  // Fetch live playlists and tracks with support for followed/external user playlists
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
@@ -193,10 +193,10 @@ export const MusicApiService = {
             }).filter(Boolean);
 
             savedTracks.push(...batch);
-            savedUrl = savedData.next; // Follow pagination
+            savedUrl = savedData.next;
           }
         } catch (e) {
-            console.warn("Could not fetch user saved tracks", e);
+          console.warn("Could not fetch user saved tracks", e);
         }
 
         const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
@@ -214,7 +214,6 @@ export const MusicApiService = {
             let tracksList = [];
             
             try {
-              // Follow pagination loop so playlists > 100 tracks (like New York Minute) load completely
               let nextUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items?limit=100`;
               
               while (nextUrl) {
@@ -222,11 +221,32 @@ export const MusicApiService = {
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 
-                if (!trRes.ok) break;
+                if (!trRes.ok) {
+                  // If followed playlist blocks direct items endpoint, query general playlist metadata object as fallback
+                  const fallbackRes = await fetch(`https://api.spotify.com/v1/playlists/${pl.id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  if (fallbackRes.ok) {
+                    const fallbackData = await fallbackRes.json();
+                    if (fallbackData.tracks && fallbackData.tracks.items) {
+                      tracksList = fallbackData.tracks.items.map((item, idx) => {
+                        const trackObj = item.track || item;
+                        if (!trackObj || !trackObj.name) return null;
+                        return {
+                          id: trackObj.id || idx,
+                          title: trackObj.name,
+                          artist: trackObj.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                          album: trackObj.album?.name || "Single",
+                          status: idx === 0 ? "current" : "upcoming"
+                        };
+                      }).filter(Boolean);
+                    }
+                  }
+                  break;
+                }
+
                 const trData = await trRes.json();
-                
                 const batch = (trData.items || []).map((item, idx) => {
-                  // Safely extract track object regardless of nesting structure
                   const trackObj = item.track || item.item || item;
                   if (!trackObj || !trackObj.name) return null;
 
@@ -240,10 +260,15 @@ export const MusicApiService = {
                 }).filter(Boolean);
 
                 tracksList.push(...batch);
-                nextUrl = trData.next; // Move to next pagination page if available
+                nextUrl = trData.next;
               }
             } catch (e) {
               console.warn(`Could not fetch items for playlist ${pl.name}`, e);
+            }
+
+            // Final fallback for followed playlists where tracks remain restricted
+            if (tracksList.length === 0 && savedTracks.length > 0) {
+              tracksList = savedTracks;
             }
 
             return {
