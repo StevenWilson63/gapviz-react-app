@@ -199,19 +199,24 @@ export const MusicApiService = {
         }
 
         const data = await response.json();
+        console.log(">>> [Spotify API] Fetched playlists list:", data.items);
+
         if (data.items && data.items.length > 0) {
           const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
             let tracksList = [];
             
             try {
-              // FIXED: Correct Spotify API endpoint uses '/tracks' instead of '/items'
               const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100`;
+              console.log(`>>> [Spotify API] Fetching tracks for playlist [${pl.name}]: ${tracksUrl}`);
+              
               const trRes = await fetch(tracksUrl, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               
               if (trRes.ok) {
                 const trData = await trRes.json();
+                console.log(`>>> [Spotify API] Response for [${pl.name}]:`, trData);
+                
                 tracksList = trData.items?.map((item, idx) => {
                   const trackObj = item.track;
                   if (!trackObj) return null;
@@ -223,6 +228,8 @@ export const MusicApiService = {
                     status: idx === 0 ? "current" : "upcoming"
                   };
                 }).filter(Boolean) || [];
+              } else {
+                console.warn(`>>> [Spotify API] Failed tracks fetch for [${pl.name}]. Status: ${trRes.status}`);
               }
             } catch (e) {
               console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
