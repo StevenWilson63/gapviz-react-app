@@ -123,12 +123,15 @@ export const MusicApiService = {
     return false;
   },
 
-  // Initiate PKCE OAuth redirect flow with comprehensive scopes
+  // Initiate PKCE OAuth redirect flow with comprehensive scopes & dialog prompt
   async initiateAuth(platformKey) {
     if (platformKey === "spotify") {
       const clientId = CLIENT_IDS.spotify;
       const redirectUri = window.location.origin;
       const scopes = "user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email";
+
+      // Clear old token to force fresh permission grant
+      localStorage.removeItem(SPOTIFY_TOKEN_KEY);
 
       // Generate PKCE verifier and challenge
       const codeVerifier = generateRandomString(64);
@@ -143,6 +146,7 @@ export const MusicApiService = {
       authUrl.searchParams.append("code_challenge_method", "S256");
       authUrl.searchParams.append("code_challenge", codeChallenge);
       authUrl.searchParams.append("scope", scopes);
+      authUrl.searchParams.append("show_dialog", "true"); // Forces consent screen to grant playlist scopes
 
       window.location.href = authUrl.toString();
     } else {
