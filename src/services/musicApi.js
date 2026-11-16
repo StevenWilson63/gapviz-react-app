@@ -32,6 +32,26 @@ const base64encode = (input) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Robust fetch helper with automatic 429 rate-limit backoff & retry
+async function fetchWithRetry(url, options, retries = 3, delay = 3000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.status === 429) {
+        console.warn(`>>> [Spotify API] Rate limited (429) on ${url}. Retrying in ${delay / 1000}s (Attempt ${i + 1}/${retries})...`);
+        await sleep(delay);
+        delay *= 2; // Exponential backoff
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      await sleep(delay);
+    }
+  }
+  throw new Error(`Max retries reached for ${url}`);
+}
+
 export const MusicApiService = {
   getConnectedTokens() {
     try {
@@ -60,9 +80,7 @@ export const MusicApiService = {
       try {
         const response = await fetch("https://accounts.spotify.com/api/token", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({
             client_id: clientId,
             grant_type: "authorization_code",
@@ -114,13 +132,13 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch playlists with rate limit backoff and progress callback support
+  // Fetch playlists with robust retry/backoff logic & cache protection
   async fetchUserPlaylists(platformKey, onProgress) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
       if (!token) return [];
 
-      // Check cache first to prevent rate limits
+      // Check local cache first
       const cached = localStorage.getItem("gapviz_spotify_playlists_cache");
       if (cached) {
         try {
@@ -137,7 +155,7 @@ export const MusicApiService = {
         let currentUserId = "";
         let userName = "Spotify User";
         
-        const uRes = await fetch("https://api.spotify.com/v1/me", {
+        const uRes = await fetchWithRetry("https://api.spotify.com/v1/me", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (uRes.ok) {
@@ -152,14 +170,9 @@ export const MusicApiService = {
         let safetyCounter = 0;
         
         while (savedUrl && safetyCounter < 10) {
-          const savedRes = await fetch(savedUrl, {
+          const savedRes = await fetchWithRetry(savedUrl, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          
-          if (savedRes.status === 429) {
-            await sleep(3000);
-            continue;
-          }
           if (!savedRes.ok) break;
           
           const savedData = await savedRes.json();
@@ -178,20 +191,18 @@ export const MusicApiService = {
           savedTracks.push(...batch);
           savedUrl = savedData.next;
           safetyCounter++;
-          await sleep(200); // Polite delay
+          await sleep(250); // Polite pacing
         }
 
         onProgress?.({ currentTrack: "Fetching playlist containers...", percent: 45 });
-        const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
+        const response = await fetchWithRetry("https://api.spotify.com/v1/me/playlists?limit=50", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (response.status === 429) {
-          console.warn(">>> [Spotify API] Rate limited on playlists. Waiting 3s...");
-          await sleep(3000);
+        if (!response.ok) {
+          console.error(">>> [Spotify API] Failed to fetch playlists after retries.");
           return [];
         }
-        if (!response.ok) return [];
 
         const data = await response.json();
         if (data.items && data.items.length > 0) {
@@ -200,7 +211,7 @@ export const MusicApiService = {
 
           for (const [index, pl] of data.items.entries()) {
             onProgress?.({ 
-              currentTrack: `Syncing playlist: ${pl.name}`, 
+              currentTrack: `Syncing: ${pl.name}`, 
               percent: Math.round(50 + (index / totalPl) * 40) 
             });
 
@@ -212,17 +223,12 @@ export const MusicApiService = {
               let itemLoops = 0;
               
               while (nextUrl && itemLoops < 5) {
-                const trRes = await fetch(nextUrl, {
+                const trRes = await fetchWithRetry(nextUrl, {
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 
-                if (trRes.status === 429) {
-                  await sleep(3000);
-                  continue;
-                }
-
                 if (!trRes.ok) {
-                  const fallbackRes = await fetch(`https://api.spotify.com/v1/playlists/${pl.id}`, {
+                  const fallbackRes = await fetchWithRetry(`https://api.spotify.com/v1/playlists/${pl.id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                   });
                   if (fallbackRes.ok) {
@@ -292,8 +298,7 @@ export const MusicApiService = {
               tracks: tracksList
             });
 
-            // Brief pause between playlist fetches to prevent 429 rate limits
-            await sleep(250);
+            await sleep(300); // Polite pause between playlists
           }
 
           if (savedTracks.length > 0) {
