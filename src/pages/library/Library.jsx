@@ -21,7 +21,7 @@ export default function Library() {
   const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null); // For viewing playlist tracks
 
-  // Sync Progress Status States
+  // Sync Progress Status States (Centered & Pulsing)
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatusText, setSyncStatusText] = useState("Gathering playlist and track metadata...");
   const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 0, currentTrack: '' });
@@ -63,7 +63,7 @@ export default function Library() {
           }));
         }
 
-        // 2. Load Spotify playlists if connected with progress simulation/reporting
+        // 2. Load Spotify playlists if connected
         setSyncStatusText("Fetching Spotify playlists & metadata...");
         const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify");
         
@@ -82,7 +82,7 @@ export default function Library() {
         setSyncStatusText("Transfer Complete");
         setTimeout(() => {
           setIsSyncing(false);
-        }, 2000);
+        }, 1500);
 
       } catch (err) {
         console.error(">>> [Library] Failed to load library data:", err);
@@ -120,45 +120,73 @@ export default function Library() {
   );
 
   return (
-    <div className="library-screen">
-      {/* Live Sync Status Banner (Flashing On Air Style) */}
+    <div className="library-screen" style={{ position: "relative" }}>
+      
+      {/* Centered, Prominent, Pulsing Sync Status Modal Overlay */}
       {isSyncing && (
         <div style={{
           position: "fixed",
-          bottom: "24px",
-          right: "24px",
-          zIndex: 9999,
-          background: "rgba(18, 18, 20, 0.95)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          borderRadius: "12px",
-          padding: "16px 20px",
-          width: "320px",
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
-          color: "#fff",
-          fontFamily: "inherit"
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgba(0, 0, 0, 0.75)",
+          backdropFilter: "blur(6px)",
+          zIndex: 99999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-            <span style={{
-              background: syncStatusText === "Transfer Complete" ? "#1db954" : "#ff3344",
-              color: "white",
-              fontSize: "10px",
-              fontWeight: "700",
-              padding: "2px 6px",
-              borderRadius: "4px"
-            }}>
-              {syncStatusText === "Transfer Complete" ? "READY" : "ON AIR"}
-            </span>
-            <h3 style={{ fontSize: "14px", fontWeight: 600, margin: 0 }}>{syncStatusText}</h3>
-          </div>
-          <p style={{ fontSize: "12px", color: "#aaa", margin: "0 0 12px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {syncProgress.currentTrack || "Aggregating multi-platform metadata vault..."}
-          </p>
-          <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "6px", borderRadius: "3px", overflow: "hidden", marginBottom: "8px" }}>
-            <div style={{ background: "#1db954", height: "100%", width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 45)}%`, transition: "width 0.3s ease" }}></div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#888" }}>
-            <span>{syncStatusText === "Transfer Complete" ? "All items synchronized" : "Transferring metadata records"}</span>
-            <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 50}%`}</span>
+          <div style={{
+            background: "#18181b",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            borderRadius: "16px",
+            padding: "32px",
+            width: "420px",
+            textAlign: "center",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
+            color: "#fff",
+            fontFamily: "inherit"
+          }}>
+            {/* Pulsing On Air Badge */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+              <span style={{
+                background: syncStatusText === "Transfer Complete" ? "#1db954" : "#ff3344",
+                color: "white",
+                fontSize: "12px",
+                fontWeight: "800",
+                letterSpacing: "1px",
+                padding: "6px 14px",
+                borderRadius: "6px",
+                boxShadow: syncStatusText === "Transfer Complete" ? "0 0 15px rgba(29, 185, 84, 0.6)" : "0 0 20px rgba(255, 51, 68, 0.8)",
+                animation: syncStatusText === "Transfer Complete" ? "none" : "pulse-glow 1.5s infinite"
+              }}>
+                {syncStatusText === "Transfer Complete" ? "READY" : "ON AIR"}
+              </span>
+            </div>
+
+            <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px 0" }}>
+              {syncStatusText}
+            </h2>
+            
+            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0", minHeight: "20px" }}>
+              {syncProgress.currentTrack || "Transferring playlist & tracks metadata..."}
+            </p>
+
+            {/* Progress Bar */}
+            <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "16px" }}>
+              <div style={{ 
+                background: "#1db954", 
+                height: "100%", 
+                width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 45)}%`, 
+                transition: "width 0.3s ease" 
+              }}></div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#71717a" }}>
+              <span>{syncStatusText === "Transfer Complete" ? "All items synchronized" : "Syncing metadata records"}</span>
+              <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 50}%`}</span>
+            </div>
           </div>
         </div>
       )}
@@ -312,7 +340,7 @@ export default function Library() {
                   </div>
                 ))
               ) : (
-                <p style={{ color: "#aaa" }}>No tracks found in this playlist.</p>
+                <p style={{ color: "#aaa" }}>No tracks found in this playlist (Restricted third-party container).</p>
               )}
             </div>
           </div>
