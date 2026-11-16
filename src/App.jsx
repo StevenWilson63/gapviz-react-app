@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import { UserProvider } from "./context/UserContext";
@@ -30,6 +30,7 @@ import PrivacyData from "./pages/profile/privacyData";
 import HelpSupport from "./pages/profile/helpSupport";
 import About from "./pages/profile/about";
 
+// Helper component to handle Spotify OAuth callback on app load
 function SpotifyAuthListener() {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(
@@ -43,6 +44,7 @@ function SpotifyAuthListener() {
         setIsProcessing(true);
         const success = await MusicApiService.handleAuthCallback();
         if (success) {
+          console.log("Spotify authentication token captured successfully!");
           navigate("/profile/connected-services", { replace: true });
         }
         setIsProcessing(false);
@@ -51,7 +53,6 @@ function SpotifyAuthListener() {
     checkAuth();
   }, [navigate]);
 
-  // If processing OAuth code, show a seamless loading screen instead of flashing Splash
   if (isProcessing) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#121212', color: '#fff' }}>
