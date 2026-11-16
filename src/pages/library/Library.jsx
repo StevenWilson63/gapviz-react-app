@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { MusicApiService } from "../../services/musicApi";
-import { getAllVaultTracks } from "../../services/vaultDb";
+import { vaultDb, getAllVaultTracks } from "../../services/vaultDb";
 import "./Library.css";
 
 export default function Library() {
@@ -19,12 +19,12 @@ export default function Library() {
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null); // For viewing playlist tracks
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
 
-  // Sync Progress Status States (Centered & Pulsing)
+  // Sync Progress Status States
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatusText, setSyncStatusText] = useState("Gathering playlist and track metadata...");
-  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 0, currentTrack: '' });
+  const [syncStatusText, setSyncStatusText] = useState("Loading local vault metadata...");
+  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 100, currentTrack: '' });
 
   // Master Library Data State
   const [libraryData, setLibraryData] = useState({
@@ -38,18 +38,17 @@ export default function Library() {
     commentaryVault: []
   });
 
-  // Load playlists and tracks from local IndexedDB Vault and Spotify API on mount with live status feedback
+  // Load from persistent IndexedDB vault on mount. Only fetch from API if local vault is empty.
   useEffect(() => {
-    async function loadLibraryData() {
+    async function initializeLibrary() {
       try {
-        console.log(">>> [Library] Loading local vault tracks and playlists...");
-        setIsSyncing(true);
-        setSyncStatusText("Connecting to local vault & streaming metadata...");
-
-        // 1. Load local vault tracks
+        console.log(">>> [Library] Checking local IndexedDB vault...");
+        
+        // 1. Always load local vault tracks first for instant rendering without flashing loaders
         const localTracks = await getAllVaultTracks();
+        
         if (localTracks && localTracks.length > 0) {
-          console.log(">>> [Library] Loaded tracks from local vault:", localTracks.length);
+          console.log(`>>> [Library] Loaded ${localTracks.length} tracks from local vault cache.`);
           setLibraryData(prev => ({
             ...prev,
             songs: localTracks.map((t, idx) => ({
@@ -63,44 +62,41 @@ export default function Library() {
           }));
         }
 
-        // 2. Load Spotify playlists if connected
-        setSyncStatusText("Fetching Spotify playlists & metadata...");
+        // 2. Check if we already have playlists cached in local storage or state
+        const cachedPlaylists = localStorage.getItem("gapviz_cached_playlists");
+        if (cachedPlaylists && (!localTracks || localTracks.length === 0)) {
+          setLibraryData(prev => ({ ...prev, playlists: JSON.parse(cachedPlaylists) }));
+          return;
+        }
+
+        // 3. If local vault is empty, perform the initial API fetch with progress modal
+        if (!localTracks || localTracks.length === 0) {
+          setIsSyncing(true);
+          setSyncStatusText("Connecting to Spotify & syncing metadata...");
+        }
+
         const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify");
-        
         if (spotifyPlaylists && spotifyPlaylists.length > 0) {
-          console.log(">>> [Library] Loaded Spotify playlists:", spotifyPlaylists.length);
           setLibraryData(prev => ({
             ...prev,
             playlists: spotifyPlaylists
           }));
-          
-          let totalCount = spotifyPlaylists.reduce((acc, p) => acc + (p.tracks?.length || 0), 0);
-          setSyncProgress({ processed: totalCount, total: totalCount, percent: 100, currentTrack: "All playlists synced successfully" });
+          localStorage.setItem("gapviz_cached_playlists", JSON.stringify(spotifyPlaylists));
         }
 
-        // Complete transfer state
-        setSyncStatusText("Transfer Complete");
-        setTimeout(() => {
-          setIsSyncing(false);
-        }, 1500);
+        if (isSyncing) {
+          setSyncStatusText("Transfer Complete");
+          setTimeout(() => setIsSyncing(false), 1200);
+        }
 
       } catch (err) {
-        console.error(">>> [Library] Failed to load library data:", err);
-        setSyncStatusText("Transfer encountered an error");
-        setTimeout(() => setIsSyncing(false), 3000);
+        console.error(">>> [Library] Failed to initialize library data:", err);
+        setIsSyncing(false);
       }
     }
 
-    loadLibraryData();
+    initializeLibrary();
   }, []);
-
-  const togglePlatformSelection = (icon) => {
-    if (selectedPlatforms.includes(icon)) {
-      setSelectedPlatforms(selectedPlatforms.filter(p => p !== icon));
-    } else {
-      setSelectedPlatforms([...selectedPlatforms, icon]);
-    }
-  };
 
   const handleSaveNewPlaylist = () => {
     if (!newPlaylistName.trim()) return;
@@ -122,7 +118,7 @@ export default function Library() {
   return (
     <div className="library-screen" style={{ position: "relative" }}>
       
-      {/* Centered, Prominent, Pulsing Sync Status Modal Overlay */}
+      {/* Centered, Pulsing "On Air" Sync Status Modal */}
       {isSyncing && (
         <div style={{
           position: "fixed",
@@ -148,7 +144,6 @@ export default function Library() {
             color: "#fff",
             fontFamily: "inherit"
           }}>
-            {/* Pulsing On Air Badge */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
               <span style={{
                 background: syncStatusText === "Transfer Complete" ? "#1db954" : "#ff3344",
@@ -169,23 +164,22 @@ export default function Library() {
               {syncStatusText}
             </h2>
             
-            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0", minHeight: "20px" }}>
-              {syncProgress.currentTrack || "Transferring playlist & tracks metadata..."}
+            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0" }}>
+              Aggregating metadata vault securely in browser storage...
             </p>
 
-            {/* Progress Bar */}
             <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "16px" }}>
               <div style={{ 
                 background: "#1db954", 
                 height: "100%", 
-                width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 45)}%`, 
+                width: `${syncStatusText === "Transfer Complete" ? 100 : 75}%`, 
                 transition: "width 0.3s ease" 
               }}></div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#71717a" }}>
-              <span>{syncStatusText === "Transfer Complete" ? "All items synchronized" : "Syncing metadata records"}</span>
-              <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 50}%`}</span>
+              <span>{syncStatusText === "Transfer Complete" ? "Vault synchronized" : "Transferring metadata records"}</span>
+              <span>{syncStatusText === "Transfer Complete" ? "100%" : "75%"}</span>
             </div>
           </div>
         </div>
