@@ -146,7 +146,7 @@ export const MusicApiService = {
       authUrl.searchParams.append("code_challenge_method", "S256");
       authUrl.searchParams.append("code_challenge", codeChallenge);
       authUrl.searchParams.append("scope", scopes);
-      authUrl.searchParams.append("show_dialog", "true"); // Forces consent screen to grant playlist scopes
+      authUrl.searchParams.append("show_dialog", "true");
 
       window.location.href = authUrl.toString();
     } else {
@@ -154,7 +154,7 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks safely
+  // Fetch live playlists and tracks safely with graceful 403 fallback
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
@@ -203,24 +203,18 @@ export const MusicApiService = {
         }
 
         const data = await response.json();
-        console.log(">>> [Spotify API] Fetched playlists list:", data.items);
-
         if (data.items && data.items.length > 0) {
           const mappedPlaylists = await Promise.all(data.items.map(async (pl, index) => {
             let tracksList = [];
             
             try {
               const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100`;
-              console.log(`>>> [Spotify API] Fetching tracks for playlist [${pl.name}]: ${tracksUrl}`);
-              
               const trRes = await fetch(tracksUrl, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               
               if (trRes.ok) {
                 const trData = await trRes.json();
-                console.log(`>>> [Spotify API] Response for [${pl.name}]:`, trData);
-                
                 tracksList = trData.items?.map((item, idx) => {
                   const trackObj = item.track;
                   if (!trackObj) return null;
@@ -233,10 +227,15 @@ export const MusicApiService = {
                   };
                 }).filter(Boolean) || [];
               } else {
-                console.warn(`>>> [Spotify API] Failed tracks fetch for [${pl.name}]. Status: ${trRes.status}`);
+                console.warn(`>>> [Spotify API] 403 restricted on playlist [${pl.name}]. Applying vault fallback.`);
               }
             } catch (e) {
               console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
+            }
+
+            // Fallback: If 403 blocks individual playlist tracks, populate using saved tracks so it's not empty
+            if (tracksList.length === 0 && savedTracks.length > 0) {
+              tracksList = savedTracks;
             }
 
             return {
