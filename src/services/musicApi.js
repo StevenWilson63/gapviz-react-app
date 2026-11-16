@@ -32,15 +32,14 @@ const base64encode = (input) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Robust fetch helper with automatic 429 rate-limit backoff & retry
-async function fetchWithRetry(url, options, retries = 3, delay = 3000) {
+async function fetchWithRetry(url, options, retries = 2, delay = 2000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, options);
       if (res.status === 429) {
-        console.warn(`>>> [Spotify API] Rate limited (429) on ${url}. Retrying in ${delay / 1000}s (Attempt ${i + 1}/${retries})...`);
+        console.warn(`>>> [Spotify API] Rate limited (429) on ${url}. Retrying in ${delay / 1000}s...`);
         await sleep(delay);
-        delay *= 2; // Exponential backoff
+        delay *= 2;
         continue;
       }
       return res;
@@ -132,76 +131,52 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch playlists with robust retry/backoff logic & cache protection
   async fetchUserPlaylists(platformKey, onProgress) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
       if (!token) return [];
 
-      // Check local cache first
+      // 1. Always check cache first to prevent 429 blocks
       const cached = localStorage.getItem("gapviz_spotify_playlists_cache");
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
           if (parsed && parsed.length > 0) {
-            console.log(">>> [Spotify API] Returning playlists from local cache.");
+            console.log(">>> [Spotify API] 429 Protection: Returning playlists from local cache.");
             return parsed;
           }
         } catch (e) {}
       }
 
       try {
-        onProgress?.({ currentTrack: "Fetching user profile...", percent: 10 });
-        let currentUserId = "";
-        let userName = "Spotify User";
+        onProgress?.({ currentTrack: "Connecting to Spotify vault...", percent: 15 });
         
-        const uRes = await fetchWithRetry("https://api.spotify.com/v1/me", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (uRes.ok) {
-          const uData = await uRes.json();
-          currentUserId = uData.id || "";
-          userName = uData.display_name || userName;
-        }
-
-        onProgress?.({ currentTrack: "Fetching Liked Songs library...", percent: 25 });
-        let savedTracks = [];
-        let savedUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
-        let safetyCounter = 0;
-        
-        while (savedUrl && safetyCounter < 10) {
-          const savedRes = await fetchWithRetry(savedUrl, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (!savedRes.ok) break;
-          
-          const savedData = await savedRes.json();
-          const batch = (savedData.items || []).map((item, idx) => {
-            const tr = item.track;
-            if (!tr || !tr.name) return null;
-            return {
-              id: tr.id || idx,
-              title: tr.name,
-              artist: tr.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-              album: tr.album?.name || "Single",
-              status: "upcoming"
-            };
-          }).filter(Boolean);
-
-          savedTracks.push(...batch);
-          savedUrl = savedData.next;
-          safetyCounter++;
-          await sleep(250); // Polite pacing
-        }
-
-        onProgress?.({ currentTrack: "Fetching playlist containers...", percent: 45 });
         const response = await fetchWithRetry("https://api.spotify.com/v1/me/playlists?limit=50", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        // If 429 persists even after retries, fallback gracefully to local IndexedDB vault tracks
         if (!response.ok) {
-          console.error(">>> [Spotify API] Failed to fetch playlists after retries.");
-          return [];
+          console.warn(">>> [Spotify API] Rate limit hit. Falling back to local vault tracks...");
+          const localVaultTracks = await vaultDb.tracks.toArray();
+          
+          const fallbackPlaylists = [
+            {
+              id: "fallback_vault_playlist",
+              name: "Master Vault Library",
+              count: localVaultTracks.length || 0,
+              platforms: ["🟢"],
+              curator: "Local IndexedDB Vault",
+              tracks: localVaultTracks.map((t, idx) => ({
+                id: t.trackKey || idx,
+                title: t.title,
+                artist: t.artist,
+                album: t.album || "Vault",
+                status: idx === 0 ? "current" : "upcoming"
+              }))
+            }
+          ];
+          return fallbackPlaylists;
         }
 
         const data = await response.json();
@@ -212,103 +187,16 @@ export const MusicApiService = {
           for (const [index, pl] of data.items.entries()) {
             onProgress?.({ 
               currentTrack: `Syncing: ${pl.name}`, 
-              percent: Math.round(50 + (index / totalPl) * 40) 
+              percent: Math.round(30 + (index / totalPl) * 60) 
             });
-
-            let tracksList = [];
-            const isOwner = pl.owner?.id === currentUserId;
-            
-            try {
-              let nextUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items?limit=100`;
-              let itemLoops = 0;
-              
-              while (nextUrl && itemLoops < 5) {
-                const trRes = await fetchWithRetry(nextUrl, {
-                  headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (!trRes.ok) {
-                  const fallbackRes = await fetchWithRetry(`https://api.spotify.com/v1/playlists/${pl.id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
-                  if (fallbackRes.ok) {
-                    const fallbackData = await fallbackRes.json();
-                    if (fallbackData.tracks && fallbackData.tracks.items) {
-                      tracksList = fallbackData.tracks.items.map((item, idx) => {
-                        const trackObj = item.track || item;
-                        if (!trackObj || !trackObj.name) return null;
-                        return {
-                          id: trackObj.id || idx,
-                          title: trackObj.name,
-                          artist: trackObj.artists?.map(a => a.name).join(", ") || "Unknown Artist",
-                          album: trackObj.album?.name || "Single",
-                          status: idx === 0 ? "current" : "upcoming"
-                        };
-                      }).filter(Boolean);
-                    }
-                  }
-                  break;
-                }
-
-                const trData = await trRes.json();
-                const batch = (trData.items || []).map((item, idx) => {
-                  const trackObj = item.track || item.item || item;
-                  if (!trackObj || !trackObj.name) return null;
-
-                  return {
-                    id: trackObj.id || idx,
-                    title: trackObj.name,
-                    artist: trackObj.artists?.map(a => a.name).join(", ") || trackObj.artist || "Unknown Artist",
-                    album: trackObj.album?.name || "Single",
-                    status: idx === 0 ? "current" : "upcoming"
-                  };
-                }).filter(Boolean);
-
-                tracksList.push(...batch);
-                nextUrl = trData.next;
-                itemLoops++;
-                await sleep(150);
-              }
-            } catch (e) {
-              console.warn(`Could not fetch items for playlist ${pl.name}`, e);
-            }
-
-            // Smart Catalog Matching fallback for third-party playlists
-            if (tracksList.length === 0 && !isOwner) {
-              try {
-                const allVaultTracks = await vaultDb.tracks.toArray();
-                if (allVaultTracks && allVaultTracks.length > 0) {
-                  tracksList = allVaultTracks.slice(0, Math.min(pl.tracks?.total || 20, 30)).map((t, idx) => ({
-                    id: t.trackKey || idx,
-                    title: t.title,
-                    artist: t.artist,
-                    album: t.album || "Catalog Match",
-                    status: idx === 0 ? "current" : "upcoming"
-                  }));
-                }
-              } catch (vaultErr) {}
-            }
 
             mappedPlaylists.push({
               id: pl.id || index,
               name: pl.name,
-              count: pl.tracks?.total || tracksList.length,
+              count: pl.tracks?.total || 0,
               platforms: ["🟢"],
-              curator: pl.owner?.display_name || userName,
-              tracks: tracksList
-            });
-
-            await sleep(300); // Polite pause between playlists
-          }
-
-          if (savedTracks.length > 0) {
-            mappedPlaylists.unshift({
-              id: "spotify_liked_songs_vault",
-              name: `${userName}'s Liked Songs`,
-              count: savedTracks.length,
-              platforms: ["🟢"],
-              curator: "Spotify Saved Library",
-              tracks: savedTracks
+              curator: pl.owner?.display_name || "Spotify User",
+              tracks: []
             });
           }
 
@@ -316,7 +204,28 @@ export const MusicApiService = {
           return mappedPlaylists;
         }
       } catch (err) {
-        console.error(">>> [Spotify API] Error fetching playlists:", err);
+        console.warn(">>> [Spotify API] Network or rate limit error, loading local vault fallback.", err);
+        
+        // Ultimate fallback to prevent blank screen on 429
+        try {
+          const localVaultTracks = await vaultDb.tracks.toArray();
+          return [{
+            id: "emergency_fallback",
+            name: "Master Vault (Offline Mode)",
+            count: localVaultTracks.length,
+            platforms: ["🟢"],
+            curator: "Local Vault",
+            tracks: localVaultTracks.map((t, idx) => ({
+              id: t.trackKey || idx,
+              title: t.title,
+              artist: t.artist,
+              album: t.album || "Vault",
+              status: idx === 0 ? "current" : "upcoming"
+            }))
+          }];
+        } catch (dbErr) {
+          return [];
+        }
       }
     }
     return [];
