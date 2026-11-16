@@ -154,7 +154,7 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists and tracks safely with graceful 403 fallback
+  // Fetch live playlists and tracks using the correct /items endpoint
   async fetchUserPlaylists(platformKey) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
@@ -208,15 +208,16 @@ export const MusicApiService = {
             let tracksList = [];
             
             try {
-              const tracksUrl = `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100`;
-              const trRes = await fetch(tracksUrl, {
+              // Updated to use the correct /items endpoint mandated by Spotify API changes
+              const itemsUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items?limit=100`;
+              const trRes = await fetch(itemsUrl, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               
               if (trRes.ok) {
                 const trData = await trRes.json();
                 tracksList = trData.items?.map((item, idx) => {
-                  const trackObj = item.track;
+                  const trackObj = item.track || item;
                   if (!trackObj) return null;
                   return {
                     id: trackObj.id || idx,
@@ -227,15 +228,10 @@ export const MusicApiService = {
                   };
                 }).filter(Boolean) || [];
               } else {
-                console.warn(`>>> [Spotify API] 403 restricted on playlist [${pl.name}]. Applying vault fallback.`);
+                console.warn(`>>> [Spotify API] Failed items fetch for [${pl.name}]. Status: ${trRes.status}`);
               }
             } catch (e) {
-              console.warn(`Could not fetch tracks for playlist ${pl.name}`, e);
-            }
-
-            // Fallback: If 403 blocks individual playlist tracks, populate using saved tracks so it's not empty
-            if (tracksList.length === 0 && savedTracks.length > 0) {
-              tracksList = savedTracks;
+              console.warn(`Could not fetch items for playlist ${pl.name}`, e);
             }
 
             return {
