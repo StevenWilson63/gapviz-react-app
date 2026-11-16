@@ -1,9 +1,30 @@
 // src/pages/library/Library.jsx
 
-import React, { useState, useEffect } from "react";
-import { MusicApiService } from "../../services/musicApi";
-import { vaultDb, getAllVaultTracks } from "../../services/vaultDb";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  MusicApiService,
+  syncSpotifyLibrary,
+  getSyncInfo,
+  SpotifyRateLimitError,
+  SpotifyAuthError
+} from "../../services/musicApi";
+import { getAllVaultTracks, getVaultPlaylists, getPlaylistTracks } from "../../services/vaultDb";
 import "./Library.css";
+
+const formatDuration = (ms) => {
+  if (!ms) return "";
+  const totalSeconds = Math.round(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = String(totalSeconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
+};
+
+const formatWait = (seconds) => {
+  if (seconds < 90) return `${seconds} seconds`;
+  const mins = Math.ceil(seconds / 60);
+  if (mins < 120) return `${mins} minutes`;
+  return `${Math.ceil(mins / 60)} hours`;
+};
 
 export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
@@ -23,104 +44,145 @@ export default function Library() {
 
   // Sync Progress Status States (Centered & Pulsing)
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatusText, setSyncStatusText] = useState("Loading local vault metadata...");
-  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 15, currentTrack: '' });
+  const [syncStatusText, setSyncStatusText] = useState("Connecting to Spotify & syncing metadata...");
+  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 5, currentTrack: "" });
+  const [syncNotice, setSyncNotice] = useState("");
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [lastSyncAt, setLastSyncAt] = useState(null);
+
+  const abortRef = useRef(null);
+  const spotifyConnected = MusicApiService.getConnectedTokens().spotify;
 
   // Master Library Data State
   const [libraryData, setLibraryData] = useState({
     playlists: [],
-    albums: [
-      { id: 1, title: "Rumours", artist: "Fleetwood Mac", year: 1977, platform: "🟢", tracks: 11, albumMode: true }
-    ],
+    albums: [],
     songs: [],
     identified: [],
     inbox: [],
     commentaryVault: []
   });
 
-  // Load from persistent cache/vault on mount with live progress feedback
-  useEffect(() => {
-    async function initializeLibrary() {
-      try {
-        console.log(">>> [Library] Initializing library view...");
-        
-        // 1. Check local storage cache first for instant rendering without rate limits
-        const cachedPlaylists = localStorage.getItem("gapviz_spotify_playlists_cache");
-        if (cachedPlaylists) {
-          const parsedPlaylists = JSON.parse(cachedPlaylists);
-          if (parsedPlaylists && parsedPlaylists.length > 0) {
-            console.log(">>> [Library] Loaded playlists from local cache instantly.");
-            setLibraryData(prev => ({ ...prev, playlists: parsedPlaylists }));
-            
-            const localTracks = await getAllVaultTracks();
-            if (localTracks && localTracks.length > 0) {
-              setLibraryData(prev => ({
-                ...prev,
-                songs: localTracks.map((t, idx) => ({
-                  id: t.id || t.trackKey || idx,
-                  title: t.title,
-                  artist: t.artist,
-                  album: t.album || "Master Vault",
-                  platform: t.platform === "spotify" ? "🟢" : "🟢",
-                  duration: "3:30"
-                }))
-              }));
-            }
-            return; // Exit early since cache is loaded
-          }
-        }
+  // Everything shown on this page comes from the local vault (IndexedDB), never straight from Spotify
+  const loadFromVault = useCallback(async () => {
+    const [playlists, tracks] = await Promise.all([getVaultPlaylists("spotify"), getAllVaultTracks()]);
 
-        // 2. If no cache exists, trigger the full sync with the centered pulsing modal
-        setIsSyncing(true);
-        setSyncStatusText("Connecting to Spotify & syncing metadata...");
-
-        const localTracks = await getAllVaultTracks();
-        if (localTracks && localTracks.length > 0) {
-          setLibraryData(prev => ({
-            ...prev,
-            songs: localTracks.map((t, idx) => ({
-              id: t.id || t.trackKey || idx,
-              title: t.title,
-              artist: t.artist,
-              album: t.album || "Master Vault",
-              platform: t.platform === "spotify" ? "🟢" : "🟢",
-              duration: "3:30"
-            }))
-          }));
-        }
-
-        // Fetch playlists from API with live progress updates passed to modal
-        const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify", (p) => {
-          if (p.currentTrack) {
-            setSyncStatusText(p.currentTrack);
-          }
-          if (p.percent) {
-            setSyncProgress(prev => ({ ...prev, percent: p.percent }));
-          }
+    const albumMap = new Map();
+    tracks.forEach((t) => {
+      const primaryArtist = (t.artist || "Unknown Artist").split(", ")[0];
+      const key = `${t.album}||${primaryArtist}`;
+      const existing = albumMap.get(key);
+      if (existing) {
+        existing.tracks += 1;
+      } else {
+        albumMap.set(key, {
+          id: key,
+          title: t.album || "Single",
+          artist: primaryArtist,
+          year: t.releaseYear || "—",
+          platform: "🟢",
+          tracks: 1,
+          albumMode: true
         });
+      }
+    });
 
-        if (spotifyPlaylists && spotifyPlaylists.length > 0) {
-          setLibraryData(prev => ({
-            ...prev,
-            playlists: spotifyPlaylists
-          }));
+    setLibraryData((prev) => ({
+      ...prev,
+      playlists: playlists.map((pl) => ({
+        id: pl.playlistKey,
+        name: pl.name,
+        count: pl.trackCount || 0,
+        platforms: ["🟢"],
+        curator: pl.curator,
+        restricted: !!pl.restricted
+      })),
+      songs: tracks.map((t, idx) => ({
+        id: t.id || t.trackKey || idx,
+        title: t.title,
+        artist: t.artist,
+        album: t.album || "Master Vault",
+        platform: "🟢",
+        duration: formatDuration(t.durationMs)
+      })),
+      albums: [...albumMap.values()].sort((a, b) => a.title.localeCompare(b.title))
+    }));
+  }, []);
+
+  const refreshSyncInfo = useCallback(async () => {
+    const info = await getSyncInfo();
+    setCooldownSeconds(info.cooldownSeconds);
+    setLastSyncAt(info.lastSyncAt);
+    if (info.cooldownSeconds > 0) {
+      setSyncNotice(
+        `Spotify has asked Gapviz to pause. Everything fetched so far is saved. You can sync again in about ${formatWait(info.cooldownSeconds)}.`
+      );
+    }
+  }, []);
+
+  // On mount: only read the local vault. This page never starts a Spotify sync by itself.
+  useEffect(() => {
+    // Remove the old localStorage playlist cache; the vault replaces it
+    localStorage.removeItem("gapviz_spotify_playlists_cache");
+
+    loadFromVault().catch((err) => console.error(">>> [Library] Failed to read vault:", err));
+    refreshSyncInfo().catch(() => {});
+
+    return () => abortRef.current?.abort();
+  }, [loadFromVault, refreshSyncInfo]);
+
+  // Manual sync: resumes from the last checkpoint, respects Spotify's cooldown
+  const handleSync = async () => {
+    if (isSyncing) return;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setSyncNotice("");
+    setSyncStatusText("Connecting to Spotify & syncing metadata...");
+    setSyncProgress({ processed: 0, total: 0, percent: 5, currentTrack: "" });
+    setIsSyncing(true);
+
+    try {
+      await syncSpotifyLibrary({
+        signal: controller.signal,
+        onProgress: (p) => {
+          if (p.currentTrack) setSyncProgress((prev) => ({ ...prev, currentTrack: p.currentTrack }));
+          if (p.percent) setSyncProgress((prev) => ({ ...prev, percent: p.percent }));
         }
+      });
 
-        setSyncStatusText("Transfer Complete");
-        setSyncProgress(prev => ({ ...prev, percent: 100 }));
-        setTimeout(() => {
-          setIsSyncing(false);
-        }, 1500);
+      await loadFromVault();
+      await refreshSyncInfo();
 
-      } catch (err) {
-        console.error(">>> [Library] Failed to initialize library data:", err);
-        setSyncStatusText("Transfer encountered an error");
-        setTimeout(() => setIsSyncing(false), 3000);
+      if (controller.signal.aborted) {
+        setIsSyncing(false);
+        setSyncNotice("Sync stopped. Press Sync Spotify to carry on where it left off.");
+        return;
+      }
+
+      setSyncStatusText("Transfer Complete");
+      setSyncProgress((prev) => ({ ...prev, percent: 100 }));
+      setTimeout(() => setIsSyncing(false), 1500);
+    } catch (err) {
+      console.error(">>> [Library] Sync stopped:", err);
+      await loadFromVault().catch(() => {});
+      await refreshSyncInfo().catch(() => {});
+      setIsSyncing(false);
+
+      if (err instanceof SpotifyRateLimitError) {
+        setSyncNotice(
+          `Spotify asked Gapviz to pause. Everything fetched so far is saved. Try again in about ${formatWait(err.retryAfterSec)} and it will carry on where it stopped.`
+        );
+      } else if (err instanceof SpotifyAuthError) {
+        setSyncNotice("Your Spotify connection has expired. Reconnect it under Profile > Connected Services, then sync again.");
+      } else {
+        setSyncNotice(`Sync stopped: ${err.message}. Your progress is saved. Press Sync Spotify to resume.`);
       }
     }
+  };
 
-    initializeLibrary();
-  }, []);
+  const handleStopSync = () => abortRef.current?.abort();
 
   const handleSaveNewPlaylist = () => {
     if (!newPlaylistName.trim()) return;
@@ -128,44 +190,45 @@ export default function Library() {
     setNewPlaylistName("");
   };
 
-  // Lazy-load playlist tracks on demand when clicked to prevent 429 rate limit blocks
+  // Playlist tracks come from the local vault: no Spotify request when a playlist is clicked
   const handleSelectPlaylist = async (playlist) => {
-    setSelectedPlaylist(playlist);
+    setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
 
-    if (!playlist.tracks || playlist.tracks.length === 0) {
-      console.log(`>>> [Library] Lazy-loading tracks for playlist: ${playlist.name}`);
-      const fetchedTracks = await MusicApiService.fetchPlaylistTracks(playlist.id);
-      
-      setSelectedPlaylist(prev => ({
-        ...prev,
-        tracks: fetchedTracks
-      }));
+    const rows = await getPlaylistTracks(playlist.id);
+    const tracks = rows.map((t) => ({
+      id: t.trackKey,
+      title: t.title,
+      artist: t.artist,
+      duration: formatDuration(t.durationMs)
+    }));
 
-      // Update cached playlists as well
-      setLibraryData(prev => {
-        const updatedPlaylists = prev.playlists.map(pl => 
-          pl.id === playlist.id ? { ...pl, tracks: fetchedTracks } : pl
-        );
-        localStorage.setItem("gapviz_spotify_playlists_cache", JSON.stringify(updatedPlaylists));
-        return { ...prev, playlists: updatedPlaylists };
-      });
-    }
+    setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
   };
 
   // Filter songs and playlists based on search query
-  const filteredSongs = libraryData.songs.filter(song =>
-    song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    song.artist.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSongs = libraryData.songs.filter(
+    (song) =>
+      song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      song.artist.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredPlaylists = libraryData.playlists.filter(playlist =>
-    playlist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    playlist.curator?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPlaylists = libraryData.playlists.filter(
+    (playlist) =>
+      playlist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      playlist.curator?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const filteredAlbums = libraryData.albums.filter(
+    (album) =>
+      album.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      album.artist.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
 
   return (
     <div className="library-screen" style={{ position: "relative" }}>
-      
+
       {/* Centered, Prominent, Pulsing "On Air" Sync Status Modal */}
       {isSyncing && (
         <div style={{
@@ -187,6 +250,7 @@ export default function Library() {
             borderRadius: "16px",
             padding: "32px",
             width: "420px",
+            maxWidth: "90vw",
             textAlign: "center",
             boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
             color: "#fff",
@@ -211,24 +275,33 @@ export default function Library() {
             <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px 0" }}>
               {syncStatusText}
             </h2>
-            
+
             <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0", minHeight: "20px" }}>
               {syncProgress.currentTrack || "Aggregating metadata vault securely in browser storage..."}
             </p>
 
             <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "16px" }}>
-              <div style={{ 
-                background: "#1db954", 
-                height: "100%", 
-                width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 50)}%`, 
-                transition: "width 0.3s ease" 
+              <div style={{
+                background: "#1db954",
+                height: "100%",
+                width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 5)}%`,
+                transition: "width 0.3s ease"
               }}></div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#71717a" }}>
               <span>{syncStatusText === "Transfer Complete" ? "Vault synchronized" : "Transferring metadata records"}</span>
-              <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 50}%`}</span>
+              <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 5}%`}</span>
             </div>
+
+            {syncStatusText !== "Transfer Complete" && (
+              <button
+                onClick={handleStopSync}
+                style={{ marginTop: "20px", background: "none", border: "1px solid #444", color: "#fff", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}
+              >
+                Stop (progress is saved)
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -237,6 +310,35 @@ export default function Library() {
       <div className="library-header">
         <h1>Master Library</h1>
         <p className="library-subtitle">Your aggregated multi-platform music vault, identified tracks & saved lore</p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px", flexWrap: "wrap" }}>
+          <button
+            onClick={handleSync}
+            disabled={syncButtonDisabled}
+            style={{
+              background: syncButtonDisabled ? "#2a2a2e" : "#1db954",
+              color: syncButtonDisabled ? "#777" : "#000",
+              border: "none",
+              borderRadius: "6px",
+              padding: "8px 16px",
+              fontWeight: 700,
+              cursor: syncButtonDisabled ? "not-allowed" : "pointer"
+            }}
+          >
+            <i className="fa-solid fa-rotate"></i> Sync Spotify
+          </button>
+          {lastSyncAt && (
+            <span style={{ color: "#71717a", fontSize: "12px" }}>
+              Last synced {new Date(lastSyncAt).toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        {syncNotice && (
+          <p style={{ marginTop: "12px", padding: "10px 14px", borderRadius: "6px", background: "rgba(255, 51, 68, 0.12)", border: "1px solid rgba(255, 51, 68, 0.4)", color: "#fca5a5", fontSize: "13px" }}>
+            {syncNotice}
+          </p>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -293,12 +395,12 @@ export default function Library() {
 
       {/* Content Area */}
       <div className="library-content-container">
-        
+
         {/* PLAYLISTS TAB */}
         {activeTab === "playlists" && !selectedPlaylist && (
           <div className="playlists-wrapper">
             <div className="create-playlist-trigger-bar">
-              <button 
+              <button
                 className="create-playlist-btn"
                 onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
               >
@@ -336,12 +438,16 @@ export default function Library() {
 
             <div className="library-grid">
               {filteredPlaylists.length === 0 ? (
-                <p style={{ color: "#aaa", padding: "20px" }}>No playlists found. Connect Spotify in your profile to sync your playlists.</p>
+                <p style={{ color: "#aaa", padding: "20px" }}>
+                  {spotifyConnected
+                    ? "No playlists in your vault yet. Press Sync Spotify to import your library."
+                    : "No playlists found. Connect Spotify in your profile to sync your playlists."}
+                </p>
               ) : (
                 filteredPlaylists.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="library-card" 
+                  <div
+                    key={item.id}
+                    className="library-card"
                     onClick={() => handleSelectPlaylist(item)}
                     style={{ cursor: "pointer" }}
                   >
@@ -366,11 +472,11 @@ export default function Library() {
             </button>
             <h2>{selectedPlaylist.name}</h2>
             <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
-            
+
             <div className="library-list-stack">
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
                 selectedPlaylist.tracks.map((track, idx) => (
-                  <div key={track.id || idx} className="library-row-item">
+                  <div key={`${track.id}-${idx}`} className="library-row-item">
                     <div className="row-item-left">
                       <span className="row-platform">🟢</span>
                       <div className="row-text-group">
@@ -378,11 +484,15 @@ export default function Library() {
                         <span className="row-song-artist">{track.artist}</span>
                       </div>
                     </div>
-                    <span className="row-duration">{track.status === "current" ? "Playing Now" : "Queued"}</span>
+                    <span className="row-duration">{track.duration}</span>
                   </div>
                 ))
+              ) : !selectedPlaylist.loaded ? (
+                <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
+              ) : selectedPlaylist.restricted ? (
+                <p style={{ color: "#aaa" }}>Spotify doesn't let Gapviz read the tracks in this playlist (it is not owned by you).</p>
               ) : (
-                <p style={{ color: "#aaa" }}>Loading playlist tracks or container is restricted...</p>
+                <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
               )}
             </div>
           </div>
@@ -410,19 +520,23 @@ export default function Library() {
           </div>
         )}
 
-        {/* Other tabs */}
+        {/* ALBUMS TAB (built from the albums your synced tracks belong to) */}
         {activeTab === "albums" && (
           <div className="library-grid">
-            {libraryData.albums.map((item) => (
-              <div key={item.id} className="library-card">
-                <div className="card-top-row">
-                  <span className="card-badge-label">ALBUM ({item.year})</span>
-                  <span className="platform-badge">{item.platform}</span>
+            {filteredAlbums.length === 0 ? (
+              <p style={{ color: "#aaa", padding: "20px" }}>No albums yet. They appear here once your tracks are synced.</p>
+            ) : (
+              filteredAlbums.map((item) => (
+                <div key={item.id} className="library-card">
+                  <div className="card-top-row">
+                    <span className="card-badge-label">ALBUM ({item.year})</span>
+                    <span className="platform-badge">{item.platform}</span>
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p className="card-subtext">{item.artist} • {item.tracks} Tracks in your library</p>
                 </div>
-                <h3>{item.title}</h3>
-                <p className="card-subtext">{item.artist} • {item.tracks} Tracks</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
