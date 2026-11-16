@@ -23,7 +23,7 @@ export default function Library() {
 
   // Sync Progress Status States (Centered & Pulsing)
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatusText, setSyncStatusText] = useState("Connecting to Spotify & syncing metadata...");
+  const [syncStatusText, setSyncStatusText] = useState("Loading local vault metadata...");
   const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 15, currentTrack: '' });
 
   // Master Library Data State
@@ -128,6 +128,30 @@ export default function Library() {
     setNewPlaylistName("");
   };
 
+  // Lazy-load playlist tracks on demand when clicked to prevent 429 rate limit blocks
+  const handleSelectPlaylist = async (playlist) => {
+    setSelectedPlaylist(playlist);
+
+    if (!playlist.tracks || playlist.tracks.length === 0) {
+      console.log(`>>> [Library] Lazy-loading tracks for playlist: ${playlist.name}`);
+      const fetchedTracks = await MusicApiService.fetchPlaylistTracks(playlist.id);
+      
+      setSelectedPlaylist(prev => ({
+        ...prev,
+        tracks: fetchedTracks
+      }));
+
+      // Update cached playlists as well
+      setLibraryData(prev => {
+        const updatedPlaylists = prev.playlists.map(pl => 
+          pl.id === playlist.id ? { ...pl, tracks: fetchedTracks } : pl
+        );
+        localStorage.setItem("gapviz_spotify_playlists_cache", JSON.stringify(updatedPlaylists));
+        return { ...prev, playlists: updatedPlaylists };
+      });
+    }
+  };
+
   // Filter songs and playlists based on search query
   const filteredSongs = libraryData.songs.filter(song =>
     song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -189,7 +213,7 @@ export default function Library() {
             </h2>
             
             <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0", minHeight: "20px" }}>
-              Aggregating metadata vault securely in browser storage...
+              {syncProgress.currentTrack || "Aggregating metadata vault securely in browser storage..."}
             </p>
 
             <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "16px" }}>
@@ -318,7 +342,7 @@ export default function Library() {
                   <div 
                     key={item.id} 
                     className="library-card" 
-                    onClick={() => setSelectedPlaylist(item)}
+                    onClick={() => handleSelectPlaylist(item)}
                     style={{ cursor: "pointer" }}
                   >
                     <div className="card-top-row">
@@ -341,7 +365,7 @@ export default function Library() {
               <i className="fa-solid fa-arrow-left"></i> Back to Playlists
             </button>
             <h2>{selectedPlaylist.name}</h2>
-            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || 0} Tracks</p>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
             
             <div className="library-list-stack">
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
@@ -358,7 +382,7 @@ export default function Library() {
                   </div>
                 ))
               ) : (
-                <p style={{ color: "#aaa" }}>No tracks found in this playlist (Restricted third-party container).</p>
+                <p style={{ color: "#aaa" }}>Loading playlist tracks or container is restricted...</p>
               )}
             </div>
           </div>

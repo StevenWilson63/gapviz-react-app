@@ -32,14 +32,14 @@ const base64encode = (input) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function fetchWithRetry(url, options, retries = 2, delay = 2000) {
+async function fetchWithRetry(url, options, retries = 3, delay = 2000) {
   for (let i = 0; i < retries; i++) {
     try {
       const res = await fetch(url, options);
       if (res.status === 429) {
-        console.warn(`>>> [Spotify API] Rate limited (429) on ${url}. Retrying in ${delay / 1000}s...`);
+        console.warn(`>>> [Spotify API] Rate limited (429) on ${url}. Backing off for ${delay / 1000}s...`);
         await sleep(delay);
-        delay *= 2;
+        delay *= 2; // Exponential backoff
         continue;
       }
       return res;
@@ -131,103 +131,173 @@ export const MusicApiService = {
     }
   },
 
+  // Fetch full user playlists with pagination and rate-limit safety
   async fetchUserPlaylists(platformKey, onProgress) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
       if (!token) return [];
 
-      // 1. Always check cache first to prevent 429 blocks
-      const cached = localStorage.getItem("gapviz_spotify_playlists_cache");
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (parsed && parsed.length > 0) {
-            console.log(">>> [Spotify API] 429 Protection: Returning playlists from local cache.");
-            return parsed;
-          }
-        } catch (e) {}
-      }
-
       try {
-        onProgress?.({ currentTrack: "Connecting to Spotify vault...", percent: 15 });
+        onProgress?.({ currentTrack: "Connecting to Spotify user profile...", percent: 10 });
         
-        const response = await fetchWithRetry("https://api.spotify.com/v1/me/playlists?limit=50", {
+        let currentUserId = "";
+        let userName = "Spotify User";
+        const uRes = await fetchWithRetry("https://api.spotify.com/v1/me", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        
-        // If 429 persists even after retries, fallback gracefully to local IndexedDB vault tracks
-        if (!response.ok) {
-          console.warn(">>> [Spotify API] Rate limit hit. Falling back to local vault tracks...");
-          const localVaultTracks = await vaultDb.tracks.toArray();
-          
-          const fallbackPlaylists = [
-            {
-              id: "fallback_vault_playlist",
-              name: "Master Vault Library",
-              count: localVaultTracks.length || 0,
-              platforms: ["🟢"],
-              curator: "Local IndexedDB Vault",
-              tracks: localVaultTracks.map((t, idx) => ({
-                id: t.trackKey || idx,
-                title: t.title,
-                artist: t.artist,
-                album: t.album || "Vault",
-                status: idx === 0 ? "current" : "upcoming"
-              }))
-            }
-          ];
-          return fallbackPlaylists;
+        if (uRes.ok) {
+          const uData = await uRes.json();
+          currentUserId = uData.id || "";
+          userName = uData.display_name || userName;
         }
 
-        const data = await response.json();
-        if (data.items && data.items.length > 0) {
-          const mappedPlaylists = [];
-          const totalPl = data.items.length;
-
-          for (const [index, pl] of data.items.entries()) {
-            onProgress?.({ 
-              currentTrack: `Syncing: ${pl.name}`, 
-              percent: Math.round(30 + (index / totalPl) * 60) 
-            });
-
-            mappedPlaylists.push({
-              id: pl.id || index,
-              name: pl.name,
-              count: pl.tracks?.total || 0,
-              platforms: ["🟢"],
-              curator: pl.owner?.display_name || "Spotify User",
-              tracks: []
-            });
-          }
-
-          localStorage.setItem("gapviz_spotify_playlists_cache", JSON.stringify(mappedPlaylists));
-          return mappedPlaylists;
-        }
-      } catch (err) {
-        console.warn(">>> [Spotify API] Network or rate limit error, loading local vault fallback.", err);
+        onProgress?.({ currentTrack: "Fetching playlist library containers...", percent: 30 });
         
-        // Ultimate fallback to prevent blank screen on 429
-        try {
-          const localVaultTracks = await vaultDb.tracks.toArray();
-          return [{
-            id: "emergency_fallback",
-            name: "Master Vault (Offline Mode)",
-            count: localVaultTracks.length,
+        let allPlaylists = [];
+        let playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
+        
+        while (playlistUrl) {
+          const plRes = await fetchWithRetry(playlistUrl, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!plRes.ok) break;
+
+          const plData = await plRes.json();
+          const batch = (plData.items || []).map((pl, idx) => ({
+            id: pl.id || idx,
+            name: pl.name,
+            count: pl.tracks?.total || 0,
             platforms: ["🟢"],
-            curator: "Local Vault",
-            tracks: localVaultTracks.map((t, idx) => ({
-              id: t.trackKey || idx,
-              title: t.title,
-              artist: t.artist,
-              album: t.album || "Vault",
-              status: idx === 0 ? "current" : "upcoming"
-            }))
-          }];
-        } catch (dbErr) {
-          return [];
+            curator: pl.owner?.display_name || userName,
+            ownerId: pl.owner?.id,
+            tracks: [] // Lazy-loaded on click to avoid 429 errors
+          }));
+
+          allPlaylists.push(...batch);
+          playlistUrl = plData.next; // Handles pagination for large library accounts (>50 playlists)
+          if (playlistUrl) await sleep(200);
+        }
+
+        onProgress?.({ currentTrack: "Syncing Saved Library (Liked Songs)...", percent: 70 });
+        let savedTracks = [];
+        let savedUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
+        let loopGuard = 0;
+
+        while (savedUrl && loopGuard < 20) {
+          const savedRes = await fetchWithRetry(savedUrl, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!savedRes.ok) break;
+
+          const savedData = await savedRes.json();
+          const trackBatch = (savedData.items || []).map((item, idx) => {
+            const tr = item.track;
+            if (!tr || !tr.name) return null;
+            return {
+              id: tr.id || idx,
+              title: tr.name,
+              artist: tr.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+              album: tr.album?.name || "Single",
+              status: "upcoming"
+            };
+          }).filter(Boolean);
+
+          savedTracks.push(...trackBatch);
+          savedUrl = savedData.next;
+          loopGuard++;
+          await sleep(150);
+        }
+
+        if (savedTracks.length > 0) {
+          allPlaylists.unshift({
+            id: "spotify_liked_songs_vault",
+            name: `${userName}'s Liked Songs`,
+            count: savedTracks.length,
+            platforms: ["🟢"],
+            curator: "Spotify Saved Library",
+            tracks: savedTracks
+          });
+        }
+
+        localStorage.setItem("gapviz_spotify_playlists_cache", JSON.stringify(allPlaylists));
+        return allPlaylists;
+
+      } catch (err) {
+        console.error(">>> [Spotify API] Error fetching playlists with pagination:", err);
+        
+        // Fallback to local cache if offline or rate-limited
+        const cached = localStorage.getItem("gapviz_spotify_playlists_cache");
+        if (cached) {
+          try { return JSON.parse(cached); } catch (e) {}
         }
       }
     }
     return [];
+  },
+
+  // Lazy-load tracks for a specific playlist when clicked by the user
+  async fetchPlaylistTracks(playlistId) {
+    if (playlistId === "spotify_liked_songs_vault" || playlistId.startsWith("fallback")) return [];
+    
+    const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
+    if (!token) return [];
+
+    try {
+      let tracksList = [];
+      let nextUrl = `https://api.spotify.com/v1/playlists/${playlistId}/items?limit=100`;
+      
+      while (nextUrl) {
+        const trRes = await fetchWithRetry(nextUrl, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!trRes.ok) {
+          // Fallback container check for restricted third-party playlists
+          const fallbackRes = await fetchWithRetry(`https://api.spotify.com/v1/playlists/${playlistId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData.tracks && fallbackData.tracks.items) {
+              tracksList = fallbackData.tracks.items.map((item, idx) => {
+                const trackObj = item.track || item;
+                if (!trackObj || !trackObj.name) return null;
+                return {
+                  id: trackObj.id || idx,
+                  title: trackObj.name,
+                  artist: trackObj.artists?.map(a => a.name).join(", ") || "Unknown Artist",
+                  album: trackObj.album?.name || "Single",
+                  status: idx === 0 ? "current" : "upcoming"
+                };
+              }).filter(Boolean);
+            }
+          }
+          break;
+        }
+
+        const trData = await trRes.json();
+        const batch = (trData.items || []).map((item, idx) => {
+          const trackObj = item.track || item.item || item;
+          if (!trackObj || !trackObj.name) return null;
+
+          return {
+            id: trackObj.id || idx,
+            title: trackObj.name,
+            artist: trackObj.artists?.map(a => a.name).join(", ") || trackObj.artist || "Unknown Artist",
+            album: trackObj.album?.name || "Single",
+            status: idx === 0 ? "current" : "upcoming"
+          };
+        }).filter(Boolean);
+
+        tracksList.push(...batch);
+        nextUrl = trData.next;
+        if (nextUrl) await sleep(150);
+      }
+
+      return tracksList;
+    } catch (e) {
+      console.warn(`Could not load tracks for playlist ID ${playlistId}`, e);
+      return [];
+    }
   }
 };
