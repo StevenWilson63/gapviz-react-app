@@ -21,10 +21,10 @@ export default function Library() {
   const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
 
-  // Sync Progress Status States
+  // Sync Progress Status States (Centered & Pulsing)
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatusText, setSyncStatusText] = useState("Loading local vault metadata...");
-  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 100, currentTrack: '' });
+  const [syncStatusText, setSyncStatusText] = useState("Connecting to Spotify & syncing metadata...");
+  const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 15, currentTrack: '' });
 
   // Master Library Data State
   const [libraryData, setLibraryData] = useState({
@@ -38,17 +38,44 @@ export default function Library() {
     commentaryVault: []
   });
 
-  // Load from persistent IndexedDB vault on mount. Only fetch from API if local vault is empty.
+  // Load from persistent cache/vault on mount with live progress feedback
   useEffect(() => {
     async function initializeLibrary() {
       try {
-        console.log(">>> [Library] Checking local IndexedDB vault...");
+        console.log(">>> [Library] Initializing library view...");
         
-        // 1. Always load local vault tracks first for instant rendering without flashing loaders
+        // 1. Check local storage cache first for instant rendering without rate limits
+        const cachedPlaylists = localStorage.getItem("gapviz_spotify_playlists_cache");
+        if (cachedPlaylists) {
+          const parsedPlaylists = JSON.parse(cachedPlaylists);
+          if (parsedPlaylists && parsedPlaylists.length > 0) {
+            console.log(">>> [Library] Loaded playlists from local cache instantly.");
+            setLibraryData(prev => ({ ...prev, playlists: parsedPlaylists }));
+            
+            const localTracks = await getAllVaultTracks();
+            if (localTracks && localTracks.length > 0) {
+              setLibraryData(prev => ({
+                ...prev,
+                songs: localTracks.map((t, idx) => ({
+                  id: t.id || t.trackKey || idx,
+                  title: t.title,
+                  artist: t.artist,
+                  album: t.album || "Master Vault",
+                  platform: t.platform === "spotify" ? "🟢" : "🟢",
+                  duration: "3:30"
+                }))
+              }));
+            }
+            return; // Exit early since cache is loaded
+          }
+        }
+
+        // 2. If no cache exists, trigger the full sync with the centered pulsing modal
+        setIsSyncing(true);
+        setSyncStatusText("Connecting to Spotify & syncing metadata...");
+
         const localTracks = await getAllVaultTracks();
-        
         if (localTracks && localTracks.length > 0) {
-          console.log(`>>> [Library] Loaded ${localTracks.length} tracks from local vault cache.`);
           setLibraryData(prev => ({
             ...prev,
             songs: localTracks.map((t, idx) => ({
@@ -56,42 +83,39 @@ export default function Library() {
               title: t.title,
               artist: t.artist,
               album: t.album || "Master Vault",
-              platform: t.platform === "spotify" ? "🟢" : (t.platform || "🟢"),
+              platform: t.platform === "spotify" ? "🟢" : "🟢",
               duration: "3:30"
             }))
           }));
         }
 
-        // 2. Check if we already have playlists cached in local storage or state
-        const cachedPlaylists = localStorage.getItem("gapviz_cached_playlists");
-        if (cachedPlaylists && (!localTracks || localTracks.length === 0)) {
-          setLibraryData(prev => ({ ...prev, playlists: JSON.parse(cachedPlaylists) }));
-          return;
-        }
+        // Fetch playlists from API with live progress updates passed to modal
+        const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify", (p) => {
+          if (p.currentTrack) {
+            setSyncStatusText(p.currentTrack);
+          }
+          if (p.percent) {
+            setSyncProgress(prev => ({ ...prev, percent: p.percent }));
+          }
+        });
 
-        // 3. If local vault is empty, perform the initial API fetch with progress modal
-        if (!localTracks || localTracks.length === 0) {
-          setIsSyncing(true);
-          setSyncStatusText("Connecting to Spotify & syncing metadata...");
-        }
-
-        const spotifyPlaylists = await MusicApiService.fetchUserPlaylists("spotify");
         if (spotifyPlaylists && spotifyPlaylists.length > 0) {
           setLibraryData(prev => ({
             ...prev,
             playlists: spotifyPlaylists
           }));
-          localStorage.setItem("gapviz_cached_playlists", JSON.stringify(spotifyPlaylists));
         }
 
-        if (isSyncing) {
-          setSyncStatusText("Transfer Complete");
-          setTimeout(() => setIsSyncing(false), 1200);
-        }
+        setSyncStatusText("Transfer Complete");
+        setSyncProgress(prev => ({ ...prev, percent: 100 }));
+        setTimeout(() => {
+          setIsSyncing(false);
+        }, 1500);
 
       } catch (err) {
         console.error(">>> [Library] Failed to initialize library data:", err);
-        setIsSyncing(false);
+        setSyncStatusText("Transfer encountered an error");
+        setTimeout(() => setIsSyncing(false), 3000);
       }
     }
 
@@ -118,7 +142,7 @@ export default function Library() {
   return (
     <div className="library-screen" style={{ position: "relative" }}>
       
-      {/* Centered, Pulsing "On Air" Sync Status Modal */}
+      {/* Centered, Prominent, Pulsing "On Air" Sync Status Modal */}
       {isSyncing && (
         <div style={{
           position: "fixed",
@@ -164,7 +188,7 @@ export default function Library() {
               {syncStatusText}
             </h2>
             
-            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0" }}>
+            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0", minHeight: "20px" }}>
               Aggregating metadata vault securely in browser storage...
             </p>
 
@@ -172,14 +196,14 @@ export default function Library() {
               <div style={{ 
                 background: "#1db954", 
                 height: "100%", 
-                width: `${syncStatusText === "Transfer Complete" ? 100 : 75}%`, 
+                width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 50)}%`, 
                 transition: "width 0.3s ease" 
               }}></div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#71717a" }}>
               <span>{syncStatusText === "Transfer Complete" ? "Vault synchronized" : "Transferring metadata records"}</span>
-              <span>{syncStatusText === "Transfer Complete" ? "100%" : "75%"}</span>
+              <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 50}%`}</span>
             </div>
           </div>
         </div>

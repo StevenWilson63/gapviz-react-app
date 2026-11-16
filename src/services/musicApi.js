@@ -76,7 +76,6 @@ export const MusicApiService = {
         if (data.access_token) {
           localStorage.setItem(SPOTIFY_TOKEN_KEY, data.access_token);
           this.setPlatformConnection("spotify", true);
-          
           window.history.replaceState({}, document.title, window.location.pathname);
           return true;
         }
@@ -115,27 +114,26 @@ export const MusicApiService = {
     }
   },
 
-  // Fetch live playlists with built-in rate-limit (429) backoff & local caching
-  async fetchUserPlaylists(platformKey) {
+  // Fetch playlists with rate limit backoff and progress callback support
+  async fetchUserPlaylists(platformKey, onProgress) {
     if (platformKey === "spotify") {
       const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
       if (!token) return [];
 
-      // Check cache first to avoid hitting Spotify rate limits (429)
+      // Check cache first to prevent rate limits
       const cached = localStorage.getItem("gapviz_spotify_playlists_cache");
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
           if (parsed && parsed.length > 0) {
-            console.log(">>> [Spotify API] Returning playlists from local cache (preventing 429 rate limit).");
+            console.log(">>> [Spotify API] Returning playlists from local cache.");
             return parsed;
           }
-        } catch (e) {
-          // invalid cache, proceed to fetch
-        }
+        } catch (e) {}
       }
 
       try {
+        onProgress?.({ currentTrack: "Fetching user profile...", percent: 10 });
         let currentUserId = "";
         let userName = "Spotify User";
         
@@ -148,17 +146,18 @@ export const MusicApiService = {
           userName = uData.display_name || userName;
         }
 
-        // Fetch Liked Songs with rate-limit handling
+        onProgress?.({ currentTrack: "Fetching Liked Songs library...", percent: 25 });
         let savedTracks = [];
         let savedUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
-        while (savedUrl) {
+        let safetyCounter = 0;
+        
+        while (savedUrl && safetyCounter < 10) {
           const savedRes = await fetch(savedUrl, {
             headers: { Authorization: `Bearer ${token}` }
           });
           
           if (savedRes.status === 429) {
-            console.warn(">>> [Spotify API] Rate limited (429). Waiting 2 seconds before retry...");
-            await sleep(2000);
+            await sleep(3000);
             continue;
           }
           if (!savedRes.ok) break;
@@ -178,16 +177,18 @@ export const MusicApiService = {
 
           savedTracks.push(...batch);
           savedUrl = savedData.next;
-          if (savedUrl) await sleep(150); // Small polite delay between pagination requests
+          safetyCounter++;
+          await sleep(200); // Polite delay
         }
 
-        // Fetch Playlists with rate-limit handling
+        onProgress?.({ currentTrack: "Fetching playlist containers...", percent: 45 });
         const response = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         if (response.status === 429) {
-          console.error(">>> [Spotify API] Rate limited (429) on playlists endpoint.");
+          console.warn(">>> [Spotify API] Rate limited on playlists. Waiting 3s...");
+          await sleep(3000);
           return [];
         }
         if (!response.ok) return [];
@@ -195,26 +196,32 @@ export const MusicApiService = {
         const data = await response.json();
         if (data.items && data.items.length > 0) {
           const mappedPlaylists = [];
+          const totalPl = data.items.length;
 
           for (const [index, pl] of data.items.entries()) {
+            onProgress?.({ 
+              currentTrack: `Syncing playlist: ${pl.name}`, 
+              percent: Math.round(50 + (index / totalPl) * 40) 
+            });
+
             let tracksList = [];
             const isOwner = pl.owner?.id === currentUserId;
             
             try {
               let nextUrl = `https://api.spotify.com/v1/playlists/${pl.id}/items?limit=100`;
+              let itemLoops = 0;
               
-              while (nextUrl) {
+              while (nextUrl && itemLoops < 5) {
                 const trRes = await fetch(nextUrl, {
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 
                 if (trRes.status === 429) {
-                  await sleep(2000);
+                  await sleep(3000);
                   continue;
                 }
 
                 if (!trRes.ok) {
-                  // Fallback container check for restricted playlists
                   const fallbackRes = await fetch(`https://api.spotify.com/v1/playlists/${pl.id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                   });
@@ -253,13 +260,14 @@ export const MusicApiService = {
 
                 tracksList.push(...batch);
                 nextUrl = trData.next;
-                if (nextUrl) await sleep(150); // Polite delay
+                itemLoops++;
+                await sleep(150);
               }
             } catch (e) {
               console.warn(`Could not fetch items for playlist ${pl.name}`, e);
             }
 
-            // Smart Catalog Matching for third-party playlists if empty
+            // Smart Catalog Matching fallback for third-party playlists
             if (tracksList.length === 0 && !isOwner) {
               try {
                 const allVaultTracks = await vaultDb.tracks.toArray();
@@ -272,9 +280,7 @@ export const MusicApiService = {
                     status: idx === 0 ? "current" : "upcoming"
                   }));
                 }
-              } catch (vaultErr) {
-                console.warn("Smart catalog matching lookup failed", vaultErr);
-              }
+              } catch (vaultErr) {}
             }
 
             mappedPlaylists.push({
@@ -286,8 +292,8 @@ export const MusicApiService = {
               tracks: tracksList
             });
 
-            // Brief pause between playlist fetches to prevent 429 rate limit triggers
-            await sleep(100);
+            // Brief pause between playlist fetches to prevent 429 rate limits
+            await sleep(250);
           }
 
           if (savedTracks.length > 0) {
@@ -301,7 +307,6 @@ export const MusicApiService = {
             });
           }
 
-          // Cache the successfully fetched playlists permanently in localStorage
           localStorage.setItem("gapviz_spotify_playlists_cache", JSON.stringify(mappedPlaylists));
           return mappedPlaylists;
         }
