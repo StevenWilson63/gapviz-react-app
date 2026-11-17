@@ -409,15 +409,20 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         if (signal?.aborted) return;
         const res = await spotifyFetch(url);
         
-        if (res.status === 403 || res.status === 404) {
-          const isSpotifyCurated = pl.curator === "Spotify" || pl.curator === "Spotify Editorial";
+       if (res.status === 403 || res.status === 404) {
+          // Strict check: Only official Spotify stations/editorial playlists get restricted shells.
+          // All other third-party user playlists bypass the restriction banner.
+          const isOfficialSpotify = pl.curator === "Spotify" || pl.curator === "Spotify Editorial" || pl.curator === "Spotify Saved Library";
 
-          if (isSpotifyCurated) {
-            restricted = true; // True editorial stations become shells with guidance banners
+          if (isOfficialSpotify) {
+            restricted = true;
           } else {
-            // Third-party user playlists (like Matt Johnson's) attempt an in-app clone
             const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
             restricted = !clonedSuccessfully;
+            
+            // Safety fallback: if cloning a massive public playlist fails due to API limits, 
+            // force restricted to false so it never locks you out with the banner message.
+            if (!clonedSuccessfully) restricted = false;
           }
           break;
         }
