@@ -377,7 +377,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with smart distinction for Spotify Curated vs Third-Party Playlists ----
+  // ---- PHASE 3: playlist tracks with strict check: only Spotify editorial stations show restriction banners ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY && p.snapshotId !== p.syncedSnapshotId
@@ -405,9 +405,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           if (isSpotifyCurated) {
             restricted = true; // True editorial stations become shells with guidance banners
           } else {
-            // Third-party user playlists (like Matt Johnson's) attempt an in-app clone
-            const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
-            restricted = !clonedSuccessfully;
+            restricted = false; // Third-party playlists by other users will not show the banner
           }
           break;
         }
