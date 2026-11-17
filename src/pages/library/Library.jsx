@@ -147,7 +147,7 @@ export default function Library() {
         signal: controller.signal,
         onProgress: (p) => {
           if (p.currentTrack) setSyncProgress((prev) => ({ ...prev, currentTrack: p.currentTrack }));
-          if (p.percent) setSyncProgress((prev) => ({ ...prev, percent: p.percent }));
+          if (p.percent) setSyncProgress((prev) => ({ ...prev, percent: p.percent }))
         }
       });
 
@@ -473,48 +473,28 @@ export default function Library() {
             <h2>{selectedPlaylist.name}</h2>
             <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
 
-            {/* RESTRICTED EDITORIAL SHELL BANNER */}
-            {selectedPlaylist.restricted ? (
-              <div style={{
-                background: "rgba(29, 185, 84, 0.1)",
-                border: "1px solid rgba(29, 185, 84, 0.4)",
-                borderRadius: "12px",
-                padding: "24px",
-                margin: "24px 0",
-                textAlign: "center",
-                color: "#fff"
-              }}>
-                <i className="fa-solid fa-lock" style={{ fontSize: "28px", color: "#1db954", marginBottom: "12px" }}></i>
-                <h3 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>Spotify-Curated Playlist</h3>
-                <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: "1.6", maxWidth: "500px", margin: "0 auto 16px auto" }}>
-                  To sync this Spotify-created playlist, open the playlist in Spotify, select all tracks, choose <strong>Add to playlist</strong> ➔ <strong>New playlist</strong>. Re-sync in Gapviz!
-                </p>
-                <span style={{ fontSize: "12px", color: "#71717a" }}>
-                  You can delete or archive this shell from your library at any time.
-                </span>
-              </div>
-            ) : (
-              <div className="library-list-stack">
-                {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
-                  selectedPlaylist.tracks.map((track, idx) => (
-                    <div key={`${track.id}-${idx}`} className="library-row-item">
-                      <div className="row-item-left">
-                        <span className="row-platform">🟢</span>
-                        <div className="row-text-group">
-                          <span className="row-song-title">{track.title}</span>
-                          <span className="row-song-artist">{track.artist} • {track.album}</span>
-                        </div>
+            <div className="library-list-stack">
+              {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
+                selectedPlaylist.tracks.map((track, idx) => (
+                  <div key={`${track.id}-${idx}`} className="library-row-item">
+                    <div className="row-item-left">
+                      <span className="row-platform">🟢</span>
+                      <div className="row-text-group">
+                        <span className="row-song-title">{track.title}</span>
+                        <span className="row-song-artist">{track.artist} • {track.album}</span>
                       </div>
-                      <span className="row-duration">{track.duration || "3:30"}</span>
                     </div>
-                  ))
-                ) : !selectedPlaylist.loaded ? (
-                  <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
-                ) : (
-                  <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
-                )}
-              </div>
-            )}
+                    <span className="row-duration">{track.duration}</span>
+                  </div>
+                ))
+              ) : !selectedPlaylist.loaded ? (
+                <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
+              ) : selectedPlaylist.restricted ? (
+                <p style={{ color: "#aaa" }}>Spotify doesn't let Gapviz read the tracks in this playlist (it is not owned by you).</p>
+              ) : (
+                <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -552,7 +532,7 @@ export default function Library() {
                     <span className="card-badge-label">ALBUM ({item.year})</span>
                     <span className="platform-badge">{item.platform}</span>
                   </div>
-                    <h3>{item.title}</h3>
+                  <h3>{item.title}</h3>
                   <p className="card-subtext">{item.artist} • {item.tracks} Tracks in your library</p>
                 </div>
               ))
