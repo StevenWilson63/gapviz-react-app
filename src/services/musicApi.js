@@ -181,6 +181,7 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
     const userId = meData.id;
 
     let trackUris = [];
+    // Fetch tracks using public API endpoint
     const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
     if (sourceRes.ok) {
       const sourceData = await sourceRes.json();
@@ -191,6 +192,7 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
 
     if (trackUris.length === 0) return false;
 
+    // Create a new user-owned clone playlist
     const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -205,6 +207,7 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
     const newPlaylistData = await createRes.json();
     const newPlaylistId = newPlaylistData.id;
 
+    // Add tracks in batches of 100
     for (let i = 0; i < trackUris.length; i += 100) {
       const batch = trackUris.slice(i, i + 100);
       await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
@@ -377,7 +380,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with strict distinction for Spotify-Curated vs Third-Party Playlists ----
+  // ---- PHASE 3: playlist tracks with robust auto-clone fallback for third-party user playlists ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY
@@ -400,16 +403,11 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         const res = await spotifyFetch(url);
         
         if (res.status === 403 || res.status === 404) {
-          // Differentiate: Spotify official/editorial stations become shells with banners.
-          // Third-party user playlists attempt auto-cloning.
-          const isSpotifyCurated = pl.curator === "Spotify" || pl.curator === "Spotify Editorial";
-
-          if (isSpotifyCurated) {
-            restricted = true;
-          } else {
-            const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
-            restricted = !clonedSuccessfully;
-          }
+          // Always try auto-cloning first for user/third-party playlists.
+          // If auto-cloning fails (meaning it's a hard-locked Spotify editorial/radio station), 
+          // then mark it as a restricted shell with the instruction banner.
+          const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
+          restricted = !clonedSuccessfully;
           break;
         }
 
