@@ -170,6 +170,56 @@ const mapTrack = (tr, addedAt) => ({
 });
 
 // ---------------------------------------------------------------------------
+// Automated In-App Clone Helper for Third-Party Playlists
+// ---------------------------------------------------------------------------
+
+async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
+  try {
+    const meRes = await spotifyFetch("https://api.spotify.com/v1/me");
+    if (!meRes.ok) return false;
+    const meData = await meRes.json();
+    const userId = meData.id;
+
+    let trackUris = [];
+    const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
+    if (sourceRes.ok) {
+      const sourceData = await sourceRes.json();
+      trackUris = (sourceData.tracks?.items || [])
+        .map(item => item.track?.uri)
+        .filter(Boolean);
+    }
+
+    if (trackUris.length === 0) return false;
+
+    const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `${playlistName} (Gapviz Cloned)`,
+        public: false,
+        description: "Automatically cloned by Gapviz vault sync assistant."
+      })
+    });
+
+    if (!createRes.ok) return false;
+    const newPlaylistData = await createRes.json();
+    const newPlaylistId = newPlaylistData.id;
+
+    for (let i = 0; i < trackUris.length; i += 100) {
+      const batch = trackUris.slice(i, i + 100);
+      await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uris: batch })
+      });
+    }
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Resumable sync
 // ---------------------------------------------------------------------------
 
@@ -218,7 +268,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list (retains all containers including Spotify curated shells) ----
+  // ---- PHASE 1: playlist list ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
     while (url) {
@@ -247,7 +297,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           syncedSnapshotId: prev?.syncedSnapshotId || null,
           sortOrder: (data.offset || 0) + i + 1,
           isPinned: prev?.isPinned || 0,
-          restricted: prev?.restricted || false // preserves shell state
+          restricted: prev?.restricted || false
         };
         if (prev) row.id = prev.id;
         return row;
@@ -327,7 +377,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks + Editorial Shell Retention on 403 ----
+  // ---- PHASE 3: playlist tracks with strict distinction for Spotify-Curated vs Third-Party Playlists ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY
@@ -350,8 +400,16 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         const res = await spotifyFetch(url);
         
         if (res.status === 403 || res.status === 404) {
-          // Flag as a restricted editorial shell so it remains visible in the UI with guidance instructions
-          restricted = true;
+          // Differentiate: Spotify official/editorial stations become shells with banners.
+          // Third-party user playlists attempt auto-cloning.
+          const isSpotifyCurated = pl.curator === "Spotify" || pl.curator === "Spotify Editorial";
+
+          if (isSpotifyCurated) {
+            restricted = true;
+          } else {
+            const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
+            restricted = !clonedSuccessfully;
+          }
           break;
         }
 
@@ -488,7 +546,7 @@ export const MusicApiService = {
         count: pl.trackCount || 0,
         platforms: ["🟢"],
         curator: pl.curator,
-        restricted: pl.restricted || false, // Pass restricted flag to UI
+        restricted: pl.restricted || false,
         tracks: []
       }));
   },
