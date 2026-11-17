@@ -268,10 +268,10 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list ----
+  // ---- PHASE 1: playlist list with pruning of deleted playlists ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
-    const fetchedPlaylistKeys = [LIKED_KEY]; // Always keep Liked Songs
+    const fetchedPlaylistKeys = [LIKED_KEY];
 
     while (url) {
       if (signal?.aborted) return;
@@ -280,7 +280,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       const data = await res.json();
 
       const items = (data.items || []).filter(Boolean);
-      
       const keys = items.map((pl) => `spotify:${pl.id}`);
       keys.forEach(k => fetchedPlaylistKeys.push(k));
 
@@ -313,12 +312,11 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       onProgress?.({ currentTrack: "Reading your playlists...", percent: 8 });
     }
 
-    // Prune playlists that were deleted on Spotify
+    // Prune playlists deleted on Spotify
     const existingVaultPlaylists = await vaultDb.playlists.where("platform").equals("spotify").toArray();
     const stalePlaylists = existingVaultPlaylists.filter(p => !fetchedPlaylistKeys.includes(p.playlistKey));
     if (stalePlaylists.length > 0) {
-      const staleIds = stalePlaylists.map(p => p.id);
-      await vaultDb.playlists.bulkDelete(staleIds);
+      await vaultDb.playlists.bulkDelete(stalePlaylists.map(p => p.id));
     }
 
     const likedPrev = await vaultDb.playlists.where("playlistKey").equals(LIKED_KEY).first();
@@ -389,7 +387,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with strict check: only Spotify editorial stations show restriction banners ----
+  // ---- PHASE 3: playlist tracks with automated cloner fallback for third-party user playlists ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY && p.snapshotId !== p.syncedSnapshotId
@@ -417,7 +415,9 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           if (isSpotifyCurated) {
             restricted = true; // True editorial stations become shells with guidance banners
           } else {
-            restricted = false; // Third-party playlists by other users will not show the banner
+            // Third-party user playlists (like Matt Johnson's) attempt an in-app clone
+            const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
+            restricted = !clonedSuccessfully;
           }
           break;
         }
