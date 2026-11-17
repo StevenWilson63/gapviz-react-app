@@ -62,7 +62,7 @@ const base64encode = (input) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ---------------------------------------------------------------------------
-// Token handling
+// Token handling (access token + refresh so long syncs survive the 1 hour expiry)
 // ---------------------------------------------------------------------------
 
 function storeTokens(data) {
@@ -98,12 +98,15 @@ async function getValidToken() {
 
   if (token && (!expiresAt || Date.now() < expiresAt - 60000)) return token;
   if (localStorage.getItem(SPOTIFY_REFRESH_KEY)) return refreshAccessToken();
-  if (token) return token;
+  if (token) return token; // legacy token with no expiry info: try it
   throw new SpotifyAuthError("Spotify is not connected.");
 }
 
 // ---------------------------------------------------------------------------
 // Rate-limit-safe request gateway
+// - one request at a time, spaced out
+// - NEVER retries a 429: stores a cooldown and stops
+// - refuses to send anything while a cooldown is active (survives page refreshes)
 // ---------------------------------------------------------------------------
 
 const MIN_GAP_MS = 400;
@@ -114,7 +117,7 @@ export function getCooldownSeconds() {
   return Math.max(0, Math.ceil((until - Date.now()) / 1000));
 }
 
-async function spotifyFetch(url, options = {}) {
+async function spotifyFetch(url) {
   const remaining = getCooldownSeconds();
   if (remaining > 0) throw new SpotifyRateLimitError(remaining);
 
@@ -123,28 +126,17 @@ async function spotifyFetch(url, options = {}) {
 
   let token = await getValidToken();
   lastRequestAt = Date.now();
-  let res = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {})
-    }
-  });
+  let res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 
   if (res.status === 401) {
-    token = await refreshAccessToken();
+    token = await refreshAccessToken(); // throws SpotifyAuthError if it can't
     lastRequestAt = Date.now();
-    res = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {})
-      }
-    });
+    res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401) throw new SpotifyAuthError();
   }
 
   if (res.status === 429) {
+    // If the browser can't read the header (CORS), assume 15 minutes
     const retryAfter = Number(res.headers.get("Retry-After")) || 900;
     localStorage.setItem(COOLDOWN_KEY, String(Date.now() + retryAfter * 1000));
     throw new SpotifyRateLimitError(retryAfter);
@@ -170,57 +162,8 @@ const mapTrack = (tr, addedAt) => ({
 });
 
 // ---------------------------------------------------------------------------
-// Automated In-App Clone Helper for 403 Restricted Playlists
-// ---------------------------------------------------------------------------
-
-async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
-  try {
-    const meRes = await spotifyFetch("https://api.spotify.com/v1/me");
-    if (!meRes.ok) return false;
-    const meData = await meRes.json();
-    const userId = meData.id;
-
-    let trackUris = [];
-    const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
-    if (sourceRes.ok) {
-      const sourceData = await sourceRes.json();
-      trackUris = (sourceData.tracks?.items || [])
-        .map(item => item.track?.uri)
-        .filter(Boolean);
-    }
-
-    if (trackUris.length === 0) return false;
-
-    const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: `${playlistName} (Gapviz Cloned)`,
-        public: false,
-        description: "Automatically cloned by Gapviz vault sync assistant."
-      })
-    });
-
-    if (!createRes.ok) return false;
-    const newPlaylistData = await createRes.json();
-    const newPlaylistId = newPlaylistData.id;
-
-    for (let i = 0; i < trackUris.length; i += 100) {
-      const batch = trackUris.slice(i, i + 100);
-      await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uris: batch })
-      });
-    }
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Resumable sync
+// Resumable sync (checkpointed in IndexedDB)
+// phases: playlists -> liked -> tracks
 // ---------------------------------------------------------------------------
 
 async function getState() {
@@ -242,7 +185,7 @@ export async function getSyncInfo() {
   };
 }
 
-let syncInFlight = null;
+let syncInFlight = null; // single-flight guard: a double click or double mount can't start two syncs
 
 export function syncSpotifyLibrary(opts) {
   if (!syncInFlight) {
@@ -256,6 +199,7 @@ export function syncSpotifyLibrary(opts) {
 async function runSpotifySync({ onProgress, signal } = {}) {
   let state = await getState();
 
+  // Fresh run (not resuming an interrupted one)
   if (!state.inProgress) {
     state = await patchState({
       inProgress: true,
@@ -268,7 +212,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list with diagnostic console logging ----
+  // ---- PHASE 1: playlist list (cheap: one call per 50 playlists) ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
     while (url) {
@@ -278,9 +222,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       const data = await res.json();
 
       const items = (data.items || []).filter(Boolean);
-      
-      console.log(">>> [Spotify Sync] Playlists fetched from Spotify:", items.map(p => p.name));
-
       const keys = items.map((pl) => `spotify:${pl.id}`);
       const prevRows = await vaultDb.playlists.where("playlistKey").anyOf(keys).toArray();
       const prevByKey = new Map(prevRows.map((p) => [p.playlistKey, p]));
@@ -294,7 +235,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           name: pl.name,
           platform: "spotify",
           curator: pl.owner?.display_name || "Spotify",
-          trackCount: pl.items?.total ?? pl.tracks?.total ?? prev?.trackCount ?? 0,
+          trackCount: pl.items?.total ?? pl.tracks?.total ?? prev?.trackCount ?? 0, // field name changed in 2026
           snapshotId: pl.snapshot_id,
           syncedSnapshotId: prev?.syncedSnapshotId || null,
           sortOrder: (data.offset || 0) + i + 1,
@@ -310,6 +251,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       onProgress?.({ currentTrack: "Reading your playlists...", percent: 8 });
     }
 
+    // Make sure the Liked Songs entry exists
     const likedPrev = await vaultDb.playlists.where("playlistKey").equals(LIKED_KEY).first();
     const likedRow = {
       ...(likedPrev || {}),
@@ -329,7 +271,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "liked" });
   }
 
-  // ---- PHASE 2: Liked Songs ----
+  // ---- PHASE 2: Liked Songs, saved page by page, resumable ----
   if (state.phase === "liked") {
     let url = state.likedNext || "https://api.spotify.com/v1/me/tracks?limit=50";
     let fetched = state.likedFetched || 0;
@@ -346,6 +288,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         .filter((i) => i?.track?.name)
         .map((i) => mapTrack(i.track, i.added_at));
 
+      // Incremental re-sync: Liked Songs come newest first, so once a whole page is
+      // already in the vault there is nothing newer left to fetch.
       if (state.incremental && tracks.length > 0) {
         const keys = tracks.map((t) => buildTrackKey("spotify", t.id, t.title, t.artist));
         const links = await vaultDb.playlistTracks.bulkGet(keys.map((k) => [LIKED_KEY, k]));
@@ -377,13 +321,11 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with debug tracking for pending queues ----
+  // ---- PHASE 3: playlist tracks, only for playlists that changed since last sync ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
-      (p) => p.playlistKey !== LIKED_KEY
+      (p) => p.playlistKey !== LIKED_KEY && p.snapshotId !== p.syncedSnapshotId
     );
-
-    console.log(">>> [Spotify Sync] Playlets pending track sync check:", pending.map(p => p.name));
 
     for (let i = 0; i < pending.length; i++) {
       if (signal?.aborted) return;
@@ -400,14 +342,10 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       while (url) {
         if (signal?.aborted) return;
         const res = await spotifyFetch(url);
-        
         if (res.status === 403 || res.status === 404) {
-          console.log(`>>> [Auto-Cloner] 403/404 caught on "${pl.name}". Triggering auto-clone...`);
-          const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
-          restricted = !clonedSuccessfully;
+          restricted = true; // e.g. a playlist you don't own: skip it, never retry in a loop
           break;
         }
-
         if (!res.ok) throw new Error(`Spotify playlist "${pl.name}" failed (${res.status})`);
         const data = await res.json();
 
@@ -455,6 +393,7 @@ export const MusicApiService = {
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
   },
 
+  // Guarded so React StrictMode's double effect can't exchange the one-time code twice
   handleAuthCallback() {
     if (!authCallbackInFlight) {
       authCallbackInFlight = this._exchangeCode().finally(() => {
@@ -492,9 +431,11 @@ export const MusicApiService = {
         this.setPlatformConnection("spotify", true);
         return true;
       }
+      console.error("Spotify token exchange was refused:", data);
     } catch (err) {
       console.error("Failed to exchange Spotify authorization code for token", err);
     } finally {
+      // The code is single-use: always clear it from the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     return false;
@@ -505,7 +446,7 @@ export const MusicApiService = {
       const clientId = CLIENT_IDS.spotify;
       const redirectUri = window.location.origin;
       const scopes =
-        "user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email";
+        "user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email";
 
       localStorage.removeItem(SPOTIFY_TOKEN_KEY);
       localStorage.removeItem(SPOTIFY_REFRESH_KEY);
@@ -515,6 +456,7 @@ export const MusicApiService = {
       localStorage.setItem("spotify_code_verifier", codeVerifier);
       const hashed = await sha256(codeVerifier);
       const codeChallenge = base64encode(hashed);
+
       const authUrl = new URL("https://accounts.spotify.com/authorize");
       authUrl.searchParams.append("client_id", clientId);
       authUrl.searchParams.append("response_type", "code");
@@ -529,6 +471,9 @@ export const MusicApiService = {
       this.setPlatformConnection(platformKey, true);
     }
   },
+
+  // ---- Compatibility wrappers: these now read from the local vault and make NO Spotify calls.
+  // Use syncSpotifyLibrary() to pull data from Spotify.
 
   async fetchUserPlaylists(platformKey) {
     if (platformKey !== "spotify") return [];
@@ -553,6 +498,6 @@ export const MusicApiService = {
     return links
       .map((l) => byKey.get(l.trackKey))
       .filter(Boolean)
-      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }))
+      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }));
   }
 };
