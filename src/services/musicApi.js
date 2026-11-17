@@ -170,7 +170,7 @@ const mapTrack = (tr, addedAt) => ({
 });
 
 // ---------------------------------------------------------------------------
-// Automated In-App Clone Helper for Third-Party Playlists
+// Automated In-App Clone Helper for 403 Restricted Playlists
 // ---------------------------------------------------------------------------
 
 async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
@@ -181,7 +181,6 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
     const userId = meData.id;
 
     let trackUris = [];
-    // Fetch tracks using public API endpoint
     const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
     if (sourceRes.ok) {
       const sourceData = await sourceRes.json();
@@ -192,7 +191,6 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
 
     if (trackUris.length === 0) return false;
 
-    // Create a new user-owned clone playlist
     const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -207,7 +205,6 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
     const newPlaylistData = await createRes.json();
     const newPlaylistId = newPlaylistData.id;
 
-    // Add tracks in batches of 100
     for (let i = 0; i < trackUris.length; i += 100) {
       const batch = trackUris.slice(i, i + 100);
       await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
@@ -271,7 +268,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list ----
+  // ---- PHASE 1: playlist list with diagnostic console logging ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
     while (url) {
@@ -282,6 +279,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
 
       const items = (data.items || []).filter(Boolean);
       
+      console.log(">>> [Spotify Sync] Playlists fetched from Spotify:", items.map(p => p.name));
+
       const keys = items.map((pl) => `spotify:${pl.id}`);
       const prevRows = await vaultDb.playlists.where("playlistKey").anyOf(keys).toArray();
       const prevByKey = new Map(prevRows.map((p) => [p.playlistKey, p]));
@@ -299,8 +298,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           snapshotId: pl.snapshot_id,
           syncedSnapshotId: prev?.syncedSnapshotId || null,
           sortOrder: (data.offset || 0) + i + 1,
-          isPinned: prev?.isPinned || 0,
-          restricted: prev?.restricted || false
+          isPinned: prev?.isPinned || 0
         };
         if (prev) row.id = prev.id;
         return row;
@@ -323,8 +321,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       snapshotId: "liked",
       syncedSnapshotId: "liked",
       sortOrder: 0,
-      isPinned: 1,
-      restricted: false
+      isPinned: 1
     };
     if (likedPrev) likedRow.id = likedPrev.id;
     await vaultDb.playlists.put(likedRow);
@@ -380,11 +377,13 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with robust auto-clone fallback for third-party user playlists ----
+  // ---- PHASE 3: playlist tracks with debug tracking for pending queues ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY
     );
+
+    console.log(">>> [Spotify Sync] Playlets pending track sync check:", pending.map(p => p.name));
 
     for (let i = 0; i < pending.length; i++) {
       if (signal?.aborted) return;
@@ -403,9 +402,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         const res = await spotifyFetch(url);
         
         if (res.status === 403 || res.status === 404) {
-          // Always try auto-cloning first for user/third-party playlists.
-          // If auto-cloning fails (meaning it's a hard-locked Spotify editorial/radio station), 
-          // then mark it as a restricted shell with the instruction banner.
+          console.log(`>>> [Auto-Cloner] 403/404 caught on "${pl.name}". Triggering auto-clone...`);
           const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
           restricted = !clonedSuccessfully;
           break;
@@ -544,7 +541,6 @@ export const MusicApiService = {
         count: pl.trackCount || 0,
         platforms: ["🟢"],
         curator: pl.curator,
-        restricted: pl.restricted || false,
         tracks: []
       }));
   },
@@ -557,6 +553,6 @@ export const MusicApiService = {
     return links
       .map((l) => byKey.get(l.trackKey))
       .filter(Boolean)
-      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }));
+      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }))
   }
 };
