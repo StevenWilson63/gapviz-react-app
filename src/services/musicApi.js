@@ -271,6 +271,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
   // ---- PHASE 1: playlist list ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
+    const fetchedPlaylistKeys = [LIKED_KEY]; // Always keep Liked Songs
+
     while (url) {
       if (signal?.aborted) return;
       const res = await spotifyFetch(url);
@@ -280,6 +282,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       const items = (data.items || []).filter(Boolean);
       
       const keys = items.map((pl) => `spotify:${pl.id}`);
+      keys.forEach(k => fetchedPlaylistKeys.push(k));
+
       const prevRows = await vaultDb.playlists.where("playlistKey").anyOf(keys).toArray();
       const prevByKey = new Map(prevRows.map((p) => [p.playlistKey, p]));
 
@@ -307,6 +311,14 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       url = data.next;
       await patchState({ playlistsNext: url });
       onProgress?.({ currentTrack: "Reading your playlists...", percent: 8 });
+    }
+
+    // Prune playlists that were deleted on Spotify
+    const existingVaultPlaylists = await vaultDb.playlists.where("platform").equals("spotify").toArray();
+    const stalePlaylists = existingVaultPlaylists.filter(p => !fetchedPlaylistKeys.includes(p.playlistKey));
+    if (stalePlaylists.length > 0) {
+      const staleIds = stalePlaylists.map(p => p.id);
+      await vaultDb.playlists.bulkDelete(staleIds);
     }
 
     const likedPrev = await vaultDb.playlists.where("playlistKey").equals(LIKED_KEY).first();
