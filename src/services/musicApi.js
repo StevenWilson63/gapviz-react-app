@@ -279,7 +279,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
 
       const items = (data.items || []).filter(Boolean);
       
-      // DEBUG LOG: Print every playlist discovered from Spotify API
       console.log(">>> [Spotify Sync] Playlists fetched from Spotify:", items.map(p => p.name));
 
       const keys = items.map((pl) => `spotify:${pl.id}`);
@@ -378,11 +377,13 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks ----
+  // ---- PHASE 3: playlist tracks with debug tracking for pending queues ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
-      (p) => p.playlistKey !== LIKED_KEY && p.snapshotId !== p.syncedSnapshotId
+      (p) => p.playlistKey !== LIKED_KEY
     );
+
+    console.log(">>> [Spotify Sync] Playlets pending track sync check:", pending.map(p => p.name));
 
     for (let i = 0; i < pending.length; i++) {
       if (signal?.aborted) return;
@@ -401,6 +402,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         const res = await spotifyFetch(url);
         
         if (res.status === 403 || res.status === 404) {
+          console.log(`>>> [Auto-Cloner] 403/404 caught on "${pl.name}". Triggering auto-clone...`);
           const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
           restricted = !clonedSuccessfully;
           break;
@@ -551,6 +553,6 @@ export const MusicApiService = {
     return links
       .map((l) => byKey.get(l.trackKey))
       .filter(Boolean)
-      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }));
+      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }))
   }
 };
