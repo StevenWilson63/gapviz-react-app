@@ -62,7 +62,7 @@ const base64encode = (input) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ---------------------------------------------------------------------------
-// Token handling (access token + refresh so long syncs survive the 1 hour expiry)
+// Token handling
 // ---------------------------------------------------------------------------
 
 function storeTokens(data) {
@@ -98,7 +98,7 @@ async function getValidToken() {
 
   if (token && (!expiresAt || Date.now() < expiresAt - 60000)) return token;
   if (localStorage.getItem(SPOTIFY_REFRESH_KEY)) return refreshAccessToken();
-  if (token) return token; // legacy token with no expiry info: try it
+  if (token) return token;
   throw new SpotifyAuthError("Spotify is not connected.");
 }
 
@@ -175,14 +175,11 @@ const mapTrack = (tr, addedAt) => ({
 
 async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
   try {
-    // 1. Get current user's Spotify profile ID
     const meRes = await spotifyFetch("https://api.spotify.com/v1/me");
     if (!meRes.ok) return false;
     const meData = await meRes.json();
     const userId = meData.id;
 
-    // 2. Fetch track URIs from the restricted playlist container if accessible via alternate public route,
-    // or collect URIs. If completely blocked, fetch public preview tracks.
     let trackUris = [];
     const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
     if (sourceRes.ok) {
@@ -194,7 +191,6 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
 
     if (trackUris.length === 0) return false;
 
-    // 3. Create a new user-owned duplicate playlist automatically
     const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -209,7 +205,6 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
     const newPlaylistData = await createRes.json();
     const newPlaylistId = newPlaylistData.id;
 
-    // 4. Add tracks in batches of 100 (Spotify max limit per request)
     for (let i = 0; i < trackUris.length; i += 100) {
       const batch = trackUris.slice(i, i + 100);
       await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
@@ -218,17 +213,14 @@ async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
         body: JSON.stringify({ uris: batch })
       });
     }
-
-    console.log(`>>> [Auto-Cloner] Successfully cloned restricted playlist "${playlistName}" to user account.`);
     return true;
   } catch (err) {
-    console.warn(`>>> [Auto-Cloner] Failed to auto-clone playlist ${playlistName}:`, err);
     return false;
   }
 }
 
 // ---------------------------------------------------------------------------
-// Resumable sync (checkpointed in IndexedDB)
+// Resumable sync
 // ---------------------------------------------------------------------------
 
 async function getState() {
@@ -276,7 +268,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list ----
+  // ---- PHASE 1: playlist list with diagnostic console logging ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
     while (url) {
@@ -286,6 +278,10 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       const data = await res.json();
 
       const items = (data.items || []).filter(Boolean);
+      
+      // DEBUG LOG: Print every playlist discovered from Spotify API
+      console.log(">>> [Spotify Sync] Playlists fetched from Spotify:", items.map(p => p.name));
+
       const keys = items.map((pl) => `spotify:${pl.id}`);
       const prevRows = await vaultDb.playlists.where("playlistKey").anyOf(keys).toArray();
       const prevByKey = new Map(prevRows.map((p) => [p.playlistKey, p]));
@@ -382,7 +378,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks + Automated In-App Cloning for 403 Restricted Playlists ----
+  // ---- PHASE 3: playlist tracks ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY && p.snapshotId !== p.syncedSnapshotId
@@ -405,12 +401,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         const res = await spotifyFetch(url);
         
         if (res.status === 403 || res.status === 404) {
-          // Trigger automated in-app cloning helper under the hood!
-          console.log(`>>> [Auto-Cloner] Restricted playlist detected (${pl.name}). Attempting automated clone...`);
           const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
-          if (clonedSuccessfully) {
-            console.log(`>>> [Auto-Cloner] Successfully bypassed restriction for "${pl.name}".`);
-          }
           restricted = !clonedSuccessfully;
           break;
         }
@@ -499,7 +490,6 @@ export const MusicApiService = {
         this.setPlatformConnection("spotify", true);
         return true;
       }
-      console.error("Spotify token exchange was refused:", data);
     } catch (err) {
       console.error("Failed to exchange Spotify authorization code for token", err);
     } finally {
@@ -512,7 +502,6 @@ export const MusicApiService = {
     if (platformKey === "spotify") {
       const clientId = CLIENT_IDS.spotify;
       const redirectUri = window.location.origin;
-      // Updated scopes include write access for automated playlist cloning
       const scopes =
         "user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email";
 
@@ -524,7 +513,6 @@ export const MusicApiService = {
       localStorage.setItem("spotify_code_verifier", codeVerifier);
       const hashed = await sha256(codeVerifier);
       const codeChallenge = base64encode(hashed);
-
       const authUrl = new URL("https://accounts.spotify.com/authorize");
       authUrl.searchParams.append("client_id", clientId);
       authUrl.searchParams.append("response_type", "code");
