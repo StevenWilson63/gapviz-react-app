@@ -122,7 +122,6 @@ export default function Library() {
 
   // On mount: only read the local vault. This page never starts a Spotify sync by itself.
   useEffect(() => {
-    // Remove the old localStorage playlist cache; the vault replaces it
     localStorage.removeItem("gapviz_spotify_playlists_cache");
 
     loadFromVault().catch((err) => console.error(">>> [Library] Failed to read vault:", err));
@@ -199,6 +198,7 @@ export default function Library() {
       id: t.trackKey,
       title: t.title,
       artist: t.artist,
+      album: t.album || "Master Vault",
       duration: formatDuration(t.durationMs)
     }));
 
@@ -464,59 +464,59 @@ export default function Library() {
           </div>
         )}
 
-        {/* When viewing a selected playlist */}
-{selectedPlaylist && (
-  <div className="playlist-detail-view">
-    <button className="back-to-playlists-btn" onClick={() => setSelectedPlaylist(null)}>
-      <i className="fa-solid fa-arrow-left"></i> Back to Playlists
-    </button>
-    
-    <div className="playlist-detail-header">
-      <h2>{selectedPlaylist.name}</h2>
-      <p>Curated by: {selectedPlaylist.curator} • {selectedPlaylist.count} tracks</p>
-    </div>
+        {/* DETAILED PLAYLIST VIEW WHEN CLICKED */}
+        {activeTab === "playlists" && selectedPlaylist && (
+          <div className="playlist-detail-view">
+            <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ marginBottom: "20px", background: "none", border: "1px solid #444", color: "#fff", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}>
+              <i className="fa-solid fa-arrow-left"></i> Back to Playlists
+            </button>
+            <h2>{selectedPlaylist.name}</h2>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
 
-    {/* RESTRICTED EDITORIAL SHELL BANNER */}
-    {selectedPlaylist.restricted ? (
-      <div style={{
-        background: "rgba(29, 185, 84, 0.1)",
-        border: "1px solid rgba(29, 185, 84, 0.4)",
-        borderRadius: "12px",
-        padding: "24px",
-        margin: "24px 0",
-        textAlign: "center",
-        color: "#fff"
-      }}>
-        <i className="fa-solid fa-lock" style={{ fontSize: "28px", color: "#1db954", marginBottom: "12px" }}></i>
-        <h3 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>Spotify-Curated Playlist</h3>
-        <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: "1.6", maxWidth: "500px", margin: "0 auto 16px auto" }}>
-          To sync this Spotify-created playlist, open the playlist in Spotify, select all tracks, choose <strong>Add to playlist</strong> ➔ <strong>New playlist</strong>. Re-sync in Gapviz!
-        </p>
-        <span style={{ fontSize: "12px", color: "#71717a" }}>
-          You can delete or archive this shell from your library at any time.
-        </span>
-      </div>
-    ) : (
-      /* Standard Track Table / List */
-      <div className="playlist-tracks-list">
-        {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
-          selectedPlaylist.tracks.map((track, idx) => (
-            <div key={track.id || idx} className="track-row">
-              <span className="track-number">{idx + 1}</span>
-              <div className="track-info">
-                <span className="track-title">{track.title}</span>
-                <span className="track-artist">{track.artist}</span>
+            {/* RESTRICTED EDITORIAL SHELL BANNER */}
+            {selectedPlaylist.restricted ? (
+              <div style={{
+                background: "rgba(29, 185, 84, 0.1)",
+                border: "1px solid rgba(29, 185, 84, 0.4)",
+                borderRadius: "12px",
+                padding: "24px",
+                margin: "24px 0",
+                textAlign: "center",
+                color: "#fff"
+              }}>
+                <i className="fa-solid fa-lock" style={{ fontSize: "28px", color: "#1db954", marginBottom: "12px" }}></i>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>Spotify-Curated Playlist</h3>
+                <p style={{ color: "#a1a1aa", fontSize: "14px", lineHeight: "1.6", maxWidth: "500px", margin: "0 auto 16px auto" }}>
+                  To sync this Spotify-created playlist, open the playlist in Spotify, select all tracks, choose <strong>Add to playlist</strong> ➔ <strong>New playlist</strong>. Re-sync in Gapviz!
+                </p>
+                <span style={{ fontSize: "12px", color: "#71717a" }}>
+                  You can delete or archive this shell from your library at any time.
+                </span>
               </div>
-              <span className="track-album">{track.album}</span>
-            </div>
-          ))
-        ) : (
-          <p className="no-tracks-msg">No tracks found in this playlist vault.</p>
+            ) : (
+              <div className="library-list-stack">
+                {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
+                  selectedPlaylist.tracks.map((track, idx) => (
+                    <div key={`${track.id}-${idx}`} className="library-row-item">
+                      <div className="row-item-left">
+                        <span className="row-platform">🟢</span>
+                        <div className="row-text-group">
+                          <span className="row-song-title">{track.title}</span>
+                          <span className="row-song-artist">{track.artist} • {track.album}</span>
+                        </div>
+                      </div>
+                      <span className="row-duration">{track.duration || "3:30"}</span>
+                    </div>
+                  ))
+                ) : !selectedPlaylist.loaded ? (
+                  <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
+                ) : (
+                  <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
+                )}
+              </div>
+            )}
+          </div>
         )}
-      </div>
-    )}
-  </div>
-)}
 
         {/* SONGS TAB */}
         {activeTab === "songs" && (
@@ -540,7 +540,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* ALBUMS TAB (built from the albums your synced tracks belong to) */}
+        {/* ALBUMS TAB */}
         {activeTab === "albums" && (
           <div className="library-grid">
             {filteredAlbums.length === 0 ? (
@@ -552,7 +552,7 @@ export default function Library() {
                     <span className="card-badge-label">ALBUM ({item.year})</span>
                     <span className="platform-badge">{item.platform}</span>
                   </div>
-                  <h3>{item.title}</h3>
+                    <h3>{item.title}</h3>
                   <p className="card-subtext">{item.artist} • {item.tracks} Tracks in your library</p>
                 </div>
               ))
