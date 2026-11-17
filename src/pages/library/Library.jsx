@@ -122,6 +122,7 @@ export default function Library() {
 
   // On mount: only read the local vault. This page never starts a Spotify sync by itself.
   useEffect(() => {
+    // Remove the old localStorage playlist cache; the vault replaces it
     localStorage.removeItem("gapviz_spotify_playlists_cache");
 
     loadFromVault().catch((err) => console.error(">>> [Library] Failed to read vault:", err));
@@ -147,7 +148,7 @@ export default function Library() {
         signal: controller.signal,
         onProgress: (p) => {
           if (p.currentTrack) setSyncProgress((prev) => ({ ...prev, currentTrack: p.currentTrack }));
-          if (p.percent) setSyncProgress((prev) => ({ ...prev, percent: p.percent }))
+          if (p.percent) setSyncProgress((prev) => ({ ...prev, percent: p.percent }));
         }
       });
 
@@ -198,7 +199,6 @@ export default function Library() {
       id: t.trackKey,
       title: t.title,
       artist: t.artist,
-      album: t.album || "Master Vault",
       duration: formatDuration(t.durationMs)
     }));
 
@@ -481,7 +481,7 @@ export default function Library() {
                       <span className="row-platform">🟢</span>
                       <div className="row-text-group">
                         <span className="row-song-title">{track.title}</span>
-                        <span className="row-song-artist">{track.artist} • {track.album}</span>
+                        <span className="row-song-artist">{track.artist}</span>
                       </div>
                     </div>
                     <span className="row-duration">{track.duration}</span>
@@ -520,7 +520,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* ALBUMS TAB */}
+        {/* ALBUMS TAB (built from the albums your synced tracks belong to) */}
         {activeTab === "albums" && (
           <div className="library-grid">
             {filteredAlbums.length === 0 ? (
