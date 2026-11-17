@@ -170,56 +170,6 @@ const mapTrack = (tr, addedAt) => ({
 });
 
 // ---------------------------------------------------------------------------
-// Automated In-App Clone Helper for 403 Restricted Playlists
-// ---------------------------------------------------------------------------
-
-async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
-  try {
-    const meRes = await spotifyFetch("https://api.spotify.com/v1/me");
-    if (!meRes.ok) return false;
-    const meData = await meRes.json();
-    const userId = meData.id;
-
-    let trackUris = [];
-    const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
-    if (sourceRes.ok) {
-      const sourceData = await sourceRes.json();
-      trackUris = (sourceData.tracks?.items || [])
-        .map(item => item.track?.uri)
-        .filter(Boolean);
-    }
-
-    if (trackUris.length === 0) return false;
-
-    const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: `${playlistName} (Gapviz Cloned)`,
-        public: false,
-        description: "Automatically cloned by Gapviz vault sync assistant."
-      })
-    });
-
-    if (!createRes.ok) return false;
-    const newPlaylistData = await createRes.json();
-    const newPlaylistId = newPlaylistData.id;
-
-    for (let i = 0; i < trackUris.length; i += 100) {
-      const batch = trackUris.slice(i, i + 100);
-      await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uris: batch })
-      });
-    }
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Resumable sync
 // ---------------------------------------------------------------------------
 
@@ -268,7 +218,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list with diagnostic console logging ----
+  // ---- PHASE 1: playlist list (retains all containers including Spotify curated shells) ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
     while (url) {
@@ -279,8 +229,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
 
       const items = (data.items || []).filter(Boolean);
       
-      console.log(">>> [Spotify Sync] Playlists fetched from Spotify:", items.map(p => p.name));
-
       const keys = items.map((pl) => `spotify:${pl.id}`);
       const prevRows = await vaultDb.playlists.where("playlistKey").anyOf(keys).toArray();
       const prevByKey = new Map(prevRows.map((p) => [p.playlistKey, p]));
@@ -298,7 +246,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           snapshotId: pl.snapshot_id,
           syncedSnapshotId: prev?.syncedSnapshotId || null,
           sortOrder: (data.offset || 0) + i + 1,
-          isPinned: prev?.isPinned || 0
+          isPinned: prev?.isPinned || 0,
+          restricted: prev?.restricted || false // preserves shell state
         };
         if (prev) row.id = prev.id;
         return row;
@@ -321,7 +270,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       snapshotId: "liked",
       syncedSnapshotId: "liked",
       sortOrder: 0,
-      isPinned: 1
+      isPinned: 1,
+      restricted: false
     };
     if (likedPrev) likedRow.id = likedPrev.id;
     await vaultDb.playlists.put(likedRow);
@@ -377,13 +327,11 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with debug tracking for pending queues ----
+  // ---- PHASE 3: playlist tracks + Editorial Shell Retention on 403 ----
   if (state.phase === "tracks") {
     const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
       (p) => p.playlistKey !== LIKED_KEY
     );
-
-    console.log(">>> [Spotify Sync] Playlets pending track sync check:", pending.map(p => p.name));
 
     for (let i = 0; i < pending.length; i++) {
       if (signal?.aborted) return;
@@ -402,9 +350,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         const res = await spotifyFetch(url);
         
         if (res.status === 403 || res.status === 404) {
-          console.log(`>>> [Auto-Cloner] 403/404 caught on "${pl.name}". Triggering auto-clone...`);
-          const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
-          restricted = !clonedSuccessfully;
+          // Flag as a restricted editorial shell so it remains visible in the UI with guidance instructions
+          restricted = true;
           break;
         }
 
@@ -541,6 +488,7 @@ export const MusicApiService = {
         count: pl.trackCount || 0,
         platforms: ["🟢"],
         curator: pl.curator,
+        restricted: pl.restricted || false, // Pass restricted flag to UI
         tracks: []
       }));
   },
@@ -553,6 +501,6 @@ export const MusicApiService = {
     return links
       .map((l) => byKey.get(l.trackKey))
       .filter(Boolean)
-      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }))
+      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }));
   }
 };
