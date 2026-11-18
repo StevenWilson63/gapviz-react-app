@@ -204,6 +204,7 @@ export default function Library() {
   const handleSaveNewPlaylist = async () => {
     if (!newPlaylistName.trim()) return;
     const playlistKey = `custom:${Date.now()}`;
+    
     await vaultDb.playlists.put({
       playlistKey,
       name: newPlaylistName.trim(),
@@ -213,8 +214,11 @@ export default function Library() {
       isCustom: true,
       sortOrder: Date.now()
     });
+    
     setNewPlaylistName("");
     setIsCreatingPlaylist(false);
+    
+    // Force immediate vault reload and state update
     await loadFromVault();
   };
 
@@ -273,15 +277,19 @@ export default function Library() {
       sortOrder: Date.now()
     });
 
-    const links = stationTracks.map((t, idx) => ({
-      playlistKey,
-      trackKey: t.trackKey,
-      position: idx
-    }));
-    await vaultDb.playlistTracks.bulkPut(links);
+    if (stationTracks.length > 0) {
+      const links = stationTracks.map((t, idx) => ({
+        playlistKey,
+        trackKey: t.trackKey,
+        position: idx
+      }));
+      await vaultDb.playlistTracks.bulkPut(links);
+    }
 
     setStationArtist("");
     setIsCrateBuilderOpen(false);
+    
+    // Force immediate vault reload and state update
     await loadFromVault();
   };
 
