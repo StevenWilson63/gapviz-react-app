@@ -14,7 +14,8 @@ import {
   getPlaylistTracks,
   getPlaylistTrackCounts,
   setPlaylistArchived,
-  requeuePlaylist
+  requeuePlaylist,
+  vaultDb
 } from "../../services/vaultDb";
 import "./Library.css";
 
@@ -57,14 +58,23 @@ export default function Library() {
   const [vaultHost, setVaultHost] = useState("all");
   const [vaultFocus, setVaultFocus] = useState("all");
 
-  // New Playlist Modal/Inline Form State
+  // New Playlist Modal / Inline Form State
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
+
+  // Crate Builder / Station Generator State
+  const [isCrateBuilderOpen, setIsCrateBuilderOpen] = useState(false);
+  const [stationArtist, setStationArtist] = useState("");
+
+  // Rename & Delete Modal State
+  const [editingPlaylist, setEditingPlaylist] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteConfirmPlaylist, setDeleteConfirmPlaylist] = useState(null);
+
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
 
-  // Sync Progress Status States (Centered & Pulsing)
+  // Sync Progress Status States
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatusText, setSyncStatusText] = useState("Connecting to Spotify & syncing metadata...");
   const [syncProgress, setSyncProgress] = useState({ processed: 0, total: 0, percent: 5, currentTrack: "" });
@@ -76,7 +86,6 @@ export default function Library() {
   const abortRef = useRef(null);
   const spotifyConnected = MusicApiService.getConnectedTokens().spotify;
 
-  // Master Library Data State
   const [libraryData, setLibraryData] = useState({
     playlists: [],
     albums: [],
@@ -86,10 +95,9 @@ export default function Library() {
     commentaryVault: []
   });
 
-  // Everything shown on this page comes from the local vault (IndexedDB), never straight from Spotify
   const loadFromVault = useCallback(async () => {
     const [playlists, tracks, trackCounts] = await Promise.all([
-      getVaultPlaylists("spotify"),
+      getVaultPlaylists(),
       getAllVaultTracks(),
       getPlaylistTrackCounts()
     ]);
@@ -122,11 +130,10 @@ export default function Library() {
           id: pl.playlistKey,
           name: pl.name,
           count: imported || pl.trackCount || 0,
-          platforms: ["🟢"],
-          curator: pl.curator,
+          platforms: pl.platform === "custom" ? ["🎛️"] : ["🟢"],
+          curator: pl.curator || "You (Gapviz Vault)",
           spotifyOwned: !!pl.spotifyOwned,
-          // A shell is a playlist Gapviz tried to read, was refused, and holds no tracks for.
-          // Anything with imported tracks is always shown as a normal playlist.
+          isCustom: pl.platform === "custom" || pl.isCustom,
           isShell: !!pl.restricted && imported === 0,
           isArchived: !!pl.isArchived
         };
@@ -148,28 +155,17 @@ export default function Library() {
     setCooldownSeconds(info.cooldownSeconds);
     setLastSyncAt(info.lastSyncAt);
     setHiddenPlaylists(info.hiddenPlaylists || 0);
-    if (info.cooldownSeconds > 0) {
-      setSyncNotice(
-        `Spotify has asked Gapviz to pause. Everything fetched so far is saved. You can sync again in about ${formatWait(info.cooldownSeconds)}.`
-      );
-    }
   }, []);
 
-  // On mount: only read the local vault. This page never starts a Spotify sync by itself.
   useEffect(() => {
-    // Remove the old localStorage playlist cache; the vault replaces it
     localStorage.removeItem("gapviz_spotify_playlists_cache");
-
     loadFromVault().catch((err) => console.error(">>> [Library] Failed to read vault:", err));
     refreshSyncInfo().catch(() => {});
-
     return () => abortRef.current?.abort();
   }, [loadFromVault, refreshSyncInfo]);
 
-  // Manual sync: resumes from the last checkpoint, respects Spotify's cooldown
   const handleSync = async () => {
     if (isSyncing) return;
-
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -189,46 +185,108 @@ export default function Library() {
 
       await loadFromVault();
       await refreshSyncInfo();
-
-      if (controller.signal.aborted) {
-        setIsSyncing(false);
-        setSyncNotice("Sync stopped. Press Sync Spotify to carry on where it left off.");
-        return;
-      }
-
-      setSyncStatusText("Transfer Complete");
-      setSyncProgress((prev) => ({ ...prev, percent: 100 }));
-      setTimeout(() => setIsSyncing(false), 1500);
-    } catch (err) {
-      console.error(">>> [Library] Sync stopped:", err);
-      await loadFromVault().catch(() => {});
-      await refreshSyncInfo().catch(() => {});
       setIsSyncing(false);
-
+    } catch (err) {
+      setIsSyncing(false);
       if (err instanceof SpotifyRateLimitError) {
-        setSyncNotice(
-          `Spotify asked Gapviz to pause. Everything fetched so far is saved. Try again in about ${formatWait(err.retryAfterSec)} and it will carry on where it stopped.`
-        );
+        setSyncNotice(`Spotify rate limit reached. Try again in ${formatWait(err.retryAfterSec)}.`);
       } else if (err instanceof SpotifyAuthError) {
-        setSyncNotice("Your Spotify connection has expired. Reconnect it under Profile > Connected Services, then sync again.");
+        setSyncNotice("Spotify connection expired. Reconnect in Connected Services.");
       } else {
-        setSyncNotice(`Sync stopped: ${err.message}. Your progress is saved. Press Sync Spotify to resume.`);
+        setSyncNotice(`Sync stopped: ${err.message}`);
       }
     }
   };
 
   const handleStopSync = () => abortRef.current?.abort();
 
-  const handleSaveNewPlaylist = () => {
+  // Create Custom Playlist
+  const handleSaveNewPlaylist = async () => {
     if (!newPlaylistName.trim()) return;
-    setIsCreatingPlaylist(false);
+    const playlistKey = `custom:${Date.now()}`;
+    await vaultDb.playlists.put({
+      playlistKey,
+      name: newPlaylistName.trim(),
+      platform: "custom",
+      curator: "You (Gapviz Vault)",
+      trackCount: 0,
+      isCustom: true,
+      sortOrder: Date.now()
+    });
     setNewPlaylistName("");
+    setIsCreatingPlaylist(false);
+    await loadFromVault();
   };
 
-  // Playlist tracks come from the local vault: no Spotify request when a playlist is clicked
+  // Rename Playlist
+  const handleRenamePlaylist = async () => {
+    if (!editingPlaylist || !renameValue.trim()) return;
+    const record = await vaultDb.playlists.where("playlistKey").equals(editingPlaylist.id).first();
+    if (record) {
+      await vaultDb.playlists.update(record.id, { name: renameValue.trim() });
+    }
+    setEditingPlaylist(null);
+    setRenameValue("");
+    if (selectedPlaylist && selectedPlaylist.id === editingPlaylist.id) {
+      setSelectedPlaylist((prev) => ({ ...prev, name: renameValue.trim() }));
+    }
+    await loadFromVault();
+  };
+
+  // Gapviz-Only Playlist Deletion
+  const handleDeleteGapvizPlaylist = async () => {
+    if (!deleteConfirmPlaylist) return;
+    const playlistKey = deleteConfirmPlaylist.id;
+    const record = await vaultDb.playlists.where("playlistKey").equals(playlistKey).first();
+    if (record) {
+      await vaultDb.playlists.delete(record.id);
+    }
+    await vaultDb.playlistTracks.where("playlistKey").equals(playlistKey).delete();
+    setDeleteConfirmPlaylist(null);
+    if (selectedPlaylist?.id === playlistKey) {
+      setSelectedPlaylist(null);
+    }
+    await loadFromVault();
+  };
+
+  // The Crate Builder: Generate [Artist] Station
+  const handleGenerateStation = async () => {
+    if (!stationArtist.trim()) return;
+    const query = stationArtist.trim().toLowerCase();
+    const allTracks = await getAllVaultTracks();
+
+    const matched = allTracks.filter(
+      (t) => (t.artist || "").toLowerCase().includes(query) || (t.genre || "").toLowerCase().includes(query)
+    );
+
+    const stationTracks = matched.slice(0, 50);
+    const playlistKey = `station:${Date.now()}`;
+    const stationName = `${stationArtist.trim()} Station`;
+
+    await vaultDb.playlists.put({
+      playlistKey,
+      name: stationName,
+      platform: "custom",
+      curator: "The Crate Builder",
+      trackCount: stationTracks.length,
+      isCustom: true,
+      sortOrder: Date.now()
+    });
+
+    const links = stationTracks.map((t, idx) => ({
+      playlistKey,
+      trackKey: t.trackKey,
+      position: idx
+    }));
+    await vaultDb.playlistTracks.bulkPut(links);
+
+    setStationArtist("");
+    setIsCrateBuilderOpen(false);
+    await loadFromVault();
+  };
+
   const handleSelectPlaylist = async (playlist) => {
     setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
-
     const rows = await getPlaylistTracks(playlist.id);
     const tracks = rows.map((t) => ({
       id: t.trackKey,
@@ -236,41 +294,23 @@ export default function Library() {
       artist: t.artist,
       duration: formatDuration(t.durationMs)
     }));
-
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
   };
 
-  // Archive hides a playlist; it stays hidden across re-syncs (deleting would just bring it back)
   const handleArchive = async (playlist, archived) => {
     await setPlaylistArchived(playlist.id, archived);
     await loadFromVault();
     setSelectedPlaylist(null);
   };
 
-  // Ask the next sync to try reading this playlist again
-  const handleRetry = async (playlist) => {
-    await requeuePlaylist(playlist.id);
-    setSelectedPlaylist(null);
-    setSyncNotice(`"${playlist.name}" will be tried again. Press Sync Spotify to do it now.`);
-  };
-
   const matchesSearch = (text) => (text || "").toLowerCase().includes(searchQuery.toLowerCase());
-
-  // Filter songs and playlists based on search query
-  const filteredSongs = libraryData.songs.filter(
-    (song) => matchesSearch(song.title) || matchesSearch(song.artist)
-  );
-
+  const filteredSongs = libraryData.songs.filter((s) => matchesSearch(s.title) || matchesSearch(s.artist));
   const activePlaylists = libraryData.playlists.filter((p) => !p.isArchived);
   const archivedPlaylists = libraryData.playlists.filter((p) => p.isArchived);
-
   const filteredPlaylists = (showArchived ? archivedPlaylists : activePlaylists).filter(
-    (playlist) => matchesSearch(playlist.name) || matchesSearch(playlist.curator)
+    (p) => matchesSearch(p.name) || matchesSearch(p.curator)
   );
-
-  const filteredAlbums = libraryData.albums.filter(
-    (album) => matchesSearch(album.title) || matchesSearch(album.artist)
-  );
+  const filteredAlbums = libraryData.albums.filter((a) => matchesSearch(a.title) || matchesSearch(a.artist));
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
   const isShell = (pl) => !!pl && !!pl.isShell;
@@ -278,76 +318,58 @@ export default function Library() {
   return (
     <div className="library-screen" style={{ position: "relative" }}>
 
-      {/* Centered, Prominent, Pulsing "On Air" Sync Status Modal */}
+      {/* Sync Status Modal */}
       {isSyncing && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "rgba(0, 0, 0, 0.75)",
-          backdropFilter: "blur(6px)",
-          zIndex: 99999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}>
-          <div style={{
-            background: "#18181b",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            borderRadius: "16px",
-            padding: "32px",
-            width: "420px",
-            maxWidth: "90vw",
-            textAlign: "center",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
-            color: "#fff",
-            fontFamily: "inherit"
-          }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-              <span style={{
-                background: syncStatusText === "Transfer Complete" ? "#1db954" : "#ff3344",
-                color: "white",
-                fontSize: "12px",
-                fontWeight: "800",
-                letterSpacing: "1px",
-                padding: "6px 14px",
-                borderRadius: "6px",
-                boxShadow: syncStatusText === "Transfer Complete" ? "0 0 15px rgba(29, 185, 84, 0.6)" : "0 0 20px rgba(255, 51, 68, 0.8)",
-                animation: syncStatusText === "Transfer Complete" ? "none" : "pulse-glow 1.5s infinite"
-              }}>
-                {syncStatusText === "Transfer Complete" ? "READY" : "ON AIR"}
-              </span>
-            </div>
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "16px", padding: "32px", width: "420px", textAlign: "center", color: "#fff" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px 0" }}>{syncStatusText}</h2>
+            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0" }}>{syncProgress.currentTrack || "Syncing metadata..."}</p>
+            <button onClick={handleStopSync} style={{ ...smallButtonStyle, marginTop: "20px" }}>Stop</button>
+          </div>
+        </div>
+      )}
 
-            <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px 0" }}>
-              {syncStatusText}
-            </h2>
-
-            <p style={{ fontSize: "14px", color: "#a1a1aa", margin: "0 0 24px 0", minHeight: "20px" }}>
-              {syncProgress.currentTrack || "Aggregating metadata vault securely in browser storage..."}
+      {/* Delete Confirmation Modal (Gapviz Only) */}
+      {deleteConfirmPlaylist && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#18181b", border: "1px solid #ff3344", borderRadius: "12px", padding: "24px", width: "400px", color: "#fff", textAlign: "center" }}>
+            <h3 style={{ color: "#ff3344", marginBottom: "12px" }}>Delete Playlist from Gapviz?</h3>
+            <p style={{ fontSize: "14px", color: "#d4d4d8", marginBottom: "20px" }}>
+              This will remove <strong>{deleteConfirmPlaylist.name}</strong> from your Gapviz vault only. Your actual Spotify account and playlists remain completely untouched.
             </p>
-
-            <div style={{ background: "rgba(255, 255, 255, 0.1)", height: "8px", borderRadius: "4px", overflow: "hidden", marginBottom: "16px" }}>
-              <div style={{
-                background: "#1db954",
-                height: "100%",
-                width: `${syncStatusText === "Transfer Complete" ? 100 : (syncProgress.percent || 5)}%`,
-                transition: "width 0.3s ease"
-              }}></div>
+            <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
+              <button onClick={() => setDeleteConfirmPlaylist(null)} style={smallButtonStyle}>Cancel</button>
+              <button onClick={handleDeleteGapvizPlaylist} style={{ ...smallButtonStyle, background: "#ff3344", border: "none", color: "#fff" }}>Delete from Gapviz</button>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#71717a" }}>
-              <span>{syncStatusText === "Transfer Complete" ? "Vault synchronized" : "Transferring metadata records"}</span>
-              <span>{syncStatusText === "Transfer Complete" ? "100%" : `${syncProgress.percent || 5}%`}</span>
+      {/* Rename Modal */}
+      {editingPlaylist && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#18181b", border: "1px solid #444", borderRadius: "12px", padding: "24px", width: "400px", color: "#fff" }}>
+            <h3 style={{ marginBottom: "12px" }}>Rename Playlist</h3>
+            <input type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+              <button onClick={() => setEditingPlaylist(null)} style={smallButtonStyle}>Cancel</button>
+              <button onClick={handleRenamePlaylist} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Save</button>
             </div>
+          </div>
+        </div>
+      )}
 
-            {syncStatusText !== "Transfer Complete" && (
-              <button onClick={handleStopSync} style={{ ...smallButtonStyle, marginTop: "20px" }}>
-                Stop (progress is saved)
-              </button>
-            )}
+      {/* Crate Builder Modal */}
+      {isCrateBuilderOpen && (
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: "#18181b", border: "1px solid #1db954", borderRadius: "12px", padding: "24px", width: "420px", color: "#fff" }}>
+            <h3 style={{ marginBottom: "8px", color: "#1db954" }}><i className="fa-solid fa-radio"></i> The Crate Builder</h3>
+            <p style={{ fontSize: "13px", color: "#a1a1aa", marginBottom: "16px" }}>Enter an artist name to build a 50-track smart station based on their vault tracks and era.</p>
+            <input type="text" placeholder="e.g. Duran Duran" value={stationArtist} onChange={(e) => setStationArtist(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+              <button onClick={() => setIsCrateBuilderOpen(false)} style={smallButtonStyle}>Cancel</button>
+              <button onClick={handleGenerateStation} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Build Station</button>
+            </div>
           </div>
         </div>
       )}
@@ -356,107 +378,53 @@ export default function Library() {
       <div className="library-header">
         <h1>Master Library</h1>
         <p className="library-subtitle">Your aggregated multi-platform music vault, identified tracks & saved lore</p>
-
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px", flexWrap: "wrap" }}>
-          <button
-            onClick={handleSync}
-            disabled={syncButtonDisabled}
-            style={{
-              background: syncButtonDisabled ? "#2a2a2e" : "#1db954",
-              color: syncButtonDisabled ? "#777" : "#000",
-              border: "none",
-              borderRadius: "6px",
-              padding: "8px 16px",
-              fontWeight: 700,
-              cursor: syncButtonDisabled ? "not-allowed" : "pointer"
-            }}
-          >
+          <button onClick={handleSync} disabled={syncButtonDisabled} style={{ background: syncButtonDisabled ? "#2a2a2e" : "#1db954", color: syncButtonDisabled ? "#777" : "#000", border: "none", borderRadius: "6px", padding: "8px 16px", fontWeight: 700, cursor: syncButtonDisabled ? "not-allowed" : "pointer" }}>
             <i className="fa-solid fa-rotate"></i> Sync Spotify
           </button>
-          {lastSyncAt && (
-            <span style={{ color: "#71717a", fontSize: "12px" }}>
-              Last synced {new Date(lastSyncAt).toLocaleString()}
-            </span>
-          )}
+          {lastSyncAt && <span style={{ color: "#71717a", fontSize: "12px" }}>Last synced {new Date(lastSyncAt).toLocaleString()}</span>}
         </div>
-
-        {syncNotice && (
-          <p style={{ marginTop: "12px", padding: "10px 14px", borderRadius: "6px", background: "rgba(255, 51, 68, 0.12)", border: "1px solid rgba(255, 51, 68, 0.4)", color: "#fca5a5", fontSize: "13px" }}>
-            {syncNotice}
-          </p>
-        )}
-
-        {hiddenPlaylists > 0 && (
-          <p style={{ marginTop: "12px", padding: "10px 14px", borderRadius: "6px", background: "rgba(255, 255, 255, 0.06)", border: "1px solid #444", color: "#d4d4d8", fontSize: "13px" }}>
-            Spotify did not share {hiddenPlaylists} {hiddenPlaylists === 1 ? "playlist" : "playlists"} from your account with Gapviz, so {hiddenPlaylists === 1 ? "it" : "they"} can't appear here. Copying the tracks into your own playlist in Spotify will bring them in on the next sync.
-          </p>
-        )}
+        {syncNotice && <p style={{ marginTop: "12px", padding: "10px", borderRadius: "6px", background: "rgba(255, 51, 68, 0.12)", color: "#fca5a5", fontSize: "13px" }}>{syncNotice}</p>}
       </div>
 
       {/* Search Bar */}
       <div className="library-search-container">
         <i className="fa-solid fa-magnifying-glass search-icon"></i>
-        <input
-          type="text"
-          placeholder="Search library by title, artist, or tag..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="library-search-input"
-        />
+        <input type="text" placeholder="Search library by title, artist, or tag..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="library-search-input" />
       </div>
 
       {/* Tab Navigation */}
       <div className="library-tabs">
-        <button
-          className={`library-tab-btn ${activeTab === "playlists" ? "active" : ""}`}
-          onClick={() => { setActiveTab("playlists"); setSelectedPlaylist(null); }}
-        >
+        <button className={`library-tab-btn ${activeTab === "playlists" ? "active" : ""}`} onClick={() => { setActiveTab("playlists"); setSelectedPlaylist(null); }}>
           <i className="fa-solid fa-list"></i> Playlists ({activePlaylists.length})
         </button>
-        <button
-          className={`library-tab-btn ${activeTab === "inbox" ? "active" : ""}`}
-          onClick={() => setActiveTab("inbox")}
-        >
+        <button className={`library-tab-btn ${activeTab === "inbox" ? "active" : ""}`} onClick={() => setActiveTab("inbox")}>
           <i className="fa-solid fa-inbox"></i> Identify Inbox ({libraryData.inbox.length})
         </button>
-        <button
-          className={`library-tab-btn ${activeTab === "albums" ? "active" : ""}`}
-          onClick={() => setActiveTab("albums")}
-        >
+        <button className={`library-tab-btn ${activeTab === "albums" ? "active" : ""}`} onClick={() => setActiveTab("albums")}>
           <i className="fa-solid fa-compact-disc"></i> Albums ({libraryData.albums.length})
         </button>
-        <button
-          className={`library-tab-btn ${activeTab === "songs" ? "active" : ""}`}
-          onClick={() => setActiveTab("songs")}
-        >
+        <button className={`library-tab-btn ${activeTab === "songs" ? "active" : ""}`} onClick={() => setActiveTab("songs")}>
           <i className="fa-solid fa-music"></i> Songs ({libraryData.songs.length})
         </button>
-        <button
-          className={`library-tab-btn ${activeTab === "identified" ? "active" : ""}`}
-          onClick={() => setActiveTab("identified")}
-        >
+        <button className={`library-tab-btn ${activeTab === "identified" ? "active" : ""}`} onClick={() => setActiveTab("identified")}>
           <i className="fa-solid fa-ear-listen"></i> Identified ({libraryData.identified.length})
         </button>
-        <button
-          className={`library-tab-btn ${activeTab === "commentary" ? "active" : ""}`}
-          onClick={() => setActiveTab("commentary")}
-        >
+        <button className={`library-tab-btn ${activeTab === "commentary" ? "active" : ""}`} onClick={() => setActiveTab("commentary")}>
           <i className="fa-solid fa-microphone-lines"></i> Commentary Vault ({libraryData.commentaryVault.length})
         </button>
       </div>
 
       {/* Content Area */}
       <div className="library-content-container">
-
-        {/* PLAYLISTS TAB */}
         {activeTab === "playlists" && !selectedPlaylist && (
           <div className="playlists-wrapper">
-            <div className="create-playlist-trigger-bar" style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-              <button
-                className="create-playlist-btn"
-                onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
-              >
+            <div className="create-playlist-trigger-bar" style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", marginBottom: "20px" }}>
+              <button className="create-playlist-btn" onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}>
                 <i className="fa-solid fa-plus"></i> Create New Playlist
+              </button>
+              <button style={{ ...smallButtonStyle, background: "#18181b", borderColor: "#1db954", color: "#1db954" }} onClick={() => setIsCrateBuilderOpen(true)}>
+                <i className="fa-solid fa-radio"></i> The Crate Builder
               </button>
               {(archivedPlaylists.length > 0 || showArchived) && (
                 <button style={smallButtonStyle} onClick={() => setShowArchived(!showArchived)}>
@@ -466,58 +434,39 @@ export default function Library() {
             </div>
 
             {isCreatingPlaylist && (
-              <div className="playlist-creator-card">
-                <div className="creator-header">
-                  <h3>Build New Playlist</h3>
-                  <button className="close-creator-btn" onClick={() => setIsCreatingPlaylist(false)}>
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-
-                <div className="creator-field">
-                  <label>Playlist Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cafe Discoveries & Late Night Rock"
-                    value={newPlaylistName}
-                    onChange={(e) => setNewPlaylistName(e.target.value)}
-                    className="creator-input"
-                  />
-                </div>
-
-                <div className="creator-actions">
-                  <button className="save-playlist-confirm-btn" onClick={handleSaveNewPlaylist}>
-                    <i className="fa-solid fa-check"></i> Save & Build Playlist
-                  </button>
+              <div className="playlist-creator-card" style={{ background: "#18181b", border: "1px solid #444", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
+                <h3 style={{ marginBottom: "12px" }}>Build New Playlist</h3>
+                <input type="text" placeholder="e.g. Cafe Discoveries" value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} />
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button onClick={handleSaveNewPlaylist} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Save & Build</button>
+                  <button onClick={() => setIsCreatingPlaylist(false)} style={smallButtonStyle}>Cancel</button>
                 </div>
               </div>
             )}
 
             <div className="library-grid">
               {filteredPlaylists.length === 0 ? (
-                <p style={{ color: "#aaa", padding: "20px" }}>
-                  {showArchived
-                    ? "No archived playlists."
-                    : spotifyConnected
-                    ? "No playlists in your vault yet. Press Sync Spotify to import your library."
-                    : "No playlists found. Connect Spotify in your profile to sync your playlists."}
-                </p>
+                <p style={{ color: "#aaa", padding: "20px" }}>No playlists found.</p>
               ) : (
                 filteredPlaylists.map((item) => (
-                  <div
-                    key={item.id}
-                    className="library-card"
-                    onClick={() => handleSelectPlaylist(item)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="card-top-row">
-                      <span className="card-badge-label">{item.isShell && item.spotifyOwned ? "SPOTIFY-MADE" : "PLAYLIST"}</span>
-                      <div className="platform-badges">{Array.isArray(item.platforms) ? item.platforms.join(" ") : item.platforms}</div>
+                  <div key={item.id} className="library-card" style={{ position: "relative" }}>
+                    <div onClick={() => handleSelectPlaylist(item)} style={{ cursor: "pointer" }}>
+                      <div className="card-top-row">
+                        <span className="card-badge-label">{item.isCustom ? "CUSTOM" : item.isShell && item.spotifyOwned ? "SPOTIFY-MADE" : "PLAYLIST"}</span>
+                        <div className="platform-badges">{item.platforms.join(" ")}</div>
+                      </div>
+                      <h3>{item.name}</h3>
+                      <p className="card-subtext">{item.curator} • {item.count} Tracks</p>
                     </div>
-                    <h3>{item.name}</h3>
-                    <p className="card-subtext">
-                      {item.curator} • {isShell(item) ? "Tracks not imported" : `${item.count} Tracks`}
-                    </p>
+                    {/* Inline management buttons */}
+                    <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px" }}>
+                      <button onClick={(e) => { e.stopPropagation(); setEditingPlaylist(item); setRenameValue(item.name); }} style={{ background: "none", border: "none", color: "#a1a1aa", cursor: "pointer", fontSize: "12px" }}>
+                        <i className="fa-solid fa-pen"></i> Rename
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmPlaylist(item); }} style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer", fontSize: "12px", marginLeft: "auto" }}>
+                        <i className="fa-solid fa-trash"></i> Delete
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -525,120 +474,69 @@ export default function Library() {
           </div>
         )}
 
-        {/* DETAILED PLAYLIST VIEW WHEN CLICKED */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
             <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ ...smallButtonStyle, marginBottom: "20px" }}>
               <i className="fa-solid fa-arrow-left"></i> Back to Playlists
             </button>
-            <h2>{selectedPlaylist.name}</h2>
-            <p style={{ color: "#aaa", marginBottom: "20px" }}>
-              {selectedPlaylist.curator} • {isShell(selectedPlaylist) ? "Tracks not imported" : `${selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks`}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "8px" }}>
+              <h2 style={{ margin: 0 }}>{selectedPlaylist.name}</h2>
+              <button onClick={() => { setEditingPlaylist(selectedPlaylist); setRenameValue(selectedPlaylist.name); }} style={{ ...smallButtonStyle, padding: "4px 10px", fontSize: "12px" }}>
+                <i className="fa-solid fa-pen"></i> Rename
+              </button>
+            </div>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
 
-            {/* Shell view: playlists Spotify won't let Gapviz read */}
-            {isShell(selectedPlaylist) && (
-              <div style={{ padding: "16px 20px", borderRadius: "10px", background: "rgba(255, 255, 255, 0.05)", border: "1px solid #444", color: "#d4d4d8", fontSize: "14px", lineHeight: 1.5, marginBottom: "20px" }}>
-                <strong style={{ color: "#fff" }}>
-                  {selectedPlaylist.spotifyOwned ? "Spotify made this playlist" : "Gapviz couldn't read this playlist's tracks"}
-                </strong>
-                <p style={{ margin: "8px 0" }}>
-                  {selectedPlaylist.spotifyOwned
-                    ? "Spotify doesn't let apps like Gapviz read the tracks in playlists it makes itself, such as radio playlists and Daily Mixes. Gapviz keeps it here so you can still find it. To bring its tracks into Gapviz:"
-                    : "Spotify refused to share this playlist's tracks with Gapviz. You can try importing it again, or bring its tracks in yourself:"}
-                </p>
-                <ol style={{ margin: "8px 0 8px 20px", padding: 0 }}>
-                  <li>Open the playlist in Spotify on a computer.</li>
-                  <li>Click any track, select them all (Ctrl+A, or Cmd+A on a Mac), right-click and choose Add to playlist, then New playlist.</li>
-                  <li>Come back here and press Sync Spotify. Your copy arrives as a normal playlist with every track.</li>
-                  <li>Archive this one if you no longer need it.</li>
-                </ol>
-                <p style={{ margin: "8px 0", color: "#a1a1aa", fontSize: "13px" }}>
-                  Your copy is a snapshot. It won't change when Spotify refreshes the original.
-                </p>
-                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "12px" }}>
-                  {!selectedPlaylist.spotifyOwned && (
-                    <button style={smallButtonStyle} onClick={() => handleRetry(selectedPlaylist)}>
-                      Try importing again
-                    </button>
-                  )}
-                  <a href={spotifyPlaylistUrl(selectedPlaylist.id)} target="_blank" rel="noopener noreferrer" style={smallButtonStyle}>
-                    <i className="fa-brands fa-spotify"></i> Open in Spotify
-                  </a>
-                  <button
-                    style={smallButtonStyle}
-                    onClick={() => handleArchive(selectedPlaylist, !selectedPlaylist.isArchived)}
-                  >
-                    {selectedPlaylist.isArchived ? "Restore to library" : "Archive this playlist"}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!isShell(selectedPlaylist) && (
-              <div className="library-list-stack">
-                {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
-                  selectedPlaylist.tracks.map((track, idx) => (
-                    <div key={`${track.id}-${idx}`} className="library-row-item">
-                      <div className="row-item-left">
-                        <span className="row-platform">🟢</span>
-                        <div className="row-text-group">
-                          <span className="row-song-title">{track.title}</span>
-                          <span className="row-song-artist">{track.artist}</span>
-                        </div>
+            <div className="library-list-stack">
+              {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
+                selectedPlaylist.tracks.map((track, idx) => (
+                  <div key={`${track.id}-${idx}`} className="library-row-item">
+                    <div className="row-item-left">
+                      <span className="row-platform">🟢</span>
+                      <div className="row-text-group">
+                        <span className="row-song-title">{track.title}</span>
+                        <span className="row-song-artist">{track.artist}</span>
                       </div>
-                      <span className="row-duration">{track.duration}</span>
                     </div>
-                  ))
-                ) : !selectedPlaylist.loaded ? (
-                  <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
-                ) : (
-                  <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
-                )}
-              </div>
-            )}
+                    <span className="row-duration">{track.duration}</span>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet.</p>
+              )}
+            </div>
           </div>
         )}
 
-        {/* SONGS TAB */}
         {activeTab === "songs" && (
           <div className="library-list-stack">
-            {filteredSongs.length === 0 ? (
-              <p style={{ color: "#aaa", padding: "20px" }}>Your Master Vault songs list is empty. Run a sync to populate your music.</p>
-            ) : (
-              filteredSongs.map((item) => (
-                <div key={item.id} className="library-row-item">
-                  <div className="row-item-left">
-                    <span className="row-platform">{item.platform}</span>
-                    <div className="row-text-group">
-                      <span className="row-song-title">{item.title}</span>
-                      <span className="row-song-artist">{item.artist} • {item.album}</span>
-                    </div>
+            {filteredSongs.map((item) => (
+              <div key={item.id} className="library-row-item">
+                <div className="row-item-left">
+                  <span className="row-platform">{item.platform}</span>
+                  <div className="row-text-group">
+                    <span className="row-song-title">{item.title}</span>
+                    <span className="row-song-artist">{item.artist} • {item.album}</span>
                   </div>
-                  <span className="row-duration">{item.duration}</span>
                 </div>
-              ))
-            )}
+                <span className="row-duration">{item.duration}</span>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* ALBUMS TAB (built from the albums your synced tracks belong to) */}
         {activeTab === "albums" && (
           <div className="library-grid">
-            {filteredAlbums.length === 0 ? (
-              <p style={{ color: "#aaa", padding: "20px" }}>No albums yet. They appear here once your tracks are synced.</p>
-            ) : (
-              filteredAlbums.map((item) => (
-                <div key={item.id} className="library-card">
-                  <div className="card-top-row">
-                    <span className="card-badge-label">ALBUM ({item.year})</span>
-                    <span className="platform-badge">{item.platform}</span>
-                  </div>
-                  <h3>{item.title}</h3>
-                  <p className="card-subtext">{item.artist} • {item.tracks} Tracks in your library</p>
+            {filteredAlbums.map((item) => (
+              <div key={item.id} className="library-card">
+                <div className="card-top-row">
+                  <span className="card-badge-label">ALBUM ({item.year})</span>
+                  <span className="platform-badge">{item.platform}</span>
                 </div>
-              ))
-            )}
+                <h3>{item.title}</h3>
+                <p className="card-subtext">{item.artist} • {item.tracks} Tracks</p>
+              </div>
+            ))}
           </div>
         )}
 
@@ -651,7 +549,6 @@ export default function Library() {
         {activeTab === "commentary" && (
           <div className="empty-vault-state"><p>Your Commentary Vault is empty.</p></div>
         )}
-
       </div>
     </div>
   );
