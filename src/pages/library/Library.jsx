@@ -58,8 +58,8 @@ export default function Library() {
   const [songSort, setSongSort] = useState("recent"); 
   const [albumSort, setAlbumSort] = useState("az"); 
 
-  // In-Playlist Sort State (matching Spotify screenshot)
-  const [playlistInternalSort, setPlaylistInternalSort] = useState("custom"); // 'custom' | 'title' | 'artist' | 'album' | 'recent' | 'release' | 'duration'
+  // In-Playlist Sort State ('download' sequence as default)
+  const [playlistInternalSort, setPlaylistInternalSort] = useState("download"); // 'download' | 'title' | 'artist' | 'album' | 'recent' | 'release' | 'duration'
 
   // Commentary Vault Filter States
   const [vaultEra, setVaultEra] = useState("all");
@@ -298,7 +298,7 @@ export default function Library() {
   const handleSelectPlaylist = async (playlist) => {
     setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
     setIsAddingTrack(false);
-    setPlaylistInternalSort("custom");
+    setPlaylistInternalSort("download");
     setSelectedTrackKeysToAdd(new Set());
     
     const rows = await getPlaylistTracks(playlist.id);
@@ -375,7 +375,7 @@ export default function Library() {
       return a.title.localeCompare(b.title);
     });
 
-  // Apply Spotify-style sorting to selected playlist tracks
+  // Apply sorting to selected playlist tracks
   const getSortedPlaylistTracks = () => {
     if (!selectedPlaylist || !selectedPlaylist.tracks) return [];
     const tracksCopy = [...selectedPlaylist.tracks];
@@ -387,7 +387,7 @@ export default function Library() {
       if (playlistInternalSort === "recent") return b.addedAt - a.addedAt;
       if (playlistInternalSort === "release") return (b.releaseYear || 0) - (a.releaseYear || 0);
       if (playlistInternalSort === "duration") return b.durationMs - a.durationMs;
-      return 0; // 'custom' maintains original position order
+      return 0; // 'download' sequence maintains original position order
     });
   };
 
@@ -568,7 +568,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* Detailed Playlist View with Spotify-Style Sort Dropdown */}
+        {/* Detailed Playlist View with Download Sequence Dropdown */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
@@ -576,7 +576,7 @@ export default function Library() {
                 <i className="fa-solid fa-arrow-left"></i> Back to Playlists
               </button>
 
-              {/* Spotify-Style In-Playlist Sort Dropdown */}
+              {/* In-Playlist Sort Dropdown with Download Sequence */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}><i className="fa-solid fa-arrow-down-wide-short"></i> Sort by:</span>
                 <select 
@@ -584,7 +584,7 @@ export default function Library() {
                   onChange={(e) => setPlaylistInternalSort(e.target.value)}
                   style={{ background: "#18181b", border: "1px solid #1db954", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
                 >
-                  <option value="custom">Custom order</option>
+                  <option value="download">Download sequence</option>
                   <option value="title">Title</option>
                   <option value="artist">Artist</option>
                   <option value="album">Album</option>
