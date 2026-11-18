@@ -53,10 +53,10 @@ export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Phase 2: Master Sorting Controls State
-  const [playlistSort, setPlaylistSort] = useState("custom"); // 'custom' | 'az' | 'tracks'
-  const [songSort, setSongSort] = useState("recent"); // 'recent' | 'az' | 'artist'
-  const [albumSort, setAlbumSort] = useState("az"); // 'az' | 'year'
+  // Phase 2: Master Sorting Controls State ('recent' added to playlists)
+  const [playlistSort, setPlaylistSort] = useState("recent"); 
+  const [songSort, setSongSort] = useState("recent"); 
+  const [albumSort, setAlbumSort] = useState("az"); 
 
   // Commentary Vault Filter States
   const [vaultEra, setVaultEra] = useState("all");
@@ -346,6 +346,7 @@ export default function Library() {
     .sort((a, b) => {
       if (playlistSort === "az") return a.name.localeCompare(b.name);
       if (playlistSort === "tracks") return b.count - a.count;
+      // 'recent' (Default: sort by sortOrder / creation timestamp descending)
       return (b.sortOrder || 0) - (a.sortOrder || 0);
     });
 
@@ -485,7 +486,7 @@ export default function Library() {
                 )}
               </div>
 
-              {/* Playlist Sorting Dropdown */}
+              {/* Playlist Sorting Dropdown (Updated with By Recent / Date Added) */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort:</span>
                 <select 
@@ -493,7 +494,7 @@ export default function Library() {
                   onChange={(e) => setPlaylistSort(e.target.value)}
                   style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
                 >
-                  <option value="custom">Default / Custom Order</option>
+                  <option value="recent">By Recent / Date Added</option>
                   <option value="az">Alphabetical (A-Z)</option>
                   <option value="tracks">Track Count (High to Low)</option>
                 </select>
@@ -646,7 +647,7 @@ export default function Library() {
                 onChange={(e) => setSongSort(e.target.value)}
                 style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
               >
-                <option value="recent">Recently Added</option>
+                <option value="recent">Recently Added / By Recent</option>
                 <option value="az">Title (A-Z)</option>
                 <option value="artist">Artist Name (A-Z)</option>
               </select>
