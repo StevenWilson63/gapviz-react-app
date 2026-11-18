@@ -53,6 +53,16 @@ export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Phase 2: Master Sorting Controls State
+  const [playlistSort, setPlaylistSort] = useState("custom"); // 'custom' | 'az' | 'tracks'
+  const [songSort, setSongSort] = useState("recent"); // 'recent' | 'az' | 'artist'
+  const [albumSort, setAlbumSort] = useState("az"); // 'az' | 'year'
+
+  // Commentary Vault Filter States
+  const [vaultEra, setVaultEra] = useState("all");
+  const [vaultHost, setVaultHost] = useState("all");
+  const [vaultFocus, setVaultFocus] = useState("all");
+
   // New Playlist Modal / Inline Form State
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -134,7 +144,8 @@ export default function Library() {
           spotifyOwned: !!pl.spotifyOwned,
           isCustom: pl.platform === "custom" || pl.isCustom,
           isShell: !!pl.restricted && imported === 0,
-          isArchived: !!pl.isArchived
+          isArchived: !!pl.isArchived,
+          sortOrder: pl.sortOrder || 0
         };
       }),
       songs: tracks.map((t, idx) => ({
@@ -144,9 +155,10 @@ export default function Library() {
         artist: t.artist,
         album: t.album || "Master Vault",
         platform: "🟢",
-        duration: formatDuration(t.durationMs)
+        duration: formatDuration(t.durationMs),
+        addedAt: t.addedAt || 0
       })),
-      albums: [...albumMap.values()].sort((a, b) => a.title.localeCompare(b.title))
+      albums: [...albumMap.values()]
     }));
   }, []);
 
@@ -293,7 +305,6 @@ export default function Library() {
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
   };
 
-  // Toggle individual track checkbox in bulk add drawer
   const toggleTrackSelection = (trackKey) => {
     const updated = new Set(selectedTrackKeysToAdd);
     if (updated.has(trackKey)) {
@@ -304,7 +315,6 @@ export default function Library() {
     setSelectedTrackKeysToAdd(updated);
   };
 
-  // Bulk add selected tracks to active playlist
   const handleAddSelectedTracks = async () => {
     if (!selectedPlaylist || selectedTrackKeysToAdd.size === 0) return;
     
@@ -326,13 +336,33 @@ export default function Library() {
   };
 
   const matchesSearch = (text) => (text || "").toLowerCase().includes(searchQuery.toLowerCase());
-  const filteredSongs = libraryData.songs.filter((s) => matchesSearch(s.title) || matchesSearch(s.artist));
+
+  // Filter & Sort Logic
   const activePlaylists = libraryData.playlists.filter((p) => !p.isArchived);
   const archivedPlaylists = libraryData.playlists.filter((p) => p.isArchived);
-  const filteredPlaylists = (showArchived ? archivedPlaylists : activePlaylists).filter(
-    (p) => matchesSearch(p.name) || matchesSearch(p.curator)
-  );
-  const filteredAlbums = libraryData.albums.filter((a) => matchesSearch(a.title) || matchesSearch(a.artist));
+  
+  const filteredPlaylists = (showArchived ? archivedPlaylists : activePlaylists)
+    .filter((p) => matchesSearch(p.name) || matchesSearch(p.curator))
+    .sort((a, b) => {
+      if (playlistSort === "az") return a.name.localeCompare(b.name);
+      if (playlistSort === "tracks") return b.count - a.count;
+      return (b.sortOrder || 0) - (a.sortOrder || 0);
+    });
+
+  const filteredSongs = libraryData.songs
+    .filter((s) => matchesSearch(s.title) || matchesSearch(s.artist))
+    .sort((a, b) => {
+      if (songSort === "az") return a.title.localeCompare(b.title);
+      if (songSort === "artist") return a.artist.localeCompare(b.artist);
+      return b.addedAt - a.addedAt;
+    });
+
+  const filteredAlbums = libraryData.albums
+    .filter((a) => matchesSearch(a.title) || matchesSearch(a.artist))
+    .sort((a, b) => {
+      if (albumSort === "year") return (b.year || 0) - (a.year || 0);
+      return a.title.localeCompare(b.title);
+    });
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
 
@@ -440,18 +470,34 @@ export default function Library() {
       <div className="library-content-container">
         {activeTab === "playlists" && !selectedPlaylist && (
           <div className="playlists-wrapper">
-            <div className="create-playlist-trigger-bar" style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", marginBottom: "20px" }}>
-              <button className="create-playlist-btn" onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}>
-                <i className="fa-solid fa-plus"></i> Create New Playlist
-              </button>
-              <button style={{ ...smallButtonStyle, background: "#18181b", borderColor: "#1db954", color: "#1db954" }} onClick={() => setIsCrateBuilderOpen(true)}>
-                <i className="fa-solid fa-radio"></i> The Crate Builder
-              </button>
-              {(archivedPlaylists.length > 0 || showArchived) && (
-                <button style={smallButtonStyle} onClick={() => setShowArchived(!showArchived)}>
-                  {showArchived ? "Back to Playlists" : `Archived (${archivedPlaylists.length})`}
+            <div className="create-playlist-trigger-bar" style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+                <button className="create-playlist-btn" onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}>
+                  <i className="fa-solid fa-plus"></i> Create New Playlist
                 </button>
-              )}
+                <button style={{ ...smallButtonStyle, background: "#18181b", borderColor: "#1db954", color: "#1db954" }} onClick={() => setIsCrateBuilderOpen(true)}>
+                  <i className="fa-solid fa-radio"></i> The Crate Builder
+                </button>
+                {(archivedPlaylists.length > 0 || showArchived) && (
+                  <button style={smallButtonStyle} onClick={() => setShowArchived(!showArchived)}>
+                    {showArchived ? "Back to Playlists" : `Archived (${archivedPlaylists.length})`}
+                  </button>
+                )}
+              </div>
+
+              {/* Playlist Sorting Dropdown */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort:</span>
+                <select 
+                  value={playlistSort} 
+                  onChange={(e) => setPlaylistSort(e.target.value)}
+                  style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+                >
+                  <option value="custom">Default / Custom Order</option>
+                  <option value="az">Alphabetical (A-Z)</option>
+                  <option value="tracks">Track Count (High to Low)</option>
+                </select>
+              </div>
             </div>
 
             {isCreatingPlaylist && (
@@ -549,7 +595,7 @@ export default function Library() {
                             <input 
                               type="checkbox" 
                               checked={isChecked} 
-                              onChange={() => {}} // handled by parent div click
+                              onChange={() => {}} 
                               style={{ cursor: "pointer", accentColor: "#1db954" }}
                             />
                             <span>{song.title} - <span style={{ color: "#a1a1aa" }}>{song.artist}</span></span>
@@ -590,26 +636,55 @@ export default function Library() {
           </div>
         )}
 
+        {/* Songs Tab with Sorting */}
         {activeTab === "songs" && (
-          <div className="library-list-stack">
-            {filteredSongs.map((item) => (
-              <Item key={item.id} item={item} />
-            ))}
+          <div>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", gap: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort Songs:</span>
+              <select 
+                value={songSort} 
+                onChange={(e) => setSongSort(e.target.value)}
+                style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+              >
+                <option value="recent">Recently Added</option>
+                <option value="az">Title (A-Z)</option>
+                <option value="artist">Artist Name (A-Z)</option>
+              </select>
+            </div>
+            <div className="library-list-stack">
+              {filteredSongs.map((item) => (
+                <Item key={item.id} item={item} />
+              ))}
+            </div>
           </div>
         )}
 
+        {/* Albums Tab with Sorting */}
         {activeTab === "albums" && (
-          <div className="library-grid">
-            {filteredAlbums.map((item) => (
-              <div key={item.id} className="library-card">
-                <div className="card-top-row">
-                  <span className="card-badge-label">ALBUM ({item.year})</span>
-                  <span className="platform-badge">{item.platform}</span>
+          <div>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", gap: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort Albums:</span>
+              <select 
+                value={albumSort} 
+                onChange={(e) => setAlbumSort(e.target.value)}
+                style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+              >
+                <option value="az">Album Title (A-Z)</option>
+                <option value="year">Release Year (Newest)</option>
+              </select>
+            </div>
+            <div className="library-grid">
+              {filteredAlbums.map((item) => (
+                <div key={item.id} className="library-card">
+                  <div className="card-top-row">
+                    <span className="card-badge-label">ALBUM ({item.year})</span>
+                    <span className="platform-badge">{item.platform}</span>
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p className="card-subtext">{item.artist} • {item.tracks} Tracks</p>
                 </div>
-                <h3>{item.title}</h3>
-                <p className="card-subtext">{item.artist} • {item.tracks} Tracks</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -627,7 +702,6 @@ export default function Library() {
   );
 }
 
-// Helper component for song rows
 function Item({ item }) {
   return (
     <div className="library-row-item">
