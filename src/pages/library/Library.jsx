@@ -37,8 +37,6 @@ const formatWait = (seconds) => {
   return `${Math.ceil(mins / 60)} hours`;
 };
 
-const spotifyPlaylistUrl = (playlistKey) => `https://open.spotify.com/playlist/${playlistKey.split(":")[1]}`;
-
 const smallButtonStyle = {
   background: "none",
   border: "1px solid #444",
@@ -55,12 +53,6 @@ export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Commentary Vault Filter States
-  const [vaultSort, setVaultSort] = useState("recent");
-  const [vaultEra, setVaultEra] = useState("all");
-  const [vaultHost, setVaultHost] = useState("all");
-  const [vaultFocus, setVaultFocus] = useState("all");
-
   // New Playlist Modal / Inline Form State
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -69,9 +61,10 @@ export default function Library() {
   const [isCrateBuilderOpen, setIsCrateBuilderOpen] = useState(false);
   const [stationArtist, setStationArtist] = useState("");
 
-  // Track Management State inside Playlists
+  // Track Management State inside Playlists (Bulk Selection)
   const [isAddingTrack, setIsAddingTrack] = useState(false);
   const [vaultSongSearch, setVaultSongSearch] = useState("");
+  const [selectedTrackKeysToAdd, setSelectedTrackKeysToAdd] = useState(new Set());
 
   // Rename & Delete Modal State
   const [editingPlaylist, setEditingPlaylist] = useState(null);
@@ -88,7 +81,6 @@ export default function Library() {
   const [syncNotice, setSyncNotice] = useState("");
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState(null);
-  const [hiddenPlaylists, setHiddenPlaylists] = useState(0);
 
   const abortRef = useRef(null);
   const spotifyConnected = MusicApiService.getConnectedTokens().spotify;
@@ -162,7 +154,6 @@ export default function Library() {
     const info = await getSyncInfo();
     setCooldownSeconds(info.cooldownSeconds);
     setLastSyncAt(info.lastSyncAt);
-    setHiddenPlaylists(info.hiddenPlaylists || 0);
   }, []);
 
   useEffect(() => {
@@ -208,7 +199,6 @@ export default function Library() {
 
   const handleStopSync = () => abortRef.current?.abort();
 
-  // Create Custom Playlist
   const handleSaveNewPlaylist = async () => {
     if (!newPlaylistName.trim()) return;
     const playlistKey = `custom:${Date.now()}`;
@@ -228,7 +218,6 @@ export default function Library() {
     await loadFromVault();
   };
 
-  // Rename Playlist
   const handleRenamePlaylist = async () => {
     if (!editingPlaylist || !renameValue.trim()) return;
     const record = await vaultDb.playlists.where("playlistKey").equals(editingPlaylist.id).first();
@@ -243,7 +232,6 @@ export default function Library() {
     await loadFromVault();
   };
 
-  // Gapviz-Only Playlist Deletion
   const handleDeleteGapvizPlaylist = async () => {
     if (!deleteConfirmPlaylist) return;
     const playlistKey = deleteConfirmPlaylist.id;
@@ -259,7 +247,6 @@ export default function Library() {
     await loadFromVault();
   };
 
-  // The Crate Builder: Smart Station Generator with peer mixing
   const handleGenerateStation = async () => {
     if (!stationArtist.trim()) return;
     const stationTracks = await generateSmartStationTracks(stationArtist.trim(), 50);
@@ -294,6 +281,7 @@ export default function Library() {
   const handleSelectPlaylist = async (playlist) => {
     setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
     setIsAddingTrack(false);
+    setSelectedTrackKeysToAdd(new Set());
     const rows = await getPlaylistTracks(playlist.id);
     const tracks = rows.map((t) => ({
       id: t.id,
@@ -305,9 +293,27 @@ export default function Library() {
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
   };
 
-  const handleAddTrackToCurrentPlaylist = async (trackKey) => {
-    if (!selectedPlaylist) return;
-    await addTrackToPlaylist(selectedPlaylist.id, trackKey);
+  // Toggle individual track checkbox in bulk add drawer
+  const toggleTrackSelection = (trackKey) => {
+    const updated = new Set(selectedTrackKeysToAdd);
+    if (updated.has(trackKey)) {
+      updated.delete(trackKey);
+    } else {
+      updated.add(trackKey);
+    }
+    setSelectedTrackKeysToAdd(updated);
+  };
+
+  // Bulk add selected tracks to active playlist
+  const handleAddSelectedTracks = async () => {
+    if (!selectedPlaylist || selectedTrackKeysToAdd.size === 0) return;
+    
+    for (const trackKey of selectedTrackKeysToAdd) {
+      await addTrackToPlaylist(selectedPlaylist.id, trackKey);
+    }
+
+    setSelectedTrackKeysToAdd(new Set());
+    setIsAddingTrack(false);
     await handleSelectPlaylist(selectedPlaylist);
     await loadFromVault();
   };
@@ -317,12 +323,6 @@ export default function Library() {
     await removeTrackFromPlaylist(selectedPlaylist.id, trackKey);
     await handleSelectPlaylist(selectedPlaylist);
     await loadFromVault();
-  };
-
-  const handleArchive = async (playlist, archived) => {
-    await setPlaylistArchived(playlist.id, archived);
-    await loadFromVault();
-    setSelectedPlaylist(null);
   };
 
   const matchesSearch = (text) => (text || "").toLowerCase().includes(searchQuery.toLowerCase());
@@ -335,7 +335,6 @@ export default function Library() {
   const filteredAlbums = libraryData.albums.filter((a) => matchesSearch(a.title) || matchesSearch(a.artist));
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
-  const isShell = (pl) => !!pl && !!pl.isShell;
 
   return (
     <div className="library-screen" style={{ position: "relative" }}>
@@ -351,7 +350,7 @@ export default function Library() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal (Gapviz Only) */}
+      {/* Delete Confirmation Modal */}
       {deleteConfirmPlaylist && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#18181b", border: "1px solid #ff3344", borderRadius: "12px", padding: "24px", width: "400px", color: "#fff", textAlign: "center" }}>
@@ -458,7 +457,7 @@ export default function Library() {
             {isCreatingPlaylist && (
               <div className="playlist-creator-card" style={{ background: "#18181b", border: "1px solid #444", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
                 <h3 style={{ marginBottom: "12px" }}>Build New Playlist</h3>
-                <input type="text" placeholder="e.g. Jock Strapping" value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} />
+                <input type="text" placeholder="e.g. Late Night Mix" value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} />
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button onClick={handleSaveNewPlaylist} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Save & Build</button>
                   <button onClick={() => setIsCreatingPlaylist(false)} style={smallButtonStyle}>Cancel</button>
@@ -496,7 +495,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* Detailed Playlist View with Track Management */}
+        {/* Detailed Playlist View with Bulk Add Drawer */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
             <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ ...smallButtonStyle, marginBottom: "20px" }}>
@@ -507,7 +506,7 @@ export default function Library() {
               <div style={{ display: "flex", gap: "8px" }}>
                 {selectedPlaylist.isCustom && (
                   <button onClick={() => setIsAddingTrack(!isAddingTrack)} style={{ ...smallButtonStyle, background: "#1db954", color: "#000", border: "none", fontWeight: "bold" }}>
-                    <i className="fa-solid fa-plus"></i> Add Tracks
+                    <i className="fa-solid fa-plus"></i> {isAddingTrack ? "Close Add Drawer" : "Add Tracks"}
                   </button>
                 )}
                 <button onClick={() => { setEditingPlaylist(selectedPlaylist); setRenameValue(selectedPlaylist.name); }} style={{ ...smallButtonStyle, padding: "4px 10px", fontSize: "12px" }}>
@@ -517,27 +516,48 @@ export default function Library() {
             </div>
             <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || 0} Tracks</p>
 
-            {/* Add Track Drawer for Custom Playlists */}
+            {/* Bulk Add Tracks Drawer */}
             {isAddingTrack && (
               <div style={{ background: "#18181b", border: "1px solid #1db954", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
-                <h4 style={{ margin: "0 0 10px 0", color: "#1db954" }}>Add Songs from Master Vault</h4>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <h4 style={{ margin: 0, color: "#1db954" }}>Select Songs from Master Vault ({selectedTrackKeysToAdd.size} selected)</h4>
+                  {selectedTrackKeysToAdd.size > 0 && (
+                    <button onClick={handleAddSelectedTracks} style={{ ...smallButtonStyle, background: "#1db954", color: "#000", border: "none", fontWeight: "bold", padding: "6px 12px", fontSize: "13px" }}>
+                      Add {selectedTrackKeysToAdd.size} Selected to Playlist
+                    </button>
+                  )}
+                </div>
                 <input 
                   type="text" 
-                  placeholder="Search vault songs to add..." 
+                  placeholder="Search vault songs..." 
                   value={vaultSongSearch} 
                   onChange={(e) => setVaultSongSearch(e.target.value)} 
                   style={{ width: "100%", padding: "8px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} 
                 />
-                <div style={{ maxHeight: "220px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ maxHeight: "250px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
                   {libraryData.songs
                     .filter(s => s.title.toLowerCase().includes(vaultSongSearch.toLowerCase()) || s.artist.toLowerCase().includes(vaultSongSearch.toLowerCase()))
-                    .slice(0, 20)
-                    .map(song => (
-                      <div key={song.trackKey} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "rgba(255,255,255,0.05)", borderRadius: "6px" }}>
-                        <span>{song.title} - <span style={{ color: "#a1a1aa" }}>{song.artist}</span></span>
-                        <button onClick={() => handleAddTrackToCurrentPlaylist(song.trackKey)} style={{ ...smallButtonStyle, padding: "4px 10px", fontSize: "12px" }}>Add</button>
-                      </div>
-                    ))}
+                    .map(song => {
+                      const isChecked = selectedTrackKeysToAdd.has(song.trackKey);
+                      return (
+                        <div 
+                          key={song.trackKey} 
+                          onClick={() => toggleTrackSelection(song.trackKey)}
+                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: isChecked ? "rgba(29, 185, 84, 0.15)" : "rgba(255,255,255,0.05)", border: isChecked ? "1px solid #1db954" : "1px solid transparent", borderRadius: "6px", cursor: "pointer" }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked} 
+                              onChange={() => {}} // handled by parent div click
+                              style={{ cursor: "pointer", accentColor: "#1db954" }}
+                            />
+                            <span>{song.title} - <span style={{ color: "#a1a1aa" }}>{song.artist}</span></span>
+                          </div>
+                          <span style={{ fontSize: "12px", color: "#71717a" }}>{song.duration}</span>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -564,7 +584,7 @@ export default function Library() {
                   </div>
                 ))
               ) : (
-                <p style={{ color: "#aaa" }}>No tracks in this playlist yet. Click "Add Tracks" above to build your crate.</p>
+                <p style={{ color: "#aaa" }}>No tracks in this playlist yet. Click "Add Tracks" above to select and batch-add songs.</p>
               )}
             </div>
           </div>
@@ -573,16 +593,7 @@ export default function Library() {
         {activeTab === "songs" && (
           <div className="library-list-stack">
             {filteredSongs.map((item) => (
-              <div key={item.id} className="library-row-item">
-                <div className="row-item-left">
-                  <span className="row-platform">{item.platform}</span>
-                  <div className="row-text-group">
-                    <span className="row-song-title">{item.title}</span>
-                    <span className="row-song-artist">{item.artist} • {item.album}</span>
-                  </div>
-                </div>
-                <span className="row-duration">{item.duration}</span>
-              </div>
+              <Item key={item.id} item={item} />
             ))}
           </div>
         )}
@@ -612,6 +623,22 @@ export default function Library() {
           <div className="empty-vault-state"><p>Your Commentary Vault is empty.</p></div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Helper component for song rows
+function Item({ item }) {
+  return (
+    <div className="library-row-item">
+      <div className="row-item-left">
+        <span className="row-platform">{item.platform}</span>
+        <div className="row-text-group">
+          <span className="row-song-title">{item.title}</span>
+          <span className="row-song-artist">{item.artist} • {item.album}</span>
+        </div>
+      </div>
+      <span className="row-duration">{item.duration}</span>
     </div>
   );
 }
