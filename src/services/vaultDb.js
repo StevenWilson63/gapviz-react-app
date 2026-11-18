@@ -28,9 +28,12 @@ export async function getAllVaultTracks() {
   return await vaultDb.tracks.where('isArchived').equals(0).toArray();
 }
 
-// Playlists for a platform: pinned first (Liked Songs), then in the order Spotify returned them
-export async function getVaultPlaylists(platform = 'spotify') {
-  const rows = await vaultDb.playlists.where('platform').equals(platform).toArray();
+// Playlists: if platform is specified, filter by it. Otherwise, return all playlists (spotify + custom).
+export async function getVaultPlaylists(platform = null) {
+  const rows = platform
+    ? await vaultDb.playlists.where('platform').equals(platform).toArray()
+    : await vaultDb.playlists.toArray();
+
   return rows.sort(
     (a, b) => (b.isPinned || 0) - (a.isPinned || 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
@@ -56,7 +59,6 @@ export async function getPlaylistTrackCounts() {
 }
 
 // Hide / restore a playlist in the library. Archived playlists stay archived across re-syncs
-// (deleting would just bring them back, because Spotify still lists them).
 export async function setPlaylistArchived(playlistKey, archived) {
   await vaultDb.playlists
     .where('playlistKey')
