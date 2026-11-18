@@ -53,10 +53,13 @@ export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Phase 2: Master Sorting Controls State ('recent' added to playlists)
-  const [playlistSort, setPlaylistSort] = useState("recent"); 
+  // Master Sorting Controls State
+  const [playlistGridSort, setPlaylistGridSort] = useState("recent"); 
   const [songSort, setSongSort] = useState("recent"); 
   const [albumSort, setAlbumSort] = useState("az"); 
+
+  // In-Playlist Sort State (matching Spotify screenshot)
+  const [playlistInternalSort, setPlaylistInternalSort] = useState("custom"); // 'custom' | 'title' | 'artist' | 'album' | 'recent' | 'release' | 'duration'
 
   // Commentary Vault Filter States
   const [vaultEra, setVaultEra] = useState("all");
@@ -156,6 +159,8 @@ export default function Library() {
         album: t.album || "Master Vault",
         platform: "🟢",
         duration: formatDuration(t.durationMs),
+        durationMs: t.durationMs || 0,
+        releaseYear: t.releaseYear || 0,
         addedAt: t.addedAt || 0
       })),
       albums: [...albumMap.values()]
@@ -293,14 +298,20 @@ export default function Library() {
   const handleSelectPlaylist = async (playlist) => {
     setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
     setIsAddingTrack(false);
+    setPlaylistInternalSort("custom");
     setSelectedTrackKeysToAdd(new Set());
+    
     const rows = await getPlaylistTracks(playlist.id);
     const tracks = rows.map((t) => ({
       id: t.id,
       trackKey: t.trackKey,
       title: t.title,
       artist: t.artist,
-      duration: formatDuration(t.durationMs)
+      album: t.album || "Single",
+      duration: formatDuration(t.durationMs),
+      durationMs: t.durationMs || 0,
+      releaseYear: t.releaseYear || 0,
+      addedAt: t.addedAt || 0
     }));
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
   };
@@ -344,9 +355,8 @@ export default function Library() {
   const filteredPlaylists = (showArchived ? archivedPlaylists : activePlaylists)
     .filter((p) => matchesSearch(p.name) || matchesSearch(p.curator))
     .sort((a, b) => {
-      if (playlistSort === "az") return a.name.localeCompare(b.name);
-      if (playlistSort === "tracks") return b.count - a.count;
-      // 'recent' (Default: sort by sortOrder / creation timestamp descending)
+      if (playlistGridSort === "az") return a.name.localeCompare(b.name);
+      if (playlistGridSort === "tracks") return b.count - a.count;
       return (b.sortOrder || 0) - (a.sortOrder || 0);
     });
 
@@ -364,6 +374,22 @@ export default function Library() {
       if (albumSort === "year") return (b.year || 0) - (a.year || 0);
       return a.title.localeCompare(b.title);
     });
+
+  // Apply Spotify-style sorting to selected playlist tracks
+  const getSortedPlaylistTracks = () => {
+    if (!selectedPlaylist || !selectedPlaylist.tracks) return [];
+    const tracksCopy = [...selectedPlaylist.tracks];
+
+    return tracksCopy.sort((a, b) => {
+      if (playlistInternalSort === "title") return a.title.localeCompare(b.title);
+      if (playlistInternalSort === "artist") return a.artist.localeCompare(b.artist);
+      if (playlistInternalSort === "album") return a.album.localeCompare(b.album);
+      if (playlistInternalSort === "recent") return b.addedAt - a.addedAt;
+      if (playlistInternalSort === "release") return (b.releaseYear || 0) - (a.releaseYear || 0);
+      if (playlistInternalSort === "duration") return b.durationMs - a.durationMs;
+      return 0; // 'custom' maintains original position order
+    });
+  };
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
 
@@ -486,12 +512,12 @@ export default function Library() {
                 )}
               </div>
 
-              {/* Playlist Sorting Dropdown (Updated with By Recent / Date Added) */}
+              {/* Master Playlist Grid Sort Dropdown */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort:</span>
                 <select 
-                  value={playlistSort} 
-                  onChange={(e) => setPlaylistSort(e.target.value)}
+                  value={playlistGridSort} 
+                  onChange={(e) => setPlaylistGridSort(e.target.value)}
                   style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
                 >
                   <option value="recent">By Recent / Date Added</option>
@@ -542,12 +568,33 @@ export default function Library() {
           </div>
         )}
 
-        {/* Detailed Playlist View with Bulk Add Drawer */}
+        {/* Detailed Playlist View with Spotify-Style Sort Dropdown */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
-            <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ ...smallButtonStyle, marginBottom: "20px" }}>
-              <i className="fa-solid fa-arrow-left"></i> Back to Playlists
-            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+              <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={smallButtonStyle}>
+                <i className="fa-solid fa-arrow-left"></i> Back to Playlists
+              </button>
+
+              {/* Spotify-Style In-Playlist Sort Dropdown */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "13px", color: "#a1a1aa" }}><i className="fa-solid fa-arrow-down-wide-short"></i> Sort by:</span>
+                <select 
+                  value={playlistInternalSort} 
+                  onChange={(e) => setPlaylistInternalSort(e.target.value)}
+                  style={{ background: "#18181b", border: "1px solid #1db954", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+                >
+                  <option value="custom">Custom order</option>
+                  <option value="title">Title</option>
+                  <option value="artist">Artist</option>
+                  <option value="album">Album</option>
+                  <option value="recent">Recently added</option>
+                  <option value="release">Release date</option>
+                  <option value="duration">Duration</option>
+                </select>
+              </div>
+            </div>
+
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "8px" }}>
               <h2 style={{ margin: 0 }}>{selectedPlaylist.name}</h2>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -611,13 +658,13 @@ export default function Library() {
 
             <div className="library-list-stack">
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
-                selectedPlaylist.tracks.map((track, idx) => (
+                getSortedPlaylistTracks().map((track, idx) => (
                   <div key={`${track.trackKey}-${idx}`} className="library-row-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div className="row-item-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <span className="row-platform">🟢</span>
                       <div className="row-text-group">
                         <span className="row-song-title">{track.title}</span>
-                        <span className="row-song-artist">{track.artist}</span>
+                        <span className="row-song-artist">{track.artist} • <span style={{ color: "#a1a1aa" }}>{track.album}</span></span>
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
