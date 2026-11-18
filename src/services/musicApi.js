@@ -12,6 +12,9 @@ const COOLDOWN_KEY = "gapviz_spotify_cooldown_until";
 const LIKED_KEY = "spotify:liked";
 const SYNC_KEY = "spotify";
 
+// A playlist Gapviz could not read is checked again after this long (or when the user asks)
+const RETRY_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
 const CLIENT_IDS = {
   spotify: "c75bf5ba6c1b4d1c897ca910d171bd5c",
   tidal: "mock_tidal_client_id"
@@ -62,7 +65,7 @@ const base64encode = (input) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ---------------------------------------------------------------------------
-// Token handling
+// Token handling (access token + refresh so long syncs survive the 1 hour expiry)
 // ---------------------------------------------------------------------------
 
 function storeTokens(data) {
@@ -98,12 +101,15 @@ async function getValidToken() {
 
   if (token && (!expiresAt || Date.now() < expiresAt - 60000)) return token;
   if (localStorage.getItem(SPOTIFY_REFRESH_KEY)) return refreshAccessToken();
-  if (token) return token;
+  if (token) return token; // legacy token with no expiry info: try it
   throw new SpotifyAuthError("Spotify is not connected.");
 }
 
 // ---------------------------------------------------------------------------
 // Rate-limit-safe request gateway
+// - one request at a time, spaced out
+// - NEVER retries a 429: stores a cooldown and stops
+// - refuses to send anything while a cooldown is active (survives page refreshes)
 // ---------------------------------------------------------------------------
 
 const MIN_GAP_MS = 400;
@@ -114,7 +120,7 @@ export function getCooldownSeconds() {
   return Math.max(0, Math.ceil((until - Date.now()) / 1000));
 }
 
-async function spotifyFetch(url, options = {}) {
+async function spotifyFetch(url) {
   const remaining = getCooldownSeconds();
   if (remaining > 0) throw new SpotifyRateLimitError(remaining);
 
@@ -123,28 +129,17 @@ async function spotifyFetch(url, options = {}) {
 
   let token = await getValidToken();
   lastRequestAt = Date.now();
-  let res = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {})
-    }
-  });
+  let res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 
   if (res.status === 401) {
-    token = await refreshAccessToken();
+    token = await refreshAccessToken(); // throws SpotifyAuthError if it can't
     lastRequestAt = Date.now();
-    res = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {})
-      }
-    });
+    res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401) throw new SpotifyAuthError();
   }
 
   if (res.status === 429) {
+    // If the browser can't read the header (CORS), assume 15 minutes
     const retryAfter = Number(res.headers.get("Retry-After")) || 900;
     localStorage.setItem(COOLDOWN_KEY, String(Date.now() + retryAfter * 1000));
     throw new SpotifyRateLimitError(retryAfter);
@@ -170,57 +165,8 @@ const mapTrack = (tr, addedAt) => ({
 });
 
 // ---------------------------------------------------------------------------
-// Automated In-App Clone Helper for Third-Party Playlists
-// ---------------------------------------------------------------------------
-
-async function autoCloneRestrictedPlaylist(sourcePlaylistId, playlistName) {
-  try {
-    const meRes = await spotifyFetch("https://api.spotify.com/v1/me");
-    if (!meRes.ok) return false;
-    const meData = await meRes.json();
-    const userId = meData.id;
-
-    let trackUris = [];
-    const sourceRes = await fetch(`https://api.spotify.com/v1/playlists/${sourcePlaylistId}`);
-    if (sourceRes.ok) {
-      const sourceData = await sourceRes.json();
-      trackUris = (sourceData.tracks?.items || [])
-        .map(item => item.track?.uri)
-        .filter(Boolean);
-    }
-
-    if (trackUris.length === 0) return false;
-
-    const createRes = await spotifyFetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: `${playlistName} (Gapviz Cloned)`,
-        public: false,
-        description: "Automatically cloned by Gapviz vault sync assistant."
-      })
-    });
-
-    if (!createRes.ok) return false;
-    const newPlaylistData = await createRes.json();
-    const newPlaylistId = newPlaylistData.id;
-
-    for (let i = 0; i < trackUris.length; i += 100) {
-      const batch = trackUris.slice(i, i + 100);
-      await spotifyFetch(`https://api.spotify.com/v1/playlists/${newPlaylistId}/tracks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uris: batch })
-      });
-    }
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Resumable sync
+// Resumable sync (checkpointed in IndexedDB)
+// phases: playlists -> liked -> tracks
 // ---------------------------------------------------------------------------
 
 async function getState() {
@@ -238,11 +184,12 @@ export async function getSyncInfo() {
   return {
     cooldownSeconds: getCooldownSeconds(),
     lastSyncAt: state.lastSyncAt || null,
-    inProgress: !!state.inProgress
+    inProgress: !!state.inProgress,
+    hiddenPlaylists: state.lastHiddenPlaylists || 0
   };
 }
 
-let syncInFlight = null;
+let syncInFlight = null; // single-flight guard: a double click or double mount can't start two syncs
 
 export function syncSpotifyLibrary(opts) {
   if (!syncInFlight) {
@@ -253,9 +200,82 @@ export function syncSpotifyLibrary(opts) {
   return syncInFlight;
 }
 
+// Save every page of a paging object (and follow "next"). Returns how many tracks were saved.
+async function savePagingChain({ playlistKey, firstPaging, signal }) {
+  let paging = firstPaging;
+  let count = 0;
+
+  while (paging) {
+    if (signal?.aborted) return { aborted: true, count };
+
+    const tracks = (paging.items || [])
+      .map((it) => it?.track || it?.item)
+      .filter((t) => t?.name)
+      .map((t) => mapTrack(t));
+
+    await saveTrackPage({
+      platform: "spotify",
+      playlistKey,
+      tracks,
+      offset: paging.offset || 0
+    });
+    count += tracks.length;
+
+    if (!paging.next) break;
+    const res = await spotifyFetch(paging.next);
+    if (res.status === 403 || res.status === 404) break; // keep what we already have
+    if (!res.ok) throw new Error(`Spotify playlist page failed (${res.status})`);
+    paging = await res.json();
+  }
+
+  return { aborted: false, count };
+}
+
+// Try to read a playlist's tracks. Two routes, because Spotify treats them differently:
+//   1. /playlists/{id}/items
+//   2. the playlist object itself (its track list is embedded in it)
+// If both are refused the playlist is genuinely unreadable and becomes a shell.
+async function importPlaylistTracks(pl, signal) {
+  const id = pl.playlistKey.split(":")[1];
+  const diag = {
+    name: pl.name,
+    owner: pl.spotifyOwned ? "spotify" : "other",
+    itemsStatus: null,
+    objectStatus: null,
+    imported: 0
+  };
+
+  // Route 1
+  const itemsRes = await spotifyFetch(`https://api.spotify.com/v1/playlists/${id}/items?limit=100`);
+  diag.itemsStatus = itemsRes.status;
+  if (itemsRes.ok) {
+    const first = await itemsRes.json();
+    const out = await savePagingChain({ playlistKey: pl.playlistKey, firstPaging: first, signal });
+    diag.imported = out.count;
+    return { ok: true, aborted: out.aborted, count: out.count, diag };
+  }
+
+  // Route 2
+  if (signal?.aborted) return { ok: false, aborted: true, count: 0, diag };
+  const objRes = await spotifyFetch(`https://api.spotify.com/v1/playlists/${id}`);
+  diag.objectStatus = objRes.status;
+  if (objRes.ok) {
+    const obj = await objRes.json();
+    const paging = obj.items?.items ? obj.items : obj.tracks?.items ? obj.tracks : null;
+    if (paging) {
+      const out = await savePagingChain({ playlistKey: pl.playlistKey, firstPaging: paging, signal });
+      diag.imported = out.count;
+      return { ok: true, aborted: out.aborted, count: out.count, diag };
+    }
+  }
+
+  return { ok: false, aborted: false, count: 0, diag };
+}
+
 async function runSpotifySync({ onProgress, signal } = {}) {
   let state = await getState();
 
+  // Fresh run (not resuming an interrupted one)
   if (!state.inProgress) {
     state = await patchState({
       inProgress: true,
@@ -264,14 +284,15 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       likedNext: null,
       likedFetched: 0,
       likedTotal: 0,
+      hiddenPlaylists: 0,
       incremental: !!state.lastSyncAt
     });
   }
 
-  // ---- PHASE 1: playlist list with pruning of deleted playlists ----
+  // ---- PHASE 1: playlist list (cheap: one call per 50 playlists) ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
-    const fetchedPlaylistKeys = [LIKED_KEY];
+    let hiddenTotal = state.hiddenPlaylists || 0;
 
     while (url) {
       if (signal?.aborted) return;
@@ -279,28 +300,37 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       if (!res.ok) throw new Error(`Spotify playlist list failed (${res.status})`);
       const data = await res.json();
 
-      const items = (data.items || []).filter(Boolean);
-      const keys = items.map((pl) => `spotify:${pl.id}`);
-      keys.forEach(k => fetchedPlaylistKeys.push(k));
+      // Spotify can return null entries for playlists it won't share with an app: count them
+      const rawItems = data.items || [];
+      const items = rawItems.filter(Boolean);
+      hiddenTotal += rawItems.length - items.length;
 
+      const keys = items.map((pl) => `spotify:${pl.id}`);
       const prevRows = await vaultDb.playlists.where("playlistKey").anyOf(keys).toArray();
       const prevByKey = new Map(prevRows.map((p) => [p.playlistKey, p]));
 
       const rows = items.map((pl, i) => {
         const playlistKey = keys[i];
         const prev = prevByKey.get(playlistKey);
+
         const row = {
           ...(prev || {}),
           playlistKey,
           name: pl.name,
           platform: "spotify",
           curator: pl.owner?.display_name || "Spotify",
-          trackCount: pl.items?.total ?? pl.tracks?.total ?? prev?.trackCount ?? 0,
+          trackCount: pl.items?.total ?? pl.tracks?.total ?? prev?.trackCount ?? 0, // field name changed in 2026
           snapshotId: pl.snapshot_id,
+          // Only used to word the message: Spotify-made playlists are owned by the "spotify" user.
+          // Whether a playlist is a shell is decided by whether Gapviz can actually read it.
+          spotifyOwned: pl.owner?.id === "spotify",
           syncedSnapshotId: prev?.syncedSnapshotId || null,
+          restricted: prev?.restricted || false,
+          restrictedAt: prev?.restrictedAt || 0,
+          imageUrl: pl.images?.[0]?.url || prev?.imageUrl || "",
           sortOrder: (data.offset || 0) + i + 1,
           isPinned: prev?.isPinned || 0,
-          restricted: prev?.restricted || false
+          isArchived: prev?.isArchived || 0
         };
         if (prev) row.id = prev.id;
         return row;
@@ -308,17 +338,11 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       await vaultDb.playlists.bulkPut(rows);
 
       url = data.next;
-      await patchState({ playlistsNext: url });
+      await patchState({ playlistsNext: url, hiddenPlaylists: hiddenTotal });
       onProgress?.({ currentTrack: "Reading your playlists...", percent: 8 });
     }
 
-    // Prune playlists deleted on Spotify
-    const existingVaultPlaylists = await vaultDb.playlists.where("platform").equals("spotify").toArray();
-    const stalePlaylists = existingVaultPlaylists.filter(p => !fetchedPlaylistKeys.includes(p.playlistKey));
-    if (stalePlaylists.length > 0) {
-      await vaultDb.playlists.bulkDelete(stalePlaylists.map(p => p.id));
-    }
-
+    // Make sure the Liked Songs entry exists
     const likedPrev = await vaultDb.playlists.where("playlistKey").equals(LIKED_KEY).first();
     const likedRow = {
       ...(likedPrev || {}),
@@ -329,9 +353,10 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       trackCount: likedPrev?.trackCount || 0,
       snapshotId: "liked",
       syncedSnapshotId: "liked",
+      restricted: false,
       sortOrder: 0,
       isPinned: 1,
-      restricted: false
+      isArchived: likedPrev?.isArchived || 0
     };
     if (likedPrev) likedRow.id = likedPrev.id;
     await vaultDb.playlists.put(likedRow);
@@ -339,7 +364,7 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "liked" });
   }
 
-  // ---- PHASE 2: Liked Songs ----
+  // ---- PHASE 2: Liked Songs, saved page by page, resumable ----
   if (state.phase === "liked") {
     let url = state.likedNext || "https://api.spotify.com/v1/me/tracks?limit=50";
     let fetched = state.likedFetched || 0;
@@ -356,6 +381,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         .filter((i) => i?.track?.name)
         .map((i) => mapTrack(i.track, i.added_at));
 
+      // Incremental re-sync: Liked Songs come newest first, so once a whole page is
+      // already in the vault there is nothing newer left to fetch.
       if (state.incremental && tracks.length > 0) {
         const keys = tracks.map((t) => buildTrackKey("spotify", t.id, t.title, t.artist));
         const links = await vaultDb.playlistTracks.bulkGet(keys.map((k) => [LIKED_KEY, k]));
@@ -387,68 +414,59 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks with automated cloner fallback for third-party user playlists ----
+  // ---- PHASE 3: playlist tracks ----
+  // A playlist is imported when it has changed since last time. One Gapviz could not read
+  // (a shell) is only tried again after a week, or when the user asks, so a Spotify-made
+  // playlist that changes daily doesn't cost requests on every sync.
   if (state.phase === "tracks") {
-    const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(
-      (p) => p.playlistKey !== LIKED_KEY && p.snapshotId !== p.syncedSnapshotId
-    );
+    const needsImport = (p) => {
+      if (p.playlistKey === LIKED_KEY) return false;
+      if (p.restricted) return Date.now() - (p.restrictedAt || 0) > RETRY_AFTER_MS;
+      return p.snapshotId !== p.syncedSnapshotId;
+    };
+
+    const pending = (await vaultDb.playlists.where("platform").equals("spotify").toArray()).filter(needsImport);
+    const diagnostics = [];
 
     for (let i = 0; i < pending.length; i++) {
       if (signal?.aborted) return;
       const pl = pending[i];
-      const id = pl.playlistKey.split(":")[1];
-      let url = `https://api.spotify.com/v1/playlists/${id}/items?limit=100`;
-      let restricted = false;
 
       onProgress?.({
         currentTrack: `Playlist ${i + 1} of ${pending.length}: ${pl.name}`,
         percent: 50 + Math.round((i / pending.length) * 50)
       });
 
-      while (url) {
-        if (signal?.aborted) return;
-        const res = await spotifyFetch(url);
-        
-       if (res.status === 403 || res.status === 404) {
-          // Strict check: Only official Spotify stations/editorial playlists get restricted shells.
-          // All other third-party user playlists bypass the restriction banner.
-          const isOfficialSpotify = pl.curator === "Spotify" || pl.curator === "Spotify Editorial" || pl.curator === "Spotify Saved Library";
+      const result = await importPlaylistTracks(pl, signal);
+      if (result.aborted) return;
 
-          if (isOfficialSpotify) {
-            restricted = true;
-          } else {
-            const clonedSuccessfully = await autoCloneRestrictedPlaylist(id, pl.name);
-            restricted = !clonedSuccessfully;
-            
-            // Safety fallback: if cloning a massive public playlist fails due to API limits, 
-            // force restricted to false so it never locks you out with the banner message.
-            if (!clonedSuccessfully) restricted = false;
-          }
-          break;
-        }
+      diagnostics.push(result.diag);
 
-        if (!res.ok) throw new Error(`Spotify playlist "${pl.name}" failed (${res.status})`);
-        const data = await res.json();
-
-        const tracks = (data.items || [])
-          .map((it) => it?.track || it?.item)
-          .filter((t) => t?.name)
-          .map((t) => mapTrack(t));
-
-        await saveTrackPage({
-          platform: "spotify",
-          playlistKey: pl.playlistKey,
-          tracks,
-          offset: data.offset || 0
+      if (result.ok) {
+        await vaultDb.playlists.update(pl.id, {
+          syncedSnapshotId: pl.snapshotId,
+          restricted: false,
+          restrictedAt: 0
         });
-        url = data.next;
+      } else {
+        await vaultDb.playlists.update(pl.id, { restricted: true, restrictedAt: Date.now() });
       }
+    }
 
-      await vaultDb.playlists.update(pl.id, { syncedSnapshotId: pl.snapshotId, restricted });
+    const failed = diagnostics.filter((d) => !d.imported && d.itemsStatus && d.itemsStatus !== 200);
+    if (failed.length > 0) {
+      console.info(">>> [Gapviz sync] Playlists Spotify would not let us read:");
+      console.table(failed);
     }
   }
 
-  await patchState({ inProgress: false, phase: null, lastSyncAt: Date.now() });
+  const finalState = await getState();
+  await patchState({
+    inProgress: false,
+    phase: null,
+    lastSyncAt: Date.now(),
+    lastHiddenPlaylists: finalState.hiddenPlaylists || 0
+  });
   onProgress?.({ currentTrack: "Done", percent: 100 });
 }
 
@@ -474,6 +492,7 @@ export const MusicApiService = {
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
   },
 
+  // Guarded so React StrictMode's double effect can't exchange the one-time code twice
   handleAuthCallback() {
     if (!authCallbackInFlight) {
       authCallbackInFlight = this._exchangeCode().finally(() => {
@@ -515,6 +534,7 @@ export const MusicApiService = {
     } catch (err) {
       console.error("Failed to exchange Spotify authorization code for token", err);
     } finally {
+      // The code is single-use: always clear it from the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     return false;
@@ -525,7 +545,7 @@ export const MusicApiService = {
       const clientId = CLIENT_IDS.spotify;
       const redirectUri = window.location.origin;
       const scopes =
-        "user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email";
+        "user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email";
 
       localStorage.removeItem(SPOTIFY_TOKEN_KEY);
       localStorage.removeItem(SPOTIFY_REFRESH_KEY);
@@ -551,10 +571,14 @@ export const MusicApiService = {
     }
   },
 
+  // ---- Compatibility wrappers: these read from the local vault and make NO Spotify calls.
+  // Use syncSpotifyLibrary() to pull data from Spotify.
+
   async fetchUserPlaylists(platformKey) {
     if (platformKey !== "spotify") return [];
     const rows = await vaultDb.playlists.where("platform").equals("spotify").toArray();
     return rows
+      .filter((pl) => !pl.isArchived)
       .sort((a, b) => (b.isPinned || 0) - (a.isPinned || 0) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
       .map((pl) => ({
         id: pl.playlistKey,
@@ -562,7 +586,6 @@ export const MusicApiService = {
         count: pl.trackCount || 0,
         platforms: ["🟢"],
         curator: pl.curator,
-        restricted: pl.restricted || false,
         tracks: []
       }));
   },

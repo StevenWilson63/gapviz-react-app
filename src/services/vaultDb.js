@@ -45,3 +45,26 @@ export async function getPlaylistTracks(playlistKey) {
   const byKey = new Map(tracks.map((t) => [t.trackKey, t]));
   return keys.map((k) => byKey.get(k)).filter(Boolean);
 }
+
+// How many tracks are actually stored for each playlist: { playlistKey: count }
+export async function getPlaylistTrackCounts() {
+  const counts = {};
+  await vaultDb.playlistTracks.each((link) => {
+    counts[link.playlistKey] = (counts[link.playlistKey] || 0) + 1;
+  });
+  return counts;
+}
+
+// Hide / restore a playlist in the library. Archived playlists stay archived across re-syncs
+// (deleting would just bring them back, because Spotify still lists them).
+export async function setPlaylistArchived(playlistKey, archived) {
+  await vaultDb.playlists
+    .where('playlistKey')
+    .equals(playlistKey)
+    .modify({ isArchived: archived ? 1 : 0 });
+}
+
+// Ask the next sync to try reading this playlist's tracks again
+export async function requeuePlaylist(playlistKey) {
+  await vaultDb.playlists.where('playlistKey').equals(playlistKey).modify({ restrictedAt: 0 });
+}

@@ -8,7 +8,14 @@ import {
   SpotifyRateLimitError,
   SpotifyAuthError
 } from "../../services/musicApi";
-import { getAllVaultTracks, getVaultPlaylists, getPlaylistTracks } from "../../services/vaultDb";
+import {
+  getAllVaultTracks,
+  getVaultPlaylists,
+  getPlaylistTracks,
+  getPlaylistTrackCounts,
+  setPlaylistArchived,
+  requeuePlaylist
+} from "../../services/vaultDb";
 import "./Library.css";
 
 const formatDuration = (ms) => {
@@ -26,6 +33,20 @@ const formatWait = (seconds) => {
   return `${Math.ceil(mins / 60)} hours`;
 };
 
+const spotifyPlaylistUrl = (playlistKey) => `https://open.spotify.com/playlist/${playlistKey.split(":")[1]}`;
+
+const smallButtonStyle = {
+  background: "none",
+  border: "1px solid #444",
+  color: "#fff",
+  padding: "8px 16px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  textDecoration: "none",
+  fontSize: "14px",
+  display: "inline-block"
+};
+
 export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,6 +62,7 @@ export default function Library() {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState(["🟢"]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   // Sync Progress Status States (Centered & Pulsing)
   const [isSyncing, setIsSyncing] = useState(false);
@@ -49,6 +71,7 @@ export default function Library() {
   const [syncNotice, setSyncNotice] = useState("");
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState(null);
+  const [hiddenPlaylists, setHiddenPlaylists] = useState(0);
 
   const abortRef = useRef(null);
   const spotifyConnected = MusicApiService.getConnectedTokens().spotify;
@@ -65,7 +88,11 @@ export default function Library() {
 
   // Everything shown on this page comes from the local vault (IndexedDB), never straight from Spotify
   const loadFromVault = useCallback(async () => {
-    const [playlists, tracks] = await Promise.all([getVaultPlaylists("spotify"), getAllVaultTracks()]);
+    const [playlists, tracks, trackCounts] = await Promise.all([
+      getVaultPlaylists("spotify"),
+      getAllVaultTracks(),
+      getPlaylistTrackCounts()
+    ]);
 
     const albumMap = new Map();
     tracks.forEach((t) => {
@@ -89,14 +116,21 @@ export default function Library() {
 
     setLibraryData((prev) => ({
       ...prev,
-      playlists: playlists.map((pl) => ({
-        id: pl.playlistKey,
-        name: pl.name,
-        count: pl.trackCount || 0,
-        platforms: ["🟢"],
-        curator: pl.curator,
-        restricted: !!pl.restricted
-      })),
+      playlists: playlists.map((pl) => {
+        const imported = trackCounts[pl.playlistKey] || 0;
+        return {
+          id: pl.playlistKey,
+          name: pl.name,
+          count: imported || pl.trackCount || 0,
+          platforms: ["🟢"],
+          curator: pl.curator,
+          spotifyOwned: !!pl.spotifyOwned,
+          // A shell is a playlist Gapviz tried to read, was refused, and holds no tracks for.
+          // Anything with imported tracks is always shown as a normal playlist.
+          isShell: !!pl.restricted && imported === 0,
+          isArchived: !!pl.isArchived
+        };
+      }),
       songs: tracks.map((t, idx) => ({
         id: t.id || t.trackKey || idx,
         title: t.title,
@@ -113,6 +147,7 @@ export default function Library() {
     const info = await getSyncInfo();
     setCooldownSeconds(info.cooldownSeconds);
     setLastSyncAt(info.lastSyncAt);
+    setHiddenPlaylists(info.hiddenPlaylists || 0);
     if (info.cooldownSeconds > 0) {
       setSyncNotice(
         `Spotify has asked Gapviz to pause. Everything fetched so far is saved. You can sync again in about ${formatWait(info.cooldownSeconds)}.`
@@ -205,26 +240,40 @@ export default function Library() {
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
   };
 
+  // Archive hides a playlist; it stays hidden across re-syncs (deleting would just bring it back)
+  const handleArchive = async (playlist, archived) => {
+    await setPlaylistArchived(playlist.id, archived);
+    await loadFromVault();
+    setSelectedPlaylist(null);
+  };
+
+  // Ask the next sync to try reading this playlist again
+  const handleRetry = async (playlist) => {
+    await requeuePlaylist(playlist.id);
+    setSelectedPlaylist(null);
+    setSyncNotice(`"${playlist.name}" will be tried again. Press Sync Spotify to do it now.`);
+  };
+
+  const matchesSearch = (text) => (text || "").toLowerCase().includes(searchQuery.toLowerCase());
+
   // Filter songs and playlists based on search query
   const filteredSongs = libraryData.songs.filter(
-    (song) =>
-      song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      song.artist.toLowerCase().includes(searchQuery.toLowerCase())
+    (song) => matchesSearch(song.title) || matchesSearch(song.artist)
   );
 
-  const filteredPlaylists = libraryData.playlists.filter(
-    (playlist) =>
-      playlist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      playlist.curator?.toLowerCase().includes(searchQuery.toLowerCase())
+  const activePlaylists = libraryData.playlists.filter((p) => !p.isArchived);
+  const archivedPlaylists = libraryData.playlists.filter((p) => p.isArchived);
+
+  const filteredPlaylists = (showArchived ? archivedPlaylists : activePlaylists).filter(
+    (playlist) => matchesSearch(playlist.name) || matchesSearch(playlist.curator)
   );
 
   const filteredAlbums = libraryData.albums.filter(
-    (album) =>
-      album.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      album.artist.toLowerCase().includes(searchQuery.toLowerCase())
+    (album) => matchesSearch(album.title) || matchesSearch(album.artist)
   );
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
+  const isShell = (pl) => !!pl && !!pl.isShell;
 
   return (
     <div className="library-screen" style={{ position: "relative" }}>
@@ -295,10 +344,7 @@ export default function Library() {
             </div>
 
             {syncStatusText !== "Transfer Complete" && (
-              <button
-                onClick={handleStopSync}
-                style={{ marginTop: "20px", background: "none", border: "1px solid #444", color: "#fff", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}
-              >
+              <button onClick={handleStopSync} style={{ ...smallButtonStyle, marginTop: "20px" }}>
                 Stop (progress is saved)
               </button>
             )}
@@ -339,6 +385,12 @@ export default function Library() {
             {syncNotice}
           </p>
         )}
+
+        {hiddenPlaylists > 0 && (
+          <p style={{ marginTop: "12px", padding: "10px 14px", borderRadius: "6px", background: "rgba(255, 255, 255, 0.06)", border: "1px solid #444", color: "#d4d4d8", fontSize: "13px" }}>
+            Spotify did not share {hiddenPlaylists} {hiddenPlaylists === 1 ? "playlist" : "playlists"} from your account with Gapviz, so {hiddenPlaylists === 1 ? "it" : "they"} can't appear here. Copying the tracks into your own playlist in Spotify will bring them in on the next sync.
+          </p>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -359,7 +411,7 @@ export default function Library() {
           className={`library-tab-btn ${activeTab === "playlists" ? "active" : ""}`}
           onClick={() => { setActiveTab("playlists"); setSelectedPlaylist(null); }}
         >
-          <i className="fa-solid fa-list"></i> Playlists ({libraryData.playlists.length})
+          <i className="fa-solid fa-list"></i> Playlists ({activePlaylists.length})
         </button>
         <button
           className={`library-tab-btn ${activeTab === "inbox" ? "active" : ""}`}
@@ -399,13 +451,18 @@ export default function Library() {
         {/* PLAYLISTS TAB */}
         {activeTab === "playlists" && !selectedPlaylist && (
           <div className="playlists-wrapper">
-            <div className="create-playlist-trigger-bar">
+            <div className="create-playlist-trigger-bar" style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
               <button
                 className="create-playlist-btn"
                 onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
               >
                 <i className="fa-solid fa-plus"></i> Create New Playlist
               </button>
+              {(archivedPlaylists.length > 0 || showArchived) && (
+                <button style={smallButtonStyle} onClick={() => setShowArchived(!showArchived)}>
+                  {showArchived ? "Back to Playlists" : `Archived (${archivedPlaylists.length})`}
+                </button>
+              )}
             </div>
 
             {isCreatingPlaylist && (
@@ -439,7 +496,9 @@ export default function Library() {
             <div className="library-grid">
               {filteredPlaylists.length === 0 ? (
                 <p style={{ color: "#aaa", padding: "20px" }}>
-                  {spotifyConnected
+                  {showArchived
+                    ? "No archived playlists."
+                    : spotifyConnected
                     ? "No playlists in your vault yet. Press Sync Spotify to import your library."
                     : "No playlists found. Connect Spotify in your profile to sync your playlists."}
                 </p>
@@ -452,11 +511,13 @@ export default function Library() {
                     style={{ cursor: "pointer" }}
                   >
                     <div className="card-top-row">
-                      <span className="card-badge-label">PLAYLIST</span>
+                      <span className="card-badge-label">{item.isShell && item.spotifyOwned ? "SPOTIFY-MADE" : "PLAYLIST"}</span>
                       <div className="platform-badges">{Array.isArray(item.platforms) ? item.platforms.join(" ") : item.platforms}</div>
                     </div>
                     <h3>{item.name}</h3>
-                    <p className="card-subtext">{item.curator} • {item.count} Tracks</p>
+                    <p className="card-subtext">
+                      {item.curator} • {isShell(item) ? "Tracks not imported" : `${item.count} Tracks`}
+                    </p>
                   </div>
                 ))
               )}
@@ -467,34 +528,75 @@ export default function Library() {
         {/* DETAILED PLAYLIST VIEW WHEN CLICKED */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
-            <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ marginBottom: "20px", background: "none", border: "1px solid #444", color: "#fff", padding: "8px 16px", borderRadius: "6px", cursor: "pointer" }}>
+            <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ ...smallButtonStyle, marginBottom: "20px" }}>
               <i className="fa-solid fa-arrow-left"></i> Back to Playlists
             </button>
             <h2>{selectedPlaylist.name}</h2>
-            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>
+              {selectedPlaylist.curator} • {isShell(selectedPlaylist) ? "Tracks not imported" : `${selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks`}
+            </p>
 
-            <div className="library-list-stack">
-              {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
-                selectedPlaylist.tracks.map((track, idx) => (
-                  <div key={`${track.id}-${idx}`} className="library-row-item">
-                    <div className="row-item-left">
-                      <span className="row-platform">🟢</span>
-                      <div className="row-text-group">
-                        <span className="row-song-title">{track.title}</span>
-                        <span className="row-song-artist">{track.artist}</span>
+            {/* Shell view: playlists Spotify won't let Gapviz read */}
+            {isShell(selectedPlaylist) && (
+              <div style={{ padding: "16px 20px", borderRadius: "10px", background: "rgba(255, 255, 255, 0.05)", border: "1px solid #444", color: "#d4d4d8", fontSize: "14px", lineHeight: 1.5, marginBottom: "20px" }}>
+                <strong style={{ color: "#fff" }}>
+                  {selectedPlaylist.spotifyOwned ? "Spotify made this playlist" : "Gapviz couldn't read this playlist's tracks"}
+                </strong>
+                <p style={{ margin: "8px 0" }}>
+                  {selectedPlaylist.spotifyOwned
+                    ? "Spotify doesn't let apps like Gapviz read the tracks in playlists it makes itself, such as radio playlists and Daily Mixes. Gapviz keeps it here so you can still find it. To bring its tracks into Gapviz:"
+                    : "Spotify refused to share this playlist's tracks with Gapviz. You can try importing it again, or bring its tracks in yourself:"}
+                </p>
+                <ol style={{ margin: "8px 0 8px 20px", padding: 0 }}>
+                  <li>Open the playlist in Spotify on a computer.</li>
+                  <li>Click any track, select them all (Ctrl+A, or Cmd+A on a Mac), right-click and choose Add to playlist, then New playlist.</li>
+                  <li>Come back here and press Sync Spotify. Your copy arrives as a normal playlist with every track.</li>
+                  <li>Archive this one if you no longer need it.</li>
+                </ol>
+                <p style={{ margin: "8px 0", color: "#a1a1aa", fontSize: "13px" }}>
+                  Your copy is a snapshot. It won't change when Spotify refreshes the original.
+                </p>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "12px" }}>
+                  {!selectedPlaylist.spotifyOwned && (
+                    <button style={smallButtonStyle} onClick={() => handleRetry(selectedPlaylist)}>
+                      Try importing again
+                    </button>
+                  )}
+                  <a href={spotifyPlaylistUrl(selectedPlaylist.id)} target="_blank" rel="noopener noreferrer" style={smallButtonStyle}>
+                    <i className="fa-brands fa-spotify"></i> Open in Spotify
+                  </a>
+                  <button
+                    style={smallButtonStyle}
+                    onClick={() => handleArchive(selectedPlaylist, !selectedPlaylist.isArchived)}
+                  >
+                    {selectedPlaylist.isArchived ? "Restore to library" : "Archive this playlist"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!isShell(selectedPlaylist) && (
+              <div className="library-list-stack">
+                {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
+                  selectedPlaylist.tracks.map((track, idx) => (
+                    <div key={`${track.id}-${idx}`} className="library-row-item">
+                      <div className="row-item-left">
+                        <span className="row-platform">🟢</span>
+                        <div className="row-text-group">
+                          <span className="row-song-title">{track.title}</span>
+                          <span className="row-song-artist">{track.artist}</span>
+                        </div>
                       </div>
+                      <span className="row-duration">{track.duration}</span>
                     </div>
-                    <span className="row-duration">{track.duration}</span>
-                  </div>
-                ))
-              ) : !selectedPlaylist.loaded ? (
-                <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
-              ) : selectedPlaylist.restricted ? (
-                <p style={{ color: "#aaa" }}>Spotify doesn't let Gapviz read the tracks in this playlist (it is not owned by you).</p>
-              ) : (
-                <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
-              )}
-            </div>
+                  ))
+                ) : !selectedPlaylist.loaded ? (
+                  <p style={{ color: "#aaa" }}>Loading tracks from your vault...</p>
+                ) : (
+                  <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet. Press Sync Spotify to import them.</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
