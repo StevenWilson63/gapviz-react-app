@@ -56,10 +56,10 @@ export default function Library() {
   // Master Sorting Controls State
   const [playlistGridSort, setPlaylistGridSort] = useState("recent"); 
   const [songSort, setSongSort] = useState("recent"); 
-  const [albumSort, setAlbumSort] = useState("az"); 
+  const [albumSort, setAlbumSort] = useState("az"); // 'az' | 'artist' | 'recent' | 'year'
 
-  // In-Playlist Sort State ('download' sequence as default)
-  const [playlistInternalSort, setPlaylistInternalSort] = useState("download"); // 'download' | 'title' | 'artist' | 'album' | 'recent' | 'release' | 'duration'
+  // In-Playlist Sort State
+  const [playlistInternalSort, setPlaylistInternalSort] = useState("download"); 
 
   // Commentary Vault Filter States
   const [vaultEra, setVaultEra] = useState("all");
@@ -121,6 +121,9 @@ export default function Library() {
       const existing = albumMap.get(key);
       if (existing) {
         existing.tracks += 1;
+        if ((t.addedAt || 0) > existing.addedAt) {
+          existing.addedAt = t.addedAt;
+        }
       } else {
         albumMap.set(key, {
           id: key,
@@ -129,6 +132,7 @@ export default function Library() {
           year: t.releaseYear || "—",
           platform: "🟢",
           tracks: 1,
+          addedAt: t.addedAt || 0,
           albumMode: true
         });
       }
@@ -371,11 +375,12 @@ export default function Library() {
   const filteredAlbums = libraryData.albums
     .filter((a) => matchesSearch(a.title) || matchesSearch(a.artist))
     .sort((a, b) => {
+      if (albumSort === "artist") return a.artist.localeCompare(b.artist);
+      if (albumSort === "recent") return b.addedAt - a.addedAt;
       if (albumSort === "year") return (b.year || 0) - (a.year || 0);
       return a.title.localeCompare(b.title);
     });
 
-  // Apply sorting to selected playlist tracks
   const getSortedPlaylistTracks = () => {
     if (!selectedPlaylist || !selectedPlaylist.tracks) return [];
     const tracksCopy = [...selectedPlaylist.tracks];
@@ -387,7 +392,7 @@ export default function Library() {
       if (playlistInternalSort === "recent") return b.addedAt - a.addedAt;
       if (playlistInternalSort === "release") return (b.releaseYear || 0) - (a.releaseYear || 0);
       if (playlistInternalSort === "duration") return b.durationMs - a.durationMs;
-      return 0; // 'download' sequence maintains original position order
+      return 0;
     });
   };
 
@@ -576,7 +581,7 @@ export default function Library() {
                 <i className="fa-solid fa-arrow-left"></i> Back to Playlists
               </button>
 
-              {/* In-Playlist Sort Dropdown with Download Sequence */}
+              {/* In-Playlist Sort Dropdown */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}><i className="fa-solid fa-arrow-down-wide-short"></i> Sort by:</span>
                 <select 
@@ -707,7 +712,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* Albums Tab with Sorting */}
+        {/* Albums Tab with Updated Sorting (Album A-Z, Artist, Recently Added, Release Year) */}
         {activeTab === "albums" && (
           <div>
             <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", gap: "8px" }}>
@@ -718,6 +723,8 @@ export default function Library() {
                 style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
               >
                 <option value="az">Album Title (A-Z)</option>
+                <option value="artist">Artist Name (A-Z)</option>
+                <option value="recent">Recently Added</option>
                 <option value="year">Release Year (Newest)</option>
               </select>
             </div>
