@@ -92,7 +92,7 @@ export async function removeTrackFromPlaylist(playlistKey, trackKey) {
   }
 }
 
-// Strict Genre-First Crate Builder Mixer
+// Smart Crate Builder with Genre-First and Era/Year Fallback Mixing
 export async function generateSmartStationTracks(artistQuery, targetCount = 50) {
   const allTracks = await getAllVaultTracks();
   const query = artistQuery.trim().toLowerCase();
@@ -100,24 +100,47 @@ export async function generateSmartStationTracks(artistQuery, targetCount = 50) 
   // 1. Anchor tracks by the requested artist
   const primaryTracks = allTracks.filter(t => (t.artist || "").toLowerCase().includes(query));
   
-  // Extract primary genres of the target artist (ignoring blanks/unknown)
   const primaryGenres = new Set(
     primaryTracks
       .map(t => (t.genre || "").toLowerCase().trim())
       .filter(g => g && g !== "unknown" && g !== "other")
   );
 
-  // 2. Strict Genre-First Peer Filtering
-  // Peers MUST match at least one genre tag from the primary artist, and must NOT be the same artist.
-  const peerTracks = allTracks.filter(t => {
-    if ((t.artist || "").toLowerCase().includes(query)) return false;
-    const trackGenre = (t.genre || "").toLowerCase().trim();
-    return primaryGenres.has(trackGenre);
-  });
+  const primaryYears = primaryTracks.map(t => t.releaseYear).filter(Boolean);
+  const avgYear = primaryYears.length > 0 ? Math.round(primaryYears.reduce((a, b) => a + b, 0) / primaryYears.length) : null;
+
+  // 2. Peer Selection with Fallback
+  let peerTracks = [];
+
+  if (primaryGenres.size > 0) {
+    // Strict Genre Match if genres are known
+    peerTracks = allTracks.filter(t => {
+      if ((t.artist || "").toLowerCase().includes(query)) return false;
+      const trackGenre = (t.genre || "").toLowerCase().trim();
+      return primaryGenres.has(trackGenre);
+    });
+  }
+
+  // Fallback: If genres were unknown or yielded too few tracks, match by Era (+/- 3 years)
+  if (peerTracks.length < 15 && avgYear) {
+    const eraPeers = allTracks.filter(t => {
+      if ((t.artist || "").toLowerCase().includes(query)) return false;
+      if (!t.releaseYear) return false;
+      return Math.abs(t.releaseYear - avgYear) <= 3;
+    });
+    // Merge without duplicates
+    const existingKeys = new Set(peerTracks.map(t => t.trackKey));
+    eraPeers.forEach(p => {
+      if (!existingKeys.has(p.trackKey)) {
+        peerTracks.push(p);
+        existingKeys.add(p.trackKey);
+      }
+    });
+  }
 
   const shuffledPeers = peerTracks.sort(() => 0.5 - Math.random());
   
-  // Target split: ~25% anchor artist, rest strict genre peers up to 50 tracks
+  // Target split: ~25% anchor artist, rest genre/era peers up to 50 tracks
   const primaryTargetCount = Math.max(5, Math.floor(targetCount * 0.25));
   const selectedPrimary = primaryTracks.slice(0, primaryTargetCount);
   const selectedPeers = shuffledPeers.slice(0, targetCount - selectedPrimary.length);
