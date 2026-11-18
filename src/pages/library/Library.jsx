@@ -202,7 +202,11 @@ export default function Library() {
 
   // Create Custom Playlist
   const handleSaveNewPlaylist = async () => {
-    if (!newPlaylistName.trim()) return;
+    console.log(">>> [Debug] Save Playlist clicked. Input value:", newPlaylistName);
+    if (!newPlaylistName.trim()) {
+      console.warn(">>> [Debug] Playlist name is empty or whitespace only!");
+      return;
+    }
     const playlistKey = `custom:${Date.now()}`;
     
     await vaultDb.playlists.put({
@@ -217,8 +221,6 @@ export default function Library() {
     
     setNewPlaylistName("");
     setIsCreatingPlaylist(false);
-    
-    // Force immediate vault reload and state update
     await loadFromVault();
   };
 
@@ -255,13 +257,19 @@ export default function Library() {
 
   // The Crate Builder: Generate [Artist] Station
   const handleGenerateStation = async () => {
-    if (!stationArtist.trim()) return;
+    console.log(">>> [Debug] Build Station clicked. Artist input:", stationArtist);
+    if (!stationArtist.trim()) {
+      console.warn(">>> [Debug] Station artist is empty or whitespace only!");
+      return;
+    }
     const query = stationArtist.trim().toLowerCase();
     const allTracks = await getAllVaultTracks();
+    console.log(">>> [Debug] Total tracks loaded from vault for matching:", allTracks.length);
 
     const matched = allTracks.filter(
       (t) => (t.artist || "").toLowerCase().includes(query) || (t.genre || "").toLowerCase().includes(query)
     );
+    console.log(">>> [Debug] Matched tracks found:", matched.length);
 
     const stationTracks = matched.slice(0, 50);
     const playlistKey = `station:${Date.now()}`;
@@ -288,8 +296,6 @@ export default function Library() {
 
     setStationArtist("");
     setIsCrateBuilderOpen(false);
-    
-    // Force immediate vault reload and state update
     await loadFromVault();
   };
 
