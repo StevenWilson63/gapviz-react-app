@@ -58,7 +58,67 @@ export async function getPlaylistTrackCounts() {
   return counts;
 }
 
-// Hide / restore a playlist in the library. Archived playlists stay archived across re-syncs
+// Add a single track to a custom playlist
+export async function addTrackToPlaylist(playlistKey, trackKey) {
+  const existingLinks = await vaultDb.playlistTracks.where('playlistKey').equals(playlistKey).toArray();
+  const position = existingLinks.length;
+  
+  const alreadyExists = existingLinks.some(l => l.trackKey === trackKey);
+  if (alreadyExists) return;
+
+  await vaultDb.playlistTracks.put({
+    playlistKey,
+    trackKey,
+    position
+  });
+
+  const plRecord = await vaultDb.playlists.where('playlistKey').equals(playlistKey).first();
+  if (plRecord) {
+    await vaultDb.playlists.update(plRecord.id, { trackCount: position + 1 });
+  }
+}
+
+// Remove a single track from a playlist
+export async function removeTrackFromPlaylist(playlistKey, trackKey) {
+  await vaultDb.playlistTracks
+    .where('[playlistKey+trackKey]')
+    .equals([playlistKey, trackKey])
+    .delete();
+
+  const existingLinks = await vaultDb.playlistTracks.where('playlistKey').equals(playlistKey).toArray();
+  const plRecord = await vaultDb.playlists.where('playlistKey').equals(playlistKey).first();
+  if (plRecord) {
+    await vaultDb.playlists.update(plRecord.id, { trackCount: existingLinks.length });
+  }
+}
+
+// Smart Crate Builder Peer Mixer: ~25% anchor artist, rest contemporaries by genre/era up to 50 tracks
+export async function generateSmartStationTracks(artistQuery, targetCount = 50) {
+  const allTracks = await getAllVaultTracks();
+  const query = artistQuery.trim().toLowerCase();
+
+  const primaryTracks = allTracks.filter(t => (t.artist || "").toLowerCase().includes(query));
+  const primaryGenres = new Set(primaryTracks.map(t => (t.genre || "").toLowerCase()).filter(g => g && g !== "unknown"));
+  const primaryYears = primaryTracks.map(t => t.releaseYear).filter(Boolean);
+  const avgYear = primaryYears.length > 0 ? Math.round(primaryYears.reduce((a, b) => a + b, 0) / primaryYears.length) : null;
+
+  const peerTracks = allTracks.filter(t => {
+    if ((t.artist || "").toLowerCase().includes(query)) return false;
+    const matchesGenre = primaryGenres.has((t.genre || "").toLowerCase());
+    const matchesEra = avgYear && t.releaseYear && Math.abs(t.releaseYear - avgYear) <= 4;
+    return matchesGenre || matchesEra;
+  });
+
+  const shuffledPeers = peerTracks.sort(() => 0.5 - Math.random());
+  const primaryTargetCount = Math.max(5, Math.floor(targetCount * 0.25));
+  const selectedPrimary = primaryTracks.slice(0, primaryTargetCount);
+  const selectedPeers = shuffledPeers.slice(0, targetCount - selectedPrimary.length);
+
+  const combined = [...selectedPrimary, ...selectedPeers].sort(() => 0.5 - Math.random());
+  return combined.slice(0, targetCount);
+}
+
+// Hide / restore a playlist in the library
 export async function setPlaylistArchived(playlistKey, archived) {
   await vaultDb.playlists
     .where('playlistKey')

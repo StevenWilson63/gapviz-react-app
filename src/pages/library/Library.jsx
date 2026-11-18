@@ -15,7 +15,10 @@ import {
   getPlaylistTrackCounts,
   setPlaylistArchived,
   requeuePlaylist,
-  vaultDb
+  vaultDb,
+  addTrackToPlaylist,
+  removeTrackFromPlaylist,
+  generateSmartStationTracks
 } from "../../services/vaultDb";
 import "./Library.css";
 
@@ -65,6 +68,10 @@ export default function Library() {
   // Crate Builder / Station Generator State
   const [isCrateBuilderOpen, setIsCrateBuilderOpen] = useState(false);
   const [stationArtist, setStationArtist] = useState("");
+
+  // Track Management State inside Playlists
+  const [isAddingTrack, setIsAddingTrack] = useState(false);
+  const [vaultSongSearch, setVaultSongSearch] = useState("");
 
   // Rename & Delete Modal State
   const [editingPlaylist, setEditingPlaylist] = useState(null);
@@ -140,6 +147,7 @@ export default function Library() {
       }),
       songs: tracks.map((t, idx) => ({
         id: t.id || t.trackKey || idx,
+        trackKey: t.trackKey,
         title: t.title,
         artist: t.artist,
         album: t.album || "Master Vault",
@@ -202,11 +210,7 @@ export default function Library() {
 
   // Create Custom Playlist
   const handleSaveNewPlaylist = async () => {
-    console.log(">>> [Debug] Save Playlist clicked. Input value:", newPlaylistName);
-    if (!newPlaylistName.trim()) {
-      console.warn(">>> [Debug] Playlist name is empty or whitespace only!");
-      return;
-    }
+    if (!newPlaylistName.trim()) return;
     const playlistKey = `custom:${Date.now()}`;
     
     await vaultDb.playlists.put({
@@ -255,23 +259,11 @@ export default function Library() {
     await loadFromVault();
   };
 
-  // The Crate Builder: Generate [Artist] Station
+  // The Crate Builder: Smart Station Generator with peer mixing
   const handleGenerateStation = async () => {
-    console.log(">>> [Debug] Build Station clicked. Artist input:", stationArtist);
-    if (!stationArtist.trim()) {
-      console.warn(">>> [Debug] Station artist is empty or whitespace only!");
-      return;
-    }
-    const query = stationArtist.trim().toLowerCase();
-    const allTracks = await getAllVaultTracks();
-    console.log(">>> [Debug] Total tracks loaded from vault for matching:", allTracks.length);
-
-    const matched = allTracks.filter(
-      (t) => (t.artist || "").toLowerCase().includes(query) || (t.genre || "").toLowerCase().includes(query)
-    );
-    console.log(">>> [Debug] Matched tracks found:", matched.length);
-
-    const stationTracks = matched.slice(0, 50);
+    if (!stationArtist.trim()) return;
+    const stationTracks = await generateSmartStationTracks(stationArtist.trim(), 50);
+    
     const playlistKey = `station:${Date.now()}`;
     const stationName = `${stationArtist.trim()} Station`;
 
@@ -279,7 +271,7 @@ export default function Library() {
       playlistKey,
       name: stationName,
       platform: "custom",
-      curator: "The Crate Builder",
+      curator: "The Crate Builder (Smart Station)",
       trackCount: stationTracks.length,
       isCustom: true,
       sortOrder: Date.now()
@@ -301,14 +293,30 @@ export default function Library() {
 
   const handleSelectPlaylist = async (playlist) => {
     setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
+    setIsAddingTrack(false);
     const rows = await getPlaylistTracks(playlist.id);
     const tracks = rows.map((t) => ({
-      id: t.trackKey,
+      id: t.id,
+      trackKey: t.trackKey,
       title: t.title,
       artist: t.artist,
       duration: formatDuration(t.durationMs)
     }));
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
+  };
+
+  const handleAddTrackToCurrentPlaylist = async (trackKey) => {
+    if (!selectedPlaylist) return;
+    await addTrackToPlaylist(selectedPlaylist.id, trackKey);
+    await handleSelectPlaylist(selectedPlaylist);
+    await loadFromVault();
+  };
+
+  const handleRemoveTrackFromCurrentPlaylist = async (trackKey) => {
+    if (!selectedPlaylist) return;
+    await removeTrackFromPlaylist(selectedPlaylist.id, trackKey);
+    await handleSelectPlaylist(selectedPlaylist);
+    await loadFromVault();
   };
 
   const handleArchive = async (playlist, archived) => {
@@ -378,7 +386,7 @@ export default function Library() {
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: "#18181b", border: "1px solid #1db954", borderRadius: "12px", padding: "24px", width: "420px", color: "#fff" }}>
             <h3 style={{ marginBottom: "8px", color: "#1db954" }}><i className="fa-solid fa-radio"></i> The Crate Builder</h3>
-            <p style={{ fontSize: "13px", color: "#a1a1aa", marginBottom: "16px" }}>Enter an artist name to build a 50-track smart station based on their vault tracks and era.</p>
+            <p style={{ fontSize: "13px", color: "#a1a1aa", marginBottom: "16px" }}>Enter an artist name to build a 50-track smart station mixed with peer artists from the same era.</p>
             <input type="text" placeholder="e.g. Duran Duran" value={stationArtist} onChange={(e) => setStationArtist(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
               <button onClick={() => setIsCrateBuilderOpen(false)} style={smallButtonStyle}>Cancel</button>
@@ -450,7 +458,7 @@ export default function Library() {
             {isCreatingPlaylist && (
               <div className="playlist-creator-card" style={{ background: "#18181b", border: "1px solid #444", borderRadius: "12px", padding: "20px", marginBottom: "20px" }}>
                 <h3 style={{ marginBottom: "12px" }}>Build New Playlist</h3>
-                <input type="text" placeholder="e.g. Cafe Discoveries" value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} />
+                <input type="text" placeholder="e.g. Jock Strapping" value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} />
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button onClick={handleSaveNewPlaylist} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Save & Build</button>
                   <button onClick={() => setIsCreatingPlaylist(false)} style={smallButtonStyle}>Cancel</button>
@@ -488,6 +496,7 @@ export default function Library() {
           </div>
         )}
 
+        {/* Detailed Playlist View with Track Management */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
             <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={{ ...smallButtonStyle, marginBottom: "20px" }}>
@@ -495,28 +504,67 @@ export default function Library() {
             </button>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", marginBottom: "8px" }}>
               <h2 style={{ margin: 0 }}>{selectedPlaylist.name}</h2>
-              <button onClick={() => { setEditingPlaylist(selectedPlaylist); setRenameValue(selectedPlaylist.name); }} style={{ ...smallButtonStyle, padding: "4px 10px", fontSize: "12px" }}>
-                <i className="fa-solid fa-pen"></i> Rename
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {selectedPlaylist.isCustom && (
+                  <button onClick={() => setIsAddingTrack(!isAddingTrack)} style={{ ...smallButtonStyle, background: "#1db954", color: "#000", border: "none", fontWeight: "bold" }}>
+                    <i className="fa-solid fa-plus"></i> Add Tracks
+                  </button>
+                )}
+                <button onClick={() => { setEditingPlaylist(selectedPlaylist); setRenameValue(selectedPlaylist.name); }} style={{ ...smallButtonStyle, padding: "4px 10px", fontSize: "12px" }}>
+                  <i className="fa-solid fa-pen"></i> Rename
+                </button>
+              </div>
             </div>
-            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || selectedPlaylist.count || 0} Tracks</p>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || 0} Tracks</p>
+
+            {/* Add Track Drawer for Custom Playlists */}
+            {isAddingTrack && (
+              <div style={{ background: "#18181b", border: "1px solid #1db954", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
+                <h4 style={{ margin: "0 0 10px 0", color: "#1db954" }}>Add Songs from Master Vault</h4>
+                <input 
+                  type="text" 
+                  placeholder="Search vault songs to add..." 
+                  value={vaultSongSearch} 
+                  onChange={(e) => setVaultSongSearch(e.target.value)} 
+                  style={{ width: "100%", padding: "8px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} 
+                />
+                <div style={{ maxHeight: "220px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {libraryData.songs
+                    .filter(s => s.title.toLowerCase().includes(vaultSongSearch.toLowerCase()) || s.artist.toLowerCase().includes(vaultSongSearch.toLowerCase()))
+                    .slice(0, 20)
+                    .map(song => (
+                      <div key={song.trackKey} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 10px", background: "rgba(255,255,255,0.05)", borderRadius: "6px" }}>
+                        <span>{song.title} - <span style={{ color: "#a1a1aa" }}>{song.artist}</span></span>
+                        <button onClick={() => handleAddTrackToCurrentPlaylist(song.trackKey)} style={{ ...smallButtonStyle, padding: "4px 10px", fontSize: "12px" }}>Add</button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
 
             <div className="library-list-stack">
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
                 selectedPlaylist.tracks.map((track, idx) => (
-                  <div key={`${track.id}-${idx}`} className="library-row-item">
-                    <div className="row-item-left">
+                  <div key={`${track.trackKey}-${idx}`} className="library-row-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div className="row-item-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <span className="row-platform">🟢</span>
                       <div className="row-text-group">
                         <span className="row-song-title">{track.title}</span>
                         <span className="row-song-artist">{track.artist}</span>
                       </div>
                     </div>
-                    <span className="row-duration">{track.duration}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <span className="row-duration">{track.duration}</span>
+                      {selectedPlaylist.isCustom && (
+                        <button onClick={() => handleRemoveTrackFromCurrentPlaylist(track.trackKey)} style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer" }} title="Remove from playlist">
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))
               ) : (
-                <p style={{ color: "#aaa" }}>No tracks saved for this playlist yet.</p>
+                <p style={{ color: "#aaa" }}>No tracks in this playlist yet. Click "Add Tracks" above to build your crate.</p>
               )}
             </div>
           </div>
