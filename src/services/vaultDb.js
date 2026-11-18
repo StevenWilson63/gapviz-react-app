@@ -92,24 +92,32 @@ export async function removeTrackFromPlaylist(playlistKey, trackKey) {
   }
 }
 
-// Smart Crate Builder Peer Mixer: ~25% anchor artist, rest contemporaries by genre/era up to 50 tracks
+// Strict Genre-First Crate Builder Mixer
 export async function generateSmartStationTracks(artistQuery, targetCount = 50) {
   const allTracks = await getAllVaultTracks();
   const query = artistQuery.trim().toLowerCase();
 
+  // 1. Anchor tracks by the requested artist
   const primaryTracks = allTracks.filter(t => (t.artist || "").toLowerCase().includes(query));
-  const primaryGenres = new Set(primaryTracks.map(t => (t.genre || "").toLowerCase()).filter(g => g && g !== "unknown"));
-  const primaryYears = primaryTracks.map(t => t.releaseYear).filter(Boolean);
-  const avgYear = primaryYears.length > 0 ? Math.round(primaryYears.reduce((a, b) => a + b, 0) / primaryYears.length) : null;
+  
+  // Extract primary genres of the target artist (ignoring blanks/unknown)
+  const primaryGenres = new Set(
+    primaryTracks
+      .map(t => (t.genre || "").toLowerCase().trim())
+      .filter(g => g && g !== "unknown" && g !== "other")
+  );
 
+  // 2. Strict Genre-First Peer Filtering
+  // Peers MUST match at least one genre tag from the primary artist, and must NOT be the same artist.
   const peerTracks = allTracks.filter(t => {
     if ((t.artist || "").toLowerCase().includes(query)) return false;
-    const matchesGenre = primaryGenres.has((t.genre || "").toLowerCase());
-    const matchesEra = avgYear && t.releaseYear && Math.abs(t.releaseYear - avgYear) <= 4;
-    return matchesGenre || matchesEra;
+    const trackGenre = (t.genre || "").toLowerCase().trim();
+    return primaryGenres.has(trackGenre);
   });
 
   const shuffledPeers = peerTracks.sort(() => 0.5 - Math.random());
+  
+  // Target split: ~25% anchor artist, rest strict genre peers up to 50 tracks
   const primaryTargetCount = Math.max(5, Math.floor(targetCount * 0.25));
   const selectedPrimary = primaryTracks.slice(0, primaryTargetCount);
   const selectedPeers = shuffledPeers.slice(0, targetCount - selectedPrimary.length);
