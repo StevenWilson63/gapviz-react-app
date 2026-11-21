@@ -46,8 +46,12 @@ const smallButtonStyle = {
   cursor: "pointer",
   textDecoration: "none",
   fontSize: "14px",
-  display: "inline-block"
+  display: "inline-block",
+  transition: "all 0.2s ease"
 };
+
+const GAPVIZ_RED = "#ff3344";
+const GAPVIZ_RED_HOVER = "#ff4d5b";
 
 export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
@@ -56,10 +60,14 @@ export default function Library() {
   // Master Sorting Controls State
   const [playlistGridSort, setPlaylistGridSort] = useState("recent"); 
   const [songSort, setSongSort] = useState("recent"); 
-  const [albumSort, setAlbumSort] = useState("az"); // 'az' | 'artist' | 'recent' | 'year'
+  const [albumSort, setAlbumSort] = useState("az"); 
 
   // In-Playlist Sort State
   const [playlistInternalSort, setPlaylistInternalSort] = useState("download"); 
+
+  // Hover State for Crate Builder trigger & primary action
+  const [crateBtnHovered, setCrateBtnHovered] = useState(false);
+  const [buildStationHovered, setBuildStationHovered] = useState(false);
 
   // Commentary Vault Filter States
   const [vaultEra, setVaultEra] = useState("all");
@@ -415,14 +423,14 @@ export default function Library() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmPlaylist && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#18181b", border: "1px solid #ff3344", borderRadius: "12px", padding: "24px", width: "400px", color: "#fff", textAlign: "center" }}>
-            <h3 style={{ color: "#ff3344", marginBottom: "12px" }}>Delete Playlist from Gapviz?</h3>
+          <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "24px", width: "400px", color: "#fff", textAlign: "center" }}>
+            <h3 style={{ color: GAPVIZ_RED, marginBottom: "12px" }}>Delete Playlist from Gapviz?</h3>
             <p style={{ fontSize: "14px", color: "#d4d4d8", marginBottom: "20px" }}>
               This will remove <strong>{deleteConfirmPlaylist.name}</strong> from your Gapviz vault only. Your actual Spotify account and playlists remain completely untouched.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
               <button onClick={() => setDeleteConfirmPlaylist(null)} style={smallButtonStyle}>Cancel</button>
-              <button onClick={handleDeleteGapvizPlaylist} style={{ ...smallButtonStyle, background: "#ff3344", border: "none", color: "#fff" }}>Delete from Gapviz</button>
+              <button onClick={handleDeleteGapvizPlaylist} style={{ ...smallButtonStyle, background: GAPVIZ_RED, border: "none", color: "#fff" }}>Delete from Gapviz</button>
             </div>
           </div>
         </div>
@@ -436,22 +444,36 @@ export default function Library() {
             <input type="text" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
               <button onClick={() => setEditingPlaylist(null)} style={smallButtonStyle}>Cancel</button>
-              <button onClick={handleRenamePlaylist} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Save</button>
+              <button onClick={handleRenamePlaylist} style={{ ...smallButtonStyle, background: GAPVIZ_RED, border: "none", color: "#fff", fontWeight: "bold" }}>Save</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Crate Builder Modal */}
+      {/* Crate Builder Modal (Gapviz Red Styled) */}
       {isCrateBuilderOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#18181b", border: "1px solid #1db954", borderRadius: "12px", padding: "24px", width: "420px", color: "#fff" }}>
-            <h3 style={{ marginBottom: "8px", color: "#1db954" }}><i className="fa-solid fa-radio"></i> The Crate Builder</h3>
+          <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "24px", width: "420px", color: "#fff", boxShadow: `0 12px 32px rgba(255, 51, 68, 0.18)` }}>
+            <h3 style={{ marginBottom: "8px", color: GAPVIZ_RED }}><i className="fa-solid fa-radio"></i> The Crate Builder</h3>
             <p style={{ fontSize: "13px", color: "#a1a1aa", marginBottom: "16px" }}>Enter an artist name to build a 50-track smart station mixed with peer artists from the same era.</p>
             <input type="text" placeholder="e.g. Duran Duran" value={stationArtist} onChange={(e) => setStationArtist(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
               <button onClick={() => setIsCrateBuilderOpen(false)} style={smallButtonStyle}>Cancel</button>
-              <button onClick={handleGenerateStation} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Build Station</button>
+              <button
+                onClick={handleGenerateStation}
+                onMouseEnter={() => setBuildStationHovered(true)}
+                onMouseLeave={() => setBuildStationHovered(false)}
+                style={{
+                  ...smallButtonStyle,
+                  background: buildStationHovered ? GAPVIZ_RED_HOVER : GAPVIZ_RED,
+                  border: "none",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  transform: buildStationHovered ? "translateY(-1px)" : "translateY(0)"
+                }}
+              >
+                Build Station
+              </button>
             </div>
           </div>
         </div>
@@ -462,7 +484,7 @@ export default function Library() {
         <h1>Master Library</h1>
         <p className="library-subtitle">Your aggregated multi-platform music vault, identified tracks & saved lore</p>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px", flexWrap: "wrap" }}>
-          <button onClick={handleSync} disabled={syncButtonDisabled} style={{ background: syncButtonDisabled ? "#2a2a2e" : "#1db954", color: syncButtonDisabled ? "#777" : "#000", border: "none", borderRadius: "6px", padding: "8px 16px", fontWeight: 700, cursor: syncButtonDisabled ? "not-allowed" : "pointer" }}>
+          <button onClick={handleSync} disabled={syncButtonDisabled} style={{ background: syncButtonDisabled ? "#2a2a2e" : GAPVIZ_RED, color: syncButtonDisabled ? "#777" : "#fff", border: "none", borderRadius: "6px", padding: "8px 16px", fontWeight: 700, cursor: syncButtonDisabled ? "not-allowed" : "pointer" }}>
             <i className="fa-solid fa-rotate"></i> Sync Spotify
           </button>
           {lastSyncAt && <span style={{ color: "#71717a", fontSize: "12px" }}>Last synced {new Date(lastSyncAt).toLocaleString()}</span>}
@@ -507,7 +529,20 @@ export default function Library() {
                 <button className="create-playlist-btn" onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}>
                   <i className="fa-solid fa-plus"></i> Create New Playlist
                 </button>
-                <button style={{ ...smallButtonStyle, background: "#18181b", borderColor: "#1db954", color: "#1db954" }} onClick={() => setIsCrateBuilderOpen(true)}>
+                <button
+                  onClick={() => setIsCrateBuilderOpen(true)}
+                  onMouseEnter={() => setCrateBtnHovered(true)}
+                  onMouseLeave={() => setCrateBtnHovered(false)}
+                  style={{
+                    ...smallButtonStyle,
+                    background: crateBtnHovered ? "rgba(255, 51, 68, 0.16)" : "rgba(255, 51, 68, 0.08)",
+                    borderColor: GAPVIZ_RED,
+                    color: crateBtnHovered ? "#fff" : GAPVIZ_RED,
+                    fontWeight: 600,
+                    transform: crateBtnHovered ? "translateY(-1px)" : "translateY(0)",
+                    boxShadow: crateBtnHovered ? "0 6px 18px rgba(255, 51, 68, 0.22)" : "none"
+                  }}
+                >
                   <i className="fa-solid fa-radio"></i> The Crate Builder
                 </button>
                 {(archivedPlaylists.length > 0 || showArchived) && (
@@ -537,7 +572,7 @@ export default function Library() {
                 <h3 style={{ marginBottom: "12px" }}>Build New Playlist</h3>
                 <input type="text" placeholder="e.g. Late Night Mix" value={newPlaylistName} onChange={(e) => setNewPlaylistName(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} />
                 <div style={{ display: "flex", gap: "10px" }}>
-                  <button onClick={handleSaveNewPlaylist} style={{ ...smallButtonStyle, background: "#1db954", border: "none", color: "#000", fontWeight: "bold" }}>Save & Build</button>
+                  <button onClick={handleSaveNewPlaylist} style={{ ...smallButtonStyle, background: GAPVIZ_RED, border: "none", color: "#fff", fontWeight: "bold" }}>Save & Build</button>
                   <button onClick={() => setIsCreatingPlaylist(false)} style={smallButtonStyle}>Cancel</button>
                 </div>
               </div>
@@ -587,7 +622,7 @@ export default function Library() {
                 <select 
                   value={playlistInternalSort} 
                   onChange={(e) => setPlaylistInternalSort(e.target.value)}
-                  style={{ background: "#18181b", border: "1px solid #1db954", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
+                  style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
                 >
                   <option value="download">Download sequence</option>
                   <option value="title">Title</option>
@@ -604,7 +639,7 @@ export default function Library() {
               <h2 style={{ margin: 0 }}>{selectedPlaylist.name}</h2>
               <div style={{ display: "flex", gap: "8px" }}>
                 {selectedPlaylist.isCustom && (
-                  <button onClick={() => setIsAddingTrack(!isAddingTrack)} style={{ ...smallButtonStyle, background: "#1db954", color: "#000", border: "none", fontWeight: "bold" }}>
+                  <button onClick={() => setIsAddingTrack(!isAddingTrack)} style={{ ...smallButtonStyle, background: GAPVIZ_RED, color: "#fff", border: "none", fontWeight: "bold" }}>
                     <i className="fa-solid fa-plus"></i> {isAddingTrack ? "Close Add Drawer" : "Add Tracks"}
                   </button>
                 )}
@@ -617,11 +652,11 @@ export default function Library() {
 
             {/* Bulk Add Tracks Drawer */}
             {isAddingTrack && (
-              <div style={{ background: "#18181b", border: "1px solid #1db954", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
+              <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                  <h4 style={{ margin: 0, color: "#1db954" }}>Select Songs from Master Vault ({selectedTrackKeysToAdd.size} selected)</h4>
+                  <h4 style={{ margin: 0, color: GAPVIZ_RED }}>Select Songs from Master Vault ({selectedTrackKeysToAdd.size} selected)</h4>
                   {selectedTrackKeysToAdd.size > 0 && (
-                    <button onClick={handleAddSelectedTracks} style={{ ...smallButtonStyle, background: "#1db954", color: "#000", border: "none", fontWeight: "bold", padding: "6px 12px", fontSize: "13px" }}>
+                    <button onClick={handleAddSelectedTracks} style={{ ...smallButtonStyle, background: GAPVIZ_RED, color: "#fff", border: "none", fontWeight: "bold", padding: "6px 12px", fontSize: "13px" }}>
                       Add {selectedTrackKeysToAdd.size} Selected to Playlist
                     </button>
                   )}
@@ -642,14 +677,14 @@ export default function Library() {
                         <div 
                           key={song.trackKey} 
                           onClick={() => toggleTrackSelection(song.trackKey)}
-                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: isChecked ? "rgba(29, 185, 84, 0.15)" : "rgba(255,255,255,0.05)", border: isChecked ? "1px solid #1db954" : "1px solid transparent", borderRadius: "6px", cursor: "pointer" }}
+                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: isChecked ? "rgba(255, 51, 68, 0.15)" : "rgba(255,255,255,0.05)", border: isChecked ? `1px solid ${GAPVIZ_RED}` : "1px solid transparent", borderRadius: "6px", cursor: "pointer" }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <input 
                               type="checkbox" 
                               checked={isChecked} 
                               onChange={() => {}} 
-                              style={{ cursor: "pointer", accentColor: "#1db954" }}
+                              style={{ cursor: "pointer", accentColor: GAPVIZ_RED }}
                             />
                             <span>{song.title} - <span style={{ color: "#a1a1aa" }}>{song.artist}</span></span>
                           </div>
