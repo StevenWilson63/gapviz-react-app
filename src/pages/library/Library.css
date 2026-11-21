@@ -624,17 +624,12 @@
 
 .crate-builder-btn {
   color: #ffffff;
-  transition: all 0.18s ease;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 }
 
-.crate-builder-btn:hover {
-  border-color: #ff3344;
-  color: #ffffff;
-}
-
+.crate-builder-btn:hover,
 .crate-builder-btn:active,
 .crate-builder-btn.active {
-  background-color: #ff3344;
+  color: #ff3344;
   border-color: #ff3344;
-  color: #ffffff;
 }
