@@ -28,7 +28,7 @@ export default function YourDjs() {
     localStorage.setItem("gv_djSettings", JSON.stringify(settings));
 
     setSavedMessage(true);
-    setTimeout(() => setSavedMessage(false), 2000);
+    setTimeout(() => setSavedMessage(false), 2500);
   };
 
   const handlePreviewVoice = () => {
@@ -154,13 +154,12 @@ export default function YourDjs() {
         </div>
 
         {/* 6. SAVE BUTTON */}
-        <button className="save-dj-btn hover-box" type="submit">
-          Save DJ Preferences
+        <button
+          className={`save-dj-btn ${savedMessage ? "saved" : "hover-box"}`}
+          type="submit"
+        >
+          {savedMessage ? "✓ Preferences Saved" : "Save DJ Preferences"}
         </button>
-
-        {savedMessage && (
-          <div className="save-confirm-box">✓ Preferences Saved</div>
-        )}
 
       </form>
     </div>
