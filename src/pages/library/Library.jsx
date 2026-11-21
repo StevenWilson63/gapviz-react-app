@@ -94,7 +94,16 @@ export default function Library() {
   const [deleteConfirmPlaylist, setDeleteConfirmPlaylist] = useState(null);
 
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
+
+  // Scroll restoration tracking for Playlists & Albums
+  const screenRef = useRef(null);
+  const playlistCardRefs = useRef(new Map());
+  const albumCardRefs = useRef(new Map());
+  const lastPlaylistScrollRef = useRef({ id: null, scrollTop: 0, windowY: 0 });
+  const lastAlbumScrollRef = useRef({ id: null, scrollTop: 0, windowY: 0 });
+  const pendingRestoreRef = useRef(null);
 
   // Sync Progress Status States
   const [isSyncing, setIsSyncing] = useState(false);
@@ -116,6 +125,45 @@ export default function Library() {
     commentaryVault: []
   });
 
+  const captureCurrentScroll = useCallback(() => {
+    const container = screenRef.current;
+    return {
+      scrollTop: container ? container.scrollTop : 0,
+      windowY: typeof window !== "undefined" ? window.scrollY : 0
+    };
+  }, []);
+
+  const restorePosition = useCallback((type, targetId, fallbackScroll) => {
+    requestAnimationFrame(() => {
+      const refMap = type === "playlist" ? playlistCardRefs.current : albumCardRefs.current;
+      const cardEl = targetId ? refMap.get(targetId) : null;
+
+      if (cardEl && typeof cardEl.scrollIntoView === "function") {
+        cardEl.scrollIntoView({ block: "center", behavior: "auto" });
+        return;
+      }
+
+      if (fallbackScroll) {
+        if (screenRef.current && fallbackScroll.scrollTop > 0) {
+          screenRef.current.scrollTop = fallbackScroll.scrollTop;
+        }
+        if (typeof window !== "undefined" && fallbackScroll.windowY > 0) {
+          window.scrollTo({ top: fallbackScroll.windowY, behavior: "auto" });
+        }
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!pendingRestoreRef.current) return;
+    const { type, id, fallbackScroll } = pendingRestoreRef.current;
+    if (type === "playlist" && selectedPlaylist) return;
+    if (type === "album" && selectedAlbum) return;
+
+    pendingRestoreRef.current = null;
+    restorePosition(type, id, fallbackScroll);
+  }, [selectedPlaylist, selectedAlbum, restorePosition]);
+
   const loadFromVault = useCallback(async () => {
     const [playlists, tracks, trackCounts] = await Promise.all([
       getVaultPlaylists(),
@@ -127,9 +175,22 @@ export default function Library() {
     tracks.forEach((t) => {
       const primaryArtist = (t.artist || "Unknown Artist").split(", ")[0];
       const key = `${t.album}||${primaryArtist}`;
+      const trackItem = {
+        id: t.id || t.trackKey,
+        trackKey: t.trackKey,
+        title: t.title,
+        artist: t.artist,
+        album: t.album || "Single",
+        duration: formatDuration(t.durationMs),
+        durationMs: t.durationMs || 0,
+        releaseYear: t.releaseYear || 0,
+        addedAt: t.addedAt || 0
+      };
+
       const existing = albumMap.get(key);
       if (existing) {
         existing.tracks += 1;
+        existing.trackList.push(trackItem);
         if ((t.addedAt || 0) > existing.addedAt) {
           existing.addedAt = t.addedAt;
         }
@@ -142,7 +203,8 @@ export default function Library() {
           platform: "🟢",
           tracks: 1,
           addedAt: t.addedAt || 0,
-          albumMode: true
+          albumMode: true,
+          trackList: [trackItem]
         });
       }
     });
@@ -272,6 +334,11 @@ export default function Library() {
     await vaultDb.playlistTracks.where("playlistKey").equals(playlistKey).delete();
     setDeleteConfirmPlaylist(null);
     if (selectedPlaylist?.id === playlistKey) {
+      pendingRestoreRef.current = {
+        type: "playlist",
+        id: lastPlaylistScrollRef.current.id,
+        fallbackScroll: lastPlaylistScrollRef.current
+      };
       setSelectedPlaylist(null);
     }
     await loadFromVault();
@@ -311,6 +378,12 @@ export default function Library() {
   };
 
   const handleSelectPlaylist = async (playlist) => {
+    const currentScroll = captureCurrentScroll();
+    lastPlaylistScrollRef.current = {
+      id: playlist.id,
+      ...currentScroll
+    };
+
     setSelectedPlaylist({ ...playlist, tracks: [], loaded: false });
     setIsAddingTrack(false);
     setPlaylistInternalSort("download");
@@ -329,6 +402,33 @@ export default function Library() {
       addedAt: t.addedAt || 0
     }));
     setSelectedPlaylist((prev) => (prev && prev.id === playlist.id ? { ...prev, tracks, loaded: true } : prev));
+  };
+
+  const handleBackToPlaylists = () => {
+    pendingRestoreRef.current = {
+      type: "playlist",
+      id: lastPlaylistScrollRef.current.id,
+      fallbackScroll: lastPlaylistScrollRef.current
+    };
+    setSelectedPlaylist(null);
+  };
+
+  const handleSelectAlbum = (album) => {
+    const currentScroll = captureCurrentScroll();
+    lastAlbumScrollRef.current = {
+      id: album.id,
+      ...currentScroll
+    };
+    setSelectedAlbum(album);
+  };
+
+  const handleBackToAlbums = () => {
+    pendingRestoreRef.current = {
+      type: "album",
+      id: lastAlbumScrollRef.current.id,
+      fallbackScroll: lastAlbumScrollRef.current
+    };
+    setSelectedAlbum(null);
   };
 
   const toggleTrackSelection = (trackKey) => {
@@ -411,7 +511,7 @@ export default function Library() {
   const isCrateActive = crateBtnClicked || isCrateBuilderOpen;
 
   return (
-    <div className="library-screen" style={{ position: "relative" }}>
+    <div ref={screenRef} className="library-screen" style={{ position: "relative" }}>
 
       {/* Sync Status Modal */}
       {isSyncing && (
@@ -520,22 +620,22 @@ export default function Library() {
 
       {/* Tab Navigation */}
       <div className="library-tabs">
-        <button className={`library-tab-btn ${activeTab === "playlists" ? "active" : ""}`} onClick={() => { setActiveTab("playlists"); setSelectedPlaylist(null); }}>
+        <button className={`library-tab-btn ${activeTab === "playlists" ? "active" : ""}`} onClick={() => { setActiveTab("playlists"); setSelectedPlaylist(null); setSelectedAlbum(null); }}>
           <i className="fa-solid fa-list"></i> Playlists ({activePlaylists.length})
         </button>
-        <button className={`library-tab-btn ${activeTab === "inbox" ? "active" : ""}`} onClick={() => setActiveTab("inbox")}>
+        <button className={`library-tab-btn ${activeTab === "inbox" ? "active" : ""}`} onClick={() => { setActiveTab("inbox"); setSelectedPlaylist(null); setSelectedAlbum(null); }}>
           <i className="fa-solid fa-inbox"></i> Identify Inbox ({libraryData.inbox.length})
         </button>
-        <button className={`library-tab-btn ${activeTab === "albums" ? "active" : ""}`} onClick={() => setActiveTab("albums")}>
+        <button className={`library-tab-btn ${activeTab === "albums" ? "active" : ""}`} onClick={() => { setActiveTab("albums"); setSelectedPlaylist(null); setSelectedAlbum(null); }}>
           <i className="fa-solid fa-compact-disc"></i> Albums ({libraryData.albums.length})
         </button>
-        <button className={`library-tab-btn ${activeTab === "songs" ? "active" : ""}`} onClick={() => setActiveTab("songs")}>
+        <button className={`library-tab-btn ${activeTab === "songs" ? "active" : ""}`} onClick={() => { setActiveTab("songs"); setSelectedPlaylist(null); setSelectedAlbum(null); }}>
           <i className="fa-solid fa-music"></i> Songs ({libraryData.songs.length})
         </button>
-        <button className={`library-tab-btn ${activeTab === "identified" ? "active" : ""}`} onClick={() => setActiveTab("identified")}>
+        <button className={`library-tab-btn ${activeTab === "identified" ? "active" : ""}`} onClick={() => { setActiveTab("identified"); setSelectedPlaylist(null); setSelectedAlbum(null); }}>
           <i className="fa-solid fa-ear-listen"></i> Identified ({libraryData.identified.length})
         </button>
-        <button className={`library-tab-btn ${activeTab === "commentary" ? "active" : ""}`} onClick={() => setActiveTab("commentary")}>
+        <button className={`library-tab-btn ${activeTab === "commentary" ? "active" : ""}`} onClick={() => { setActiveTab("commentary"); setSelectedPlaylist(null); setSelectedAlbum(null); }}>
           <i className="fa-solid fa-microphone-lines"></i> Commentary Vault ({libraryData.commentaryVault.length})
         </button>
       </div>
@@ -599,7 +699,15 @@ export default function Library() {
                 <p style={{ color: "#aaa", padding: "20px" }}>No playlists found.</p>
               ) : (
                 filteredPlaylists.map((item) => (
-                  <div key={item.id} className="library-card" style={{ position: "relative" }}>
+                  <div
+                    key={item.id}
+                    ref={(el) => {
+                      if (el) playlistCardRefs.current.set(item.id, el);
+                      else playlistCardRefs.current.delete(item.id);
+                    }}
+                    className="library-card"
+                    style={{ position: "relative" }}
+                  >
                     <div onClick={() => handleSelectPlaylist(item)} style={{ cursor: "pointer" }}>
                       <div className="card-top-row">
                         <span className="card-badge-label">{item.isCustom ? "CUSTOM" : item.isShell && item.spotifyOwned ? "SPOTIFY-MADE" : "PLAYLIST"}</span>
@@ -628,7 +736,7 @@ export default function Library() {
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
-              <button className="back-btn" onClick={() => setSelectedPlaylist(null)} style={smallButtonStyle}>
+              <button className="back-btn" onClick={handleBackToPlaylists} style={smallButtonStyle}>
                 <i className="fa-solid fa-arrow-left"></i> Back to Playlists
               </button>
 
@@ -763,8 +871,8 @@ export default function Library() {
           </div>
         )}
 
-        {/* Albums Tab with Updated Sorting */}
-        {activeTab === "albums" && (
+        {/* Albums Grid Tab */}
+        {activeTab === "albums" && !selectedAlbum && (
           <div>
             <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", gap: "8px" }}>
               <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort Albums:</span>
@@ -781,7 +889,15 @@ export default function Library() {
             </div>
             <div className="library-grid">
               {filteredAlbums.map((item) => (
-                <div key={item.id} className="library-card">
+                <div
+                  key={item.id}
+                  ref={(el) => {
+                    if (el) albumCardRefs.current.set(item.id, el);
+                    else albumCardRefs.current.delete(item.id);
+                  }}
+                  className="library-card"
+                  onClick={() => handleSelectAlbum(item)}
+                >
                   <div className="card-top-row">
                     <span className="card-badge-label">ALBUM ({item.year})</span>
                     <span className="platform-badge">{item.platform}</span>
@@ -790,6 +906,41 @@ export default function Library() {
                   <p className="card-subtext">{item.artist} • {item.tracks} Tracks</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Detailed Album View */}
+        {activeTab === "albums" && selectedAlbum && (
+          <div className="playlist-detail-view">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+              <button className="back-btn" onClick={handleBackToAlbums} style={smallButtonStyle}>
+                <i className="fa-solid fa-arrow-left"></i> Back to Albums
+              </button>
+            </div>
+
+            <h2 style={{ margin: "0 0 6px 0" }}>{selectedAlbum.title}</h2>
+            <p style={{ color: "#aaa", marginBottom: "20px" }}>
+              {selectedAlbum.artist} • {selectedAlbum.year} • {selectedAlbum.trackList?.length || selectedAlbum.tracks || 0} Tracks
+            </p>
+
+            <div className="library-list-stack">
+              {selectedAlbum.trackList && selectedAlbum.trackList.length > 0 ? (
+                selectedAlbum.trackList.map((track, idx) => (
+                  <div key={`${track.trackKey || track.id}-${idx}`} className="library-row-item">
+                    <div className="row-item-left">
+                      <span className="row-platform">{selectedAlbum.platform || "🟢"}</span>
+                      <div className="row-text-group">
+                        <span className="row-song-title">{track.title}</span>
+                        <span className="row-song-artist">{track.artist}</span>
+                      </div>
+                    </div>
+                    <span className="row-duration">{track.duration}</span>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: "#aaa" }}>No tracks found for this album.</p>
+              )}
             </div>
           </div>
         )}
