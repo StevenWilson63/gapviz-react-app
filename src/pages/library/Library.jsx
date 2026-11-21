@@ -52,6 +52,7 @@ const smallButtonStyle = {
 
 const GAPVIZ_RED = "#ff3344";
 const GAPVIZ_RED_ACTIVE = "#e01e2f";
+const BACK_TO_TOP_THRESHOLD = 260;
 
 export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
@@ -96,6 +97,7 @@ export default function Library() {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   // Scroll restoration tracking for Playlists & Albums
   const screenRef = useRef(null);
@@ -133,6 +135,44 @@ export default function Library() {
     };
   }, []);
 
+  const updateBackToTopVisibility = useCallback(() => {
+    const isGridTab =
+      (activeTab === "playlists" && !selectedPlaylist) ||
+      (activeTab === "albums" && !selectedAlbum);
+
+    if (!isGridTab) {
+      setShowBackToTop(false);
+      return;
+    }
+
+    const containerTop = screenRef.current ? screenRef.current.scrollTop : 0;
+    const winTop = typeof window !== "undefined" ? window.scrollY : 0;
+    setShowBackToTop(Math.max(containerTop, winTop) > BACK_TO_TOP_THRESHOLD);
+  }, [activeTab, selectedPlaylist, selectedAlbum]);
+
+  useEffect(() => {
+    updateBackToTopVisibility();
+    const container = screenRef.current;
+    const onScroll = () => updateBackToTopVisibility();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    container?.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      container?.removeEventListener("scroll", onScroll);
+    };
+  }, [updateBackToTopVisibility]);
+
+  const handleBackToTop = useCallback(() => {
+    if (screenRef.current && screenRef.current.scrollTop > 0) {
+      screenRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
+
   const restorePosition = useCallback((type, targetId, fallbackScroll) => {
     requestAnimationFrame(() => {
       const refMap = type === "playlist" ? playlistCardRefs.current : albumCardRefs.current;
@@ -140,6 +180,7 @@ export default function Library() {
 
       if (cardEl && typeof cardEl.scrollIntoView === "function") {
         cardEl.scrollIntoView({ block: "center", behavior: "auto" });
+        updateBackToTopVisibility();
         return;
       }
 
@@ -151,8 +192,9 @@ export default function Library() {
           window.scrollTo({ top: fallbackScroll.windowY, behavior: "auto" });
         }
       }
+      updateBackToTopVisibility();
     });
-  }, []);
+  }, [updateBackToTopVisibility]);
 
   useEffect(() => {
     if (!pendingRestoreRef.current) return;
@@ -955,6 +997,18 @@ export default function Library() {
           <div className="empty-vault-state"><p>Your Commentary Vault is empty.</p></div>
         )}
       </div>
+
+      {/* Back to the Top Button for Playlists & Albums Grids */}
+      {showBackToTop && (
+        <button
+          type="button"
+          className="back-to-top-btn"
+          onClick={handleBackToTop}
+          aria-label="Back to the top"
+        >
+          <i className="fa-solid fa-arrow-up"></i> Back to the Top
+        </button>
+      )}
     </div>
   );
 }
