@@ -1,207 +1,126 @@
 import React, { useState, useEffect } from "react";
-import "./connectedServices.css";
+import "./appearance.css";
 import { useNavigate } from "react-router-dom";
-import { MusicApiService } from "../../services/musicApi";
 
-export default function ConnectedServices() {
+export default function Appearance() {
   const navigate = useNavigate();
 
-  // Alphabetical streaming platforms state
-  const [amazonMusicConnected, setAmazonMusicConnected] = useState(false);
-  const [appleMusicConnected, setAppleMusicConnected] = useState(false);
-  const [deezerConnected, setDeezerConnected] = useState(false);
-  const [qobuzConnected, setQobuzConnected] = useState(false);
-  const [soundcloudConnected, setSoundcloudConnected] = useState(false);
-  const [spotifyConnected, setSpotifyConnected] = useState(false);
-  const [tidalConnected, setTidalConnected] = useState(false);
-  const [youtubeMusicConnected, setYoutubeMusicConnected] = useState(false);
-
+  const [theme, setTheme] = useState("dark");
+  const [textSize, setTextSize] = useState("medium");
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [language, setLanguage] = useState("English");
   const [savedMessage, setSavedMessage] = useState(false);
 
   useEffect(() => {
-    // Check tokens or fallback to localStorage
-    const storedTokens = MusicApiService.getConnectedTokens ? MusicApiService.getConnectedTokens() : {};
-    const storedLocal = JSON.parse(localStorage.getItem("gv_connectedServices") || "{}");
-
-    setAmazonMusicConnected(storedLocal.amazonMusic || false);
-    setAppleMusicConnected(storedLocal.appleMusic || false);
-    setDeezerConnected(storedLocal.deezer || false);
-    setQobuzConnected(storedLocal.qobuz || false);
-    setSoundcloudConnected(storedLocal.soundcloud || false);
-    setSpotifyConnected(storedTokens.spotify || storedLocal.spotify || false);
-    setTidalConnected(storedLocal.tidal || false);
-    setYoutubeMusicConnected(storedLocal.youtubeMusic || false);
-  }, []);
-
-  const handleSpotifyClick = () => {
-    console.log(">>> Spotify connect clicked! Current connected state:", spotifyConnected);
-
-    if (!spotifyConnected) {
-      // Trigger the real Spotify Developer App OAuth flow to securely pull tracks
-      console.log(">>> Initiating Spotify Auth redirect...");
-      MusicApiService.initiateAuth("spotify");
-    } else {
-      // Allow disconnecting if already connected
-      console.log(">>> Disconnecting Spotify...");
-      setSpotifyConnected(false);
-      MusicApiService.setPlatformConnection("spotify", false);
+    try {
+      const stored = JSON.parse(localStorage.getItem("gv_appearance") || "{}");
+      if (stored.theme) setTheme(stored.theme);
+      if (stored.textSize) setTextSize(stored.textSize);
+      if (stored.reduceMotion !== undefined) setReduceMotion(stored.reduceMotion);
+      if (stored.language) setLanguage(stored.language);
+    } catch (e) {
+      console.error("Failed to load appearance settings", e);
     }
-  };
+  }, []);
 
   const handleSave = (e) => {
     e.preventDefault();
-    const settings = {
-      amazonMusic: amazonMusicConnected,
-      appleMusic: appleMusicConnected,
-      deezer: deezerConnected,
-      qobuz: qobuzConnected,
-      soundcloud: soundcloudConnected,
-      spotify: spotifyConnected,
-      tidal: tidalConnected,
-      youtubeMusic: youtubeMusicConnected,
-    };
-    localStorage.setItem("gv_connectedServices", JSON.stringify(settings));
+    const settings = { theme, textSize, reduceMotion, language };
+    localStorage.setItem("gv_appearance", JSON.stringify(settings));
 
     setSavedMessage(true);
     setTimeout(() => setSavedMessage(false), 2500);
   };
 
   return (
-    <div className="connected-services-screen">
+    <div className="appearance-screen">
       <button className="back-profile-btn" onClick={() => navigate("/profile")}>
         ← Back to Profile
       </button>
 
-      <h1 className="connected-services-title">Connected Services</h1>
-      <p className="connected-services-subtitle">
-        Link your streaming platforms to sync playback state and track metadata.
+      <h1 className="appearance-title">Appearance</h1>
+      <p className="appearance-subtitle">
+        Customize your visual theme, text scaling, and motion preferences.
       </p>
 
-      <form className="connected-services-card" onSubmit={handleSave}>
+      <form className="appearance-card" onSubmit={handleSave}>
 
-        {/* AMAZON MUSIC */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">Amazon Music</span>
-            <span className="service-desc">Sync active stream state and cloud library</span>
+        {/* Theme Setting */}
+        <div className="appearance-row hover-box">
+          <div className="appearance-info">
+            <span className="appearance-label">Theme Mode</span>
+            <span className="appearance-desc">Select your preferred visual style</span>
+          </div>
+          <div className="appearance-options-group">
+            {["dark", "light", "system"].map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`option-chip ${theme === t ? "active" : ""}`}
+                onClick={() => setTheme(t)}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Text Size Setting */}
+        <div className="appearance-row hover-box">
+          <div className="appearance-info">
+            <span className="appearance-label">Text Size</span>
+            <span className="appearance-desc">Adjust UI readability scale</span>
+          </div>
+          <div className="appearance-options-group">
+            {["small", "medium", "large"].map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={`option-chip ${textSize === size ? "active" : ""}`}
+                onClick={() => setTextSize(size)}
+              >
+                {size.charAt(0).toUpperCase() + size.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Reduce Motion Setting */}
+        <div className="appearance-row hover-box">
+          <div className="appearance-info">
+            <span className="appearance-label">Reduce Motion</span>
+            <span className="appearance-desc">Minimize interface animations and transitions</span>
           </div>
           <button
             type="button"
-            className={`service-toggle-btn ${amazonMusicConnected ? "connected" : ""}`}
-            onClick={() => setAmazonMusicConnected(!amazonMusicConnected)}
+            className={`service-toggle-btn ${reduceMotion ? "connected" : ""}`}
+            onClick={() => setReduceMotion(!reduceMotion)}
           >
-            {amazonMusicConnected ? "Connected ✓" : "Connect"}
+            {reduceMotion ? "Enabled" : "Disabled"}
           </button>
         </div>
 
-        {/* APPLE MUSIC */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">Apple Music</span>
-            <span className="service-desc">Identify current playing tracks via Apple Music API</span>
+        {/* Language Selection */}
+        <div className="appearance-row hover-box">
+          <div className="appearance-info">
+            <span className="appearance-label">Language</span>
+            <span className="appearance-desc">Choose your preferred display language</span>
           </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${appleMusicConnected ? "connected" : ""}`}
-            onClick={() => setAppleMusicConnected(!appleMusicConnected)}
+          <select
+            className="appearance-select"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
           >
-            {appleMusicConnected ? "Connected ✓" : "Connect"}
-          </button>
+            <option value="English">English</option>
+            <option value="Spanish">Español</option>
+            <option value="French">Français</option>
+            <option value="German">Deutsch</option>
+            <option value="Japanese">日本語</option>
+          </select>
         </div>
 
-        {/* DEEZER */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">Deezer</span>
-            <span className="service-desc">Sync playback state and flow playlists</span>
-          </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${deezerConnected ? "connected" : ""}`}
-            onClick={() => setDeezerConnected(!deezerConnected)}
-          >
-            {deezerConnected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-
-        {/* QOBUZ */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">Qobuz</span>
-            <span className="service-desc">Sync hi-res audio stream metadata</span>
-          </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${qobuzConnected ? "connected" : ""}`}
-            onClick={() => setQobuzConnected(!qobuzConnected)}
-          >
-            {qobuzConnected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-
-        {/* SOUNDCLOUD */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">SoundCloud</span>
-            <span className="service-desc">Link independent tracks, sets, and live audio</span>
-          </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${soundcloudConnected ? "connected" : ""}`}
-            onClick={() => setSoundcloudConnected(!soundcloudConnected)}
-          >
-            {soundcloudConnected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-
-        {/* SPOTIFY (Wired to OAuth) */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">Spotify</span>
-            <span className="service-desc">Sync playback history and library tracks</span>
-          </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${spotifyConnected ? "connected" : ""}`}
-            onClick={handleSpotifyClick}
-          >
-            {spotifyConnected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-
-        {/* TIDAL */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">Tidal</span>
-            <span className="service-desc">Connect lossless streaming playback state</span>
-          </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${tidalConnected ? "connected" : ""}`}
-            onClick={() => setTidalConnected(!tidalConnected)}
-          >
-            {tidalConnected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-
-        {/* YOUTUBE MUSIC */}
-        <div className="service-row hover-box">
-          <div className="service-info">
-            <span className="service-name">YouTube Music</span>
-            <span className="service-desc">Link video & audio stream metadata</span>
-          </div>
-          <button
-            type="button"
-            className={`service-toggle-btn ${youtubeMusicConnected ? "connected" : ""}`}
-            onClick={() => setYoutubeMusicConnected(!youtubeMusicConnected)}
-          >
-            {youtubeMusicConnected ? "Connected ✓" : "Connect"}
-          </button>
-        </div>
-
-        {/* IN-PLACE SAVE BUTTON */}
         <button
-          className={`connected-services-save ${savedMessage ? "saved" : "hover-box"}`}
+          className={`appearance-save ${savedMessage ? "saved" : "hover-box"}`}
           type="submit"
         >
           {savedMessage ? "✓ Changes Saved" : "Save Changes"}

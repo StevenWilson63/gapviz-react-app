@@ -163,18 +163,18 @@
   transition: all 0.2s ease;
 }
 
-.appearance-save:hover {
+.appearance-save:hover:not(.saved) {
   background-color: #ff1a1a;
   color: #ffffff;
   box-shadow: 0 0 10px rgba(255, 26, 26, 0.5);
 }
 
-.save-confirm-box {
-  text-align: center;
-  color: #00ff00;
-  font-size: 14px;
-  font-weight: 600;
-  animation: fadeInOut 2s ease;
+.appearance-card .appearance-save.saved,
+.appearance-save.saved {
+  background: rgba(0, 255, 0, 0.1) !important;
+  border: 1px solid #00ff00 !important;
+  color: #00ff00 !important;
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.25) !important;
 }
 
 /* Standard hover effect matching home screen boxes */
