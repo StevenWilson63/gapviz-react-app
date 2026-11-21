@@ -22,7 +22,7 @@ export default function ConnectedServices() {
     // Check tokens or fallback to localStorage
     const storedTokens = MusicApiService.getConnectedTokens ? MusicApiService.getConnectedTokens() : {};
     const storedLocal = JSON.parse(localStorage.getItem("gv_connectedServices") || "{}");
-    
+
     setAmazonMusicConnected(storedLocal.amazonMusic || false);
     setAppleMusicConnected(storedLocal.appleMusic || false);
     setDeezerConnected(storedLocal.deezer || false);
@@ -35,7 +35,7 @@ export default function ConnectedServices() {
 
   const handleSpotifyClick = () => {
     console.log(">>> Spotify connect clicked! Current connected state:", spotifyConnected);
-    
+
     if (!spotifyConnected) {
       // Trigger the real Spotify Developer App OAuth flow to securely pull tracks
       console.log(">>> Initiating Spotify Auth redirect...");
@@ -63,7 +63,7 @@ export default function ConnectedServices() {
     localStorage.setItem("gv_connectedServices", JSON.stringify(settings));
 
     setSavedMessage(true);
-    setTimeout(() => setSavedMessage(false), 2000);
+    setTimeout(() => setSavedMessage(false), 2500);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function ConnectedServices() {
       </p>
 
       <form className="connected-services-card" onSubmit={handleSave}>
-        
+
         {/* AMAZON MUSIC */}
         <div className="service-row hover-box">
           <div className="service-info">
@@ -199,14 +199,13 @@ export default function ConnectedServices() {
           </button>
         </div>
 
-        {/* SAVE BUTTON */}
-        <button className="connected-services-save hover-box" type="submit">
-          Save Changes
+        {/* IN-PLACE SAVE BUTTON */}
+        <button
+          className={`connected-services-save ${savedMessage ? "saved" : "hover-box"}`}
+          type="submit"
+        >
+          {savedMessage ? "✓ Changes Saved" : "Save Changes"}
         </button>
-
-        {savedMessage && (
-          <div className="save-confirm-box">✓ Changes Saved</div>
-        )}
 
       </form>
     </div>

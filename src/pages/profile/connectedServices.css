@@ -109,21 +109,19 @@
   cursor: pointer;
   margin-top: 10px;
   margin-bottom: 30px;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
-.connected-services-save:hover {
+.connected-services-save:hover:not(.saved) {
   background: #e01414;
 }
 
-.save-confirm-box {
-  background: rgba(0, 255, 0, 0.1);
-  border: 1px solid #00ff00;
-  color: #00ff00;
-  padding: 10px;
-  border-radius: 6px;
-  text-align: center;
-  font-weight: bold;
+.connected-services-card .connected-services-save.saved,
+.connected-services-save.saved {
+  background: rgba(0, 255, 0, 0.1) !important;
+  border: 1px solid #00ff00 !important;
+  color: #00ff00 !important;
+  box-shadow: 0 0 12px rgba(0, 255, 0, 0.25) !important;
 }
 
 .hover-box:hover {
