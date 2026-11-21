@@ -638,8 +638,8 @@
 .back-to-top-btn {
   position: fixed;
   right: 24px;
-  bottom: 28px;
-  z-index: 9990;
+  bottom: calc(138px + env(safe-area-inset-bottom, 0px));
+  z-index: 10005;
   background-color: #18181b;
   color: #ffffff;
   border: 2px solid #ff3344;
