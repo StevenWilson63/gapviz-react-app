@@ -50,7 +50,6 @@ export default function Account() {
   };
 
   useEffect(() => {
-    // Read from gapvizUser JSON object or individual key fallbacks set during /join
     const stored = JSON.parse(localStorage.getItem("gapvizUser") || "{}");
 
     setFirstName(stored.firstName || localStorage.getItem("firstName") || "");
@@ -78,13 +77,13 @@ export default function Account() {
   };
 
   const validateEmail = (value) => {
-    if (!value) return true; // optional if empty
+    if (!value) return true;
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return pattern.test(value);
   };
 
   const validatePassword = (value) => {
-    if (!value) return true; // optional if empty
+    if (!value) return true;
     if (value.length < 8) return false;
     const hasLetter = /[A-Za-z]/.test(value);
     const hasNumber = /[0-9]/.test(value);
@@ -185,10 +184,8 @@ export default function Account() {
       photo,
     };
 
-    // Save JSON bundle
     localStorage.setItem("gapvizUser", JSON.stringify(user));
 
-    // Save sync keys for Splash / Join / Home modules
     const preferredDisplayName = nickname.trim() || firstName.trim();
     const combinedFullName = `${firstName} ${surname}`.trim();
 
@@ -207,7 +204,7 @@ export default function Account() {
     setNickname(nickname);
 
     setSavedMessage(true);
-    setTimeout(() => setSavedMessage(false), 2000);
+    setTimeout(() => setSavedMessage(false), 2500);
   }
 
   function handleDeleteAccount() {
@@ -289,7 +286,6 @@ export default function Account() {
       <form className="account-card" onSubmit={handleSave} autoComplete="new-password">
         <div className="account-avatar">
           <div className="avatar-wrapper" style={{ position: "relative" }}>
-            {/* AVATAR CIRCLE WITH PULSING RED HALO & TOOLTIP */}
             <div
               className={`avatar-circle ${hasUnread ? "has-unread" : ""}`}
               onMouseEnter={() => setIsAvatarHovered(true)}
@@ -311,7 +307,6 @@ export default function Account() {
               )}
             </div>
 
-            {/* CUSTOM TOOLTIP FOR NEW NOTIFICATIONS */}
             {hasUnread && isAvatarHovered && (
               <div className="avatar-notification-tooltip">
                 New notifications
@@ -396,21 +391,21 @@ export default function Account() {
         </div>
 
         <div className="account-field hover-box phonetic-row">
-  <div className="phonetic-input-wrapper">
-    <label>Phonetic Name</label>
-    <input
-      type="text"
-      value={phonetic}
-      onChange={handlePhoneticChange}
-      autoComplete="new-password"
-    />
-    {phoneticError && <div className="error-text">{phoneticError}</div>}
-  </div>
+          <div className="phonetic-input-wrapper">
+            <label>Phonetic Name</label>
+            <input
+              type="text"
+              value={phonetic}
+              onChange={handlePhoneticChange}
+              autoComplete="new-password"
+            />
+            {phoneticError && <div className="error-text">{phoneticError}</div>}
+          </div>
 
-  <button className="play-sample-button" type="button" onClick={playSample}>
-    ▶️ Play
-  </button>
-</div>
+          <button className="play-sample-button" type="button" onClick={playSample}>
+            ▶️ Play
+          </button>
+        </div>
 
         <div className="account-field hover-box">
           <label>Email</label>
@@ -466,16 +461,14 @@ export default function Account() {
         </div>
 
         <button
-          className={`account-save hover-box ${!allValid ? "disabled-save" : ""}`}
+          className={`account-save ${savedMessage ? "saved" : ""} ${
+            !allValid ? "disabled-save" : ""
+          }`}
           type="submit"
           disabled={!allValid}
         >
-          Save Changes
+          {savedMessage ? "✓ Changes Saved" : "Save Changes"}
         </button>
-
-        {savedMessage && (
-          <div className="save-confirm-box">✓ Changes Saved</div>
-        )}
 
         <button className="account-delete" type="button" onClick={handleDeleteAccount}>
           Delete Account
