@@ -621,3 +621,20 @@
   50% { transform: scale(1.03); opacity: 0.6; box-shadow: 0 0 10px rgba(255, 51, 68, 0.4); }
   100% { transform: scale(1); opacity: 1; box-shadow: 0 0 20px rgba(255, 51, 68, 0.8); }
 }
+
+.crate-builder-btn {
+  color: #ffffff;
+  transition: all 0.18s ease;
+}
+
+.crate-builder-btn:hover {
+  border-color: #ff3344;
+  color: #ffffff;
+}
+
+.crate-builder-btn:active,
+.crate-builder-btn.active {
+  background-color: #ff3344;
+  border-color: #ff3344;
+  color: #ffffff;
+}

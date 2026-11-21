@@ -65,8 +65,7 @@ export default function Library() {
   // In-Playlist Sort State
   const [playlistInternalSort, setPlaylistInternalSort] = useState("download");
 
-  // Hover & Active Click States for Crate Builder controls
-  const [crateBtnHovered, setCrateBtnHovered] = useState(false);
+  // Click / Active State for Crate Builder button
   const [crateBtnClicked, setCrateBtnClicked] = useState(false);
   const [buildStationHovered, setBuildStationHovered] = useState(false);
   const [buildStationClicked, setBuildStationClicked] = useState(false);
@@ -409,14 +408,7 @@ export default function Library() {
   };
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
-
-  const crateActive = crateBtnClicked || isCrateBuilderOpen;
-  const crateButtonBackground = crateActive
-    ? GAPVIZ_RED_ACTIVE
-    : crateBtnHovered
-    ? GAPVIZ_RED
-    : "#18181b";
-  const crateButtonBorder = crateActive || crateBtnHovered ? GAPVIZ_RED : "#444";
+  const isCrateActive = crateBtnClicked || isCrateBuilderOpen;
 
   return (
     <div className="library-screen" style={{ position: "relative" }}>
@@ -465,7 +457,7 @@ export default function Library() {
       {/* Crate Builder Modal */}
       {isCrateBuilderOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "24px", width: "420px", color: "#fff" }}>
+          <div className="library-card" style={{ width: "420px", color: "#fff", cursor: "default" }}>
             <h3 style={{ marginBottom: "8px", color: "#fff" }}><i className="fa-solid fa-radio" style={{ color: GAPVIZ_RED }}></i> The Crate Builder</h3>
             <p style={{ fontSize: "13px", color: "#a1a1aa", marginBottom: "16px" }}>Enter an artist name to build a 50-track smart station mixed with peer artists from the same era.</p>
             <input type="text" placeholder="e.g. Duran Duran" value={stationArtist} onChange={(e) => setStationArtist(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
@@ -554,26 +546,17 @@ export default function Library() {
           <div className="playlists-wrapper">
             <div className="create-playlist-trigger-bar" style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-                <button className="create-playlist-btn" onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}>
+                <button
+                  className={`create-playlist-btn ${isCreatingPlaylist ? "active" : ""}`}
+                  onClick={() => setIsCreatingPlaylist(!isCreatingPlaylist)}
+                >
                   <i className="fa-solid fa-plus"></i> Create New Playlist
                 </button>
                 <button
+                  className={`create-playlist-btn crate-builder-btn ${isCrateActive ? "active" : ""}`}
                   onClick={() => {
                     setCrateBtnClicked(true);
                     setIsCrateBuilderOpen(true);
-                  }}
-                  onMouseEnter={() => setCrateBtnHovered(true)}
-                  onMouseLeave={() => {
-                    setCrateBtnHovered(false);
-                    if (!isCrateBuilderOpen) setCrateBtnClicked(false);
-                  }}
-                  onMouseDown={() => setCrateBtnClicked(true)}
-                  style={{
-                    ...smallButtonStyle,
-                    background: crateButtonBackground,
-                    border: `1px solid ${crateButtonBorder}`,
-                    color: "#fff",
-                    fontWeight: 600
                   }}
                 >
                   <i className="fa-solid fa-radio"></i> The Crate Builder
