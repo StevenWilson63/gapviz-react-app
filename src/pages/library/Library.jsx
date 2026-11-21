@@ -47,27 +47,29 @@ const smallButtonStyle = {
   textDecoration: "none",
   fontSize: "14px",
   display: "inline-block",
-  transition: "all 0.2s ease"
+  transition: "all 0.18s ease"
 };
 
 const GAPVIZ_RED = "#ff3344";
-const GAPVIZ_RED_HOVER = "#ff4d5b";
+const GAPVIZ_RED_ACTIVE = "#e01e2f";
 
 export default function Library() {
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Master Sorting Controls State
-  const [playlistGridSort, setPlaylistGridSort] = useState("recent"); 
-  const [songSort, setSongSort] = useState("recent"); 
-  const [albumSort, setAlbumSort] = useState("az"); 
+  const [playlistGridSort, setPlaylistGridSort] = useState("recent");
+  const [songSort, setSongSort] = useState("recent");
+  const [albumSort, setAlbumSort] = useState("az");
 
   // In-Playlist Sort State
-  const [playlistInternalSort, setPlaylistInternalSort] = useState("download"); 
+  const [playlistInternalSort, setPlaylistInternalSort] = useState("download");
 
-  // Hover State for Crate Builder trigger & primary action
+  // Hover & Active Click States for Crate Builder controls
   const [crateBtnHovered, setCrateBtnHovered] = useState(false);
+  const [crateBtnClicked, setCrateBtnClicked] = useState(false);
   const [buildStationHovered, setBuildStationHovered] = useState(false);
+  const [buildStationClicked, setBuildStationClicked] = useState(false);
 
   // Commentary Vault Filter States
   const [vaultEra, setVaultEra] = useState("all");
@@ -231,7 +233,7 @@ export default function Library() {
   const handleSaveNewPlaylist = async () => {
     if (!newPlaylistName.trim()) return;
     const playlistKey = `custom:${Date.now()}`;
-    
+
     await vaultDb.playlists.put({
       playlistKey,
       name: newPlaylistName.trim(),
@@ -241,7 +243,7 @@ export default function Library() {
       isCustom: true,
       sortOrder: Date.now()
     });
-    
+
     setNewPlaylistName("");
     setIsCreatingPlaylist(false);
     await loadFromVault();
@@ -279,7 +281,7 @@ export default function Library() {
   const handleGenerateStation = async () => {
     if (!stationArtist.trim()) return;
     const stationTracks = await generateSmartStationTracks(stationArtist.trim(), 50);
-    
+
     const playlistKey = `station:${Date.now()}`;
     const stationName = `${stationArtist.trim()} Station`;
 
@@ -304,6 +306,8 @@ export default function Library() {
 
     setStationArtist("");
     setIsCrateBuilderOpen(false);
+    setCrateBtnClicked(false);
+    setBuildStationClicked(false);
     await loadFromVault();
   };
 
@@ -312,7 +316,7 @@ export default function Library() {
     setIsAddingTrack(false);
     setPlaylistInternalSort("download");
     setSelectedTrackKeysToAdd(new Set());
-    
+
     const rows = await getPlaylistTracks(playlist.id);
     const tracks = rows.map((t) => ({
       id: t.id,
@@ -340,7 +344,7 @@ export default function Library() {
 
   const handleAddSelectedTracks = async () => {
     if (!selectedPlaylist || selectedTrackKeysToAdd.size === 0) return;
-    
+
     for (const trackKey of selectedTrackKeysToAdd) {
       await addTrackToPlaylist(selectedPlaylist.id, trackKey);
     }
@@ -363,7 +367,7 @@ export default function Library() {
   // Filter & Sort Logic
   const activePlaylists = libraryData.playlists.filter((p) => !p.isArchived);
   const archivedPlaylists = libraryData.playlists.filter((p) => p.isArchived);
-  
+
   const filteredPlaylists = (showArchived ? archivedPlaylists : activePlaylists)
     .filter((p) => matchesSearch(p.name) || matchesSearch(p.curator))
     .sort((a, b) => {
@@ -405,6 +409,14 @@ export default function Library() {
   };
 
   const syncButtonDisabled = isSyncing || cooldownSeconds > 0 || !spotifyConnected;
+
+  const crateActive = crateBtnClicked || isCrateBuilderOpen;
+  const crateButtonBackground = crateActive
+    ? GAPVIZ_RED_ACTIVE
+    : crateBtnHovered
+    ? GAPVIZ_RED
+    : "#18181b";
+  const crateButtonBorder = crateActive || crateBtnHovered ? GAPVIZ_RED : "#444";
 
   return (
     <div className="library-screen" style={{ position: "relative" }}>
@@ -450,26 +462,42 @@ export default function Library() {
         </div>
       )}
 
-      {/* Crate Builder Modal (Gapviz Red Styled) */}
+      {/* Crate Builder Modal */}
       {isCrateBuilderOpen && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.8)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "24px", width: "420px", color: "#fff", boxShadow: `0 12px 32px rgba(255, 51, 68, 0.18)` }}>
-            <h3 style={{ marginBottom: "8px", color: GAPVIZ_RED }}><i className="fa-solid fa-radio"></i> The Crate Builder</h3>
+          <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "24px", width: "420px", color: "#fff" }}>
+            <h3 style={{ marginBottom: "8px", color: "#fff" }}><i className="fa-solid fa-radio" style={{ color: GAPVIZ_RED }}></i> The Crate Builder</h3>
             <p style={{ fontSize: "13px", color: "#a1a1aa", marginBottom: "16px" }}>Enter an artist name to build a 50-track smart station mixed with peer artists from the same era.</p>
             <input type="text" placeholder="e.g. Duran Duran" value={stationArtist} onChange={(e) => setStationArtist(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "16px" }} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-              <button onClick={() => setIsCrateBuilderOpen(false)} style={smallButtonStyle}>Cancel</button>
+              <button
+                onClick={() => {
+                  setIsCrateBuilderOpen(false);
+                  setCrateBtnClicked(false);
+                }}
+                style={smallButtonStyle}
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleGenerateStation}
                 onMouseEnter={() => setBuildStationHovered(true)}
-                onMouseLeave={() => setBuildStationHovered(false)}
+                onMouseLeave={() => {
+                  setBuildStationHovered(false);
+                  setBuildStationClicked(false);
+                }}
+                onMouseDown={() => setBuildStationClicked(true)}
+                onMouseUp={() => setBuildStationClicked(false)}
                 style={{
                   ...smallButtonStyle,
-                  background: buildStationHovered ? GAPVIZ_RED_HOVER : GAPVIZ_RED,
-                  border: "none",
+                  background: buildStationClicked
+                    ? GAPVIZ_RED_ACTIVE
+                    : buildStationHovered
+                    ? GAPVIZ_RED
+                    : "#18181b",
+                  border: `1px solid ${GAPVIZ_RED}`,
                   color: "#fff",
-                  fontWeight: "bold",
-                  transform: buildStationHovered ? "translateY(-1px)" : "translateY(0)"
+                  fontWeight: "bold"
                 }}
               >
                 Build Station
@@ -530,17 +558,22 @@ export default function Library() {
                   <i className="fa-solid fa-plus"></i> Create New Playlist
                 </button>
                 <button
-                  onClick={() => setIsCrateBuilderOpen(true)}
+                  onClick={() => {
+                    setCrateBtnClicked(true);
+                    setIsCrateBuilderOpen(true);
+                  }}
                   onMouseEnter={() => setCrateBtnHovered(true)}
-                  onMouseLeave={() => setCrateBtnHovered(false)}
+                  onMouseLeave={() => {
+                    setCrateBtnHovered(false);
+                    if (!isCrateBuilderOpen) setCrateBtnClicked(false);
+                  }}
+                  onMouseDown={() => setCrateBtnClicked(true)}
                   style={{
                     ...smallButtonStyle,
-                    background: crateBtnHovered ? "rgba(255, 51, 68, 0.16)" : "rgba(255, 51, 68, 0.08)",
-                    borderColor: GAPVIZ_RED,
-                    color: crateBtnHovered ? "#fff" : GAPVIZ_RED,
-                    fontWeight: 600,
-                    transform: crateBtnHovered ? "translateY(-1px)" : "translateY(0)",
-                    boxShadow: crateBtnHovered ? "0 6px 18px rgba(255, 51, 68, 0.22)" : "none"
+                    background: crateButtonBackground,
+                    border: `1px solid ${crateButtonBorder}`,
+                    color: "#fff",
+                    fontWeight: 600
                   }}
                 >
                   <i className="fa-solid fa-radio"></i> The Crate Builder
@@ -555,8 +588,8 @@ export default function Library() {
               {/* Master Playlist Grid Sort Dropdown */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort:</span>
-                <select 
-                  value={playlistGridSort} 
+                <select
+                  value={playlistGridSort}
                   onChange={(e) => setPlaylistGridSort(e.target.value)}
                   style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
                 >
@@ -619,8 +652,8 @@ export default function Library() {
               {/* In-Playlist Sort Dropdown */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}><i className="fa-solid fa-arrow-down-wide-short"></i> Sort by:</span>
-                <select 
-                  value={playlistInternalSort} 
+                <select
+                  value={playlistInternalSort}
                   onChange={(e) => setPlaylistInternalSort(e.target.value)}
                   style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
                 >
@@ -661,29 +694,29 @@ export default function Library() {
                     </button>
                   )}
                 </div>
-                <input 
-                  type="text" 
-                  placeholder="Search vault songs..." 
-                  value={vaultSongSearch} 
-                  onChange={(e) => setVaultSongSearch(e.target.value)} 
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }} 
+                <input
+                  type="text"
+                  placeholder="Search vault songs..."
+                  value={vaultSongSearch}
+                  onChange={(e) => setVaultSongSearch(e.target.value)}
+                  style={{ width: "100%", padding: "8px", borderRadius: "6px", background: "#27272a", border: "1px solid #52525b", color: "#fff", marginBottom: "12px" }}
                 />
                 <div style={{ maxHeight: "250px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
                   {libraryData.songs
-                    .filter(s => s.title.toLowerCase().includes(vaultSongSearch.toLowerCase()) || s.artist.toLowerCase().includes(vaultSongSearch.toLowerCase()))
-                    .map(song => {
+                    .filter((s) => s.title.toLowerCase().includes(vaultSongSearch.toLowerCase()) || s.artist.toLowerCase().includes(vaultSongSearch.toLowerCase()))
+                    .map((song) => {
                       const isChecked = selectedTrackKeysToAdd.has(song.trackKey);
                       return (
-                        <div 
-                          key={song.trackKey} 
+                        <div
+                          key={song.trackKey}
                           onClick={() => toggleTrackSelection(song.trackKey)}
                           style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: isChecked ? "rgba(255, 51, 68, 0.15)" : "rgba(255,255,255,0.05)", border: isChecked ? `1px solid ${GAPVIZ_RED}` : "1px solid transparent", borderRadius: "6px", cursor: "pointer" }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            <input 
-                              type="checkbox" 
-                              checked={isChecked} 
-                              onChange={() => {}} 
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}}
                               style={{ cursor: "pointer", accentColor: GAPVIZ_RED }}
                             />
                             <span>{song.title} - <span style={{ color: "#a1a1aa" }}>{song.artist}</span></span>
@@ -729,8 +762,8 @@ export default function Library() {
           <div>
             <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", gap: "8px" }}>
               <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort Songs:</span>
-              <select 
-                value={songSort} 
+              <select
+                value={songSort}
                 onChange={(e) => setSongSort(e.target.value)}
                 style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
               >
@@ -747,13 +780,13 @@ export default function Library() {
           </div>
         )}
 
-        {/* Albums Tab with Updated Sorting (Album A-Z, Artist, Recently Added, Release Year) */}
+        {/* Albums Tab with Updated Sorting */}
         {activeTab === "albums" && (
           <div>
             <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "16px", gap: "8px" }}>
               <span style={{ fontSize: "13px", color: "#a1a1aa" }}>Sort Albums:</span>
-              <select 
-                value={albumSort} 
+              <select
+                value={albumSort}
                 onChange={(e) => setAlbumSort(e.target.value)}
                 style={{ background: "#18181b", border: "1px solid #444", color: "#fff", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}
               >
