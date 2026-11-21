@@ -37,7 +37,7 @@ export default function Notifications() {
     window.dispatchEvent(new Event("gv_notifications_updated"));
 
     setSavedMessage(true);
-    setTimeout(() => setSavedMessage(false), 2000);
+    setTimeout(() => setSavedMessage(false), 2500);
   };
 
   return (
@@ -52,7 +52,7 @@ export default function Notifications() {
       </p>
 
       <form className="notifications-card" onSubmit={handleSave}>
-        
+
         <div className="service-row hover-box">
           <div className="service-info">
             <span className="service-name">Push Notifications</span>
@@ -109,13 +109,12 @@ export default function Notifications() {
           </button>
         </div>
 
-        <button className="notifications-save hover-box" type="submit">
-          Save Changes
+        <button
+          className={`notifications-save ${savedMessage ? "saved" : "hover-box"}`}
+          type="submit"
+        >
+          {savedMessage ? "✓ Changes Saved" : "Save Changes"}
         </button>
-
-        {savedMessage && (
-          <div className="save-confirm-box">✓ Preferences Saved</div>
-        )}
 
       </form>
     </div>
