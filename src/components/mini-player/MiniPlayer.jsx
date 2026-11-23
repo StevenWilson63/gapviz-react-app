@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
+import { usePlayer } from "../../context/PlayerContext";
 import "./MiniPlayer.css";
 
 export default function MiniPlayer({ onOpenSoundBooth }) {
-  const [isPlaying, setIsPlaying] = useState(true);
+  const { currentTrack, isPlaying, togglePlay } = usePlayer();
 
-  const togglePlay = (e) => {
+  const handleTogglePlay = (e) => {
     e.stopPropagation(); // Prevents opening the SoundBooth when clicking play/pause
-    setIsPlaying(!isPlaying);
+    togglePlay();
   };
 
   return (
@@ -19,24 +20,24 @@ export default function MiniPlayer({ onOpenSoundBooth }) {
       {/* Track Info */}
       <div className="mini-player-info">
         <img
-          src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400"
+          src={currentTrack.artworkUrl}
           alt="Album art"
           className="mini-player-art"
         />
         <div className="mini-player-text">
           <div className="mini-player-title-row">
-            <span className="mini-player-pulse"></span>
-            <span className="mini-player-song">Dreams</span>
+            {isPlaying && <span className="mini-player-pulse"></span>}
+            <span className="mini-player-song">{currentTrack.title}</span>
           </div>
           <div className="mini-player-artist">
-            Fleetwood Mac • <span className="mini-player-album">Rumours (1977)</span>
+            {currentTrack.artist} • <span className="mini-player-album">{currentTrack.album}</span>
           </div>
         </div>
       </div>
 
       {/* Playback Controls */}
       <div className="mini-player-controls" onClick={(e) => e.stopPropagation()}>
-        <button className="mini-player-btn" onClick={togglePlay}>
+        <button className="mini-player-btn" onClick={handleTogglePlay}>
           <i className={`fa-solid ${isPlaying ? "fa-pause" : "fa-play"}`}></i>
         </button>
       </div>

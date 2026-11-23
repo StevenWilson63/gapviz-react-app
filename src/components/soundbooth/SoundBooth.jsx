@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { usePlayer } from "../../context/PlayerContext";
 import "./SoundBooth.css";
 
 // HTML5 Canvas Text Renderer Component for Script Anti-Copy Security
@@ -15,7 +16,6 @@ function CanvasTeleprompter({ text, fontSize, lineHeightRatio = 1.5 }) {
     const containerWidth = container.clientWidth || 300;
     const dpr = window.devicePixelRatio || 1;
 
-    // Helper for wrapping text cleanly into canvas line layers
     const words = text.split(" ");
     let lines = [];
     let currentLine = "";
@@ -37,7 +37,6 @@ function CanvasTeleprompter({ text, fontSize, lineHeightRatio = 1.5 }) {
     const calculatedLineHeight = fontSize * lineHeightRatio;
     const canvasHeight = Math.max(lines.length * calculatedLineHeight + 10, 60);
 
-    // Scale canvas resolution for high-DPI crisp rendering
     canvas.width = containerWidth * dpr;
     canvas.height = canvasHeight * dpr;
     canvas.style.width = `${containerWidth}px`;
@@ -46,7 +45,6 @@ function CanvasTeleprompter({ text, fontSize, lineHeightRatio = 1.5 }) {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, containerWidth, canvasHeight);
 
-    // Draw text directly to Canvas pixel canvas
     ctx.font = `${fontSize}px Arial, sans-serif`;
     ctx.fillStyle = "#d4d4d4";
     ctx.textBaseline = "top";
@@ -63,31 +61,41 @@ function CanvasTeleprompter({ text, fontSize, lineHeightRatio = 1.5 }) {
   );
 }
 
+const getCommentaryText = (track) => {
+  if (!track) return "";
+  if (track.narrative) return track.narrative;
+  if (track.commentary) return track.commentary;
+
+  const titleLower = (track.title || "").toLowerCase();
+  const artistLower = (track.artist || "").toLowerCase();
+
+  if (titleLower === "dreams" && artistLower.includes("fleetwood mac")) {
+    return "\"Rumours was recorded under intense emotional turmoil in Sausalito, California. Stevie Nicks wrote 'Dreams' in just 10 minutes sitting on a bed in Sly Stone’s studio room...\"";
+  }
+
+  const albumNote =
+    track.album && track.album !== "Master Vault"
+      ? ` from ${track.album}`
+      : "";
+
+  return `"Spinning '${track.title}' by ${track.artist}${albumNote}. Cueing up liner notes, credits, and DJ story context for this track in SoundBooth."`;
+};
+
 export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
-  const [isPlaying, setIsPlaying] = useState(true);
+  const {
+    currentTrack,
+    isPlaying,
+    togglePlay,
+    playNext,
+    playPrevious,
+    selectQueueIndex,
+    queueMeta
+  } = usePlayer();
+
   const [commentaryFontSize, setCommentaryFontSize] = useState(15);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
 
-  // Mock playlist & queue data
-  const activePlaylist = {
-    name: "Massive Guitar Solos",
-    platforms: [
-      { name: "Spotify", icon: "🟢" },
-      { name: "Tidal", icon: "🟦" },
-      { name: "Apple Music", icon: "🍎" }
-    ],
-    tracks: [
-      { id: 1, title: "Go Your Own Way", artist: "Fleetwood Mac", status: "played" },
-      { id: 2, title: "The Chain", artist: "Fleetwood Mac", status: "played" },
-      { id: 3, title: "Dreams", artist: "Fleetwood Mac", status: "current" },
-      { id: 4, title: "Hotel California", artist: "Eagles", status: "upcoming" },
-      { id: 5, title: "Sultans of Swing", artist: "Dire Straits", status: "upcoming" },
-      { id: 6, title: "Comfortably Numb", artist: "Pink Floyd", status: "upcoming" }
-    ]
-  };
-
-  const currentScriptText =
-    "\"Rumours was recorded under intense emotional turmoil in Sausalito, California. Stevie Nicks wrote 'Dreams' in just 10 minutes sitting on a bed in Sly Stone’s studio room...\"";
+  const currentScriptText = getCommentaryText(currentTrack);
 
   if (!isOpen) return null;
 
@@ -99,7 +107,6 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
     setCommentaryFontSize((prev) => Math.max(prev - 2, 13));
   };
 
-  // Right-Click Context Menu Suppression Guard
   const handleContextMenu = (e) => {
     e.preventDefault();
   };
@@ -125,12 +132,12 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
           <span className="playlist-icon">🎵</span>
           <div className="playlist-info-text">
             <span className="playlist-label">PLAYLIST</span>
-            <span className="playlist-name">{activePlaylist.name}</span>
+            <span className="playlist-name">{queueMeta.name}</span>
           </div>
         </div>
         <div className="playlist-bar-right">
           <div className="platform-badges">
-            {activePlaylist.platforms.map((p, idx) => (
+            {queueMeta.platforms.map((p, idx) => (
               <span key={idx} title={p.name}>{p.icon}</span>
             ))}
           </div>
@@ -143,13 +150,13 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
       {/* Album Artwork & Metadata */}
       <div className="soundbooth-content">
         <img
-          src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400"
+          src={currentTrack.artworkUrl}
           alt="Album Art"
           className="soundbooth-art"
         />
-        <h2 className="soundbooth-song-title">Dreams</h2>
-        <p className="soundbooth-artist">Fleetwood Mac</p>
-        <p className="soundbooth-album">Album: Rumours (1977)</p>
+        <h2 className="soundbooth-song-title">{currentTrack.title}</h2>
+        <p className="soundbooth-artist">{currentTrack.artist}</p>
+        <p className="soundbooth-album">Album: {currentTrack.album}</p>
       </div>
 
       {/* Track Progress Scrubber Bar */}
@@ -159,7 +166,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         </div>
         <div className="soundbooth-time-row">
           <span>1:24</span>
-          <span>4:17</span>
+          <span>{currentTrack.duration || "4:17"}</span>
         </div>
       </div>
 
@@ -168,23 +175,23 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         <button className="soundbooth-sub-control-btn" title="Shuffle">
           <i className="fa-solid fa-shuffle"></i>
         </button>
-        <button className="soundbooth-sub-control-btn" title="Previous Track">
+        <button className="soundbooth-sub-control-btn" onClick={playPrevious} title="Previous Track">
           <i className="fa-solid fa-backward-step"></i>
         </button>
-        <button className="soundbooth-main-play-btn" onClick={() => setIsPlaying(!isPlaying)} title={isPlaying ? "Pause" : "Play"}>
+        <button className="soundbooth-main-play-btn" onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
           <i className={`fa-solid ${isPlaying ? "fa-pause" : "fa-play"}`}></i>
         </button>
-        <button className="soundbooth-sub-control-btn" title="Next Track">
+        <button className="soundbooth-sub-control-btn" onClick={playNext} title="Next Track">
           <i className="fa-solid fa-forward-step"></i>
         </button>
         <button className="soundbooth-sub-control-btn" title="Repeat">
           <i className="fa-solid fa-repeat"></i>
         </button>
-      </div> 
+      </div>
 
       {/* Live Commentary Card with HTML5 Canvas Teleprompter & Right-Click Suppression */}
-      <div 
-        className="soundbooth-commentary-card user-select-none" 
+      <div
+        className="soundbooth-commentary-card user-select-none"
         onContextMenu={handleContextMenu}
       >
         <div className="soundbooth-commentary-header">
@@ -202,7 +209,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
 
         {/* HTML5 Canvas Teleprompter (No DOM Text Nodes) */}
         <CanvasTeleprompter text={currentScriptText} fontSize={commentaryFontSize} />
-        
+
         {/* Attribution Pill Box (Clean Source Name) */}
         <div className="commentary-attribution-wrapper">
           <span className="commentary-attribution-pill">
@@ -223,9 +230,9 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
           <div className="soundbooth-queue-drawer">
             <div className="queue-drawer-header">
               <div className="queue-drawer-title-group">
-                <h3>{activePlaylist.name}</h3>
+                <h3>{queueMeta.name}</h3>
                 <span className="queue-subtitle">
-                  {activePlaylist.platforms.map(p => p.icon).join(" ")} Connected Playlist • {activePlaylist.tracks.length} Tracks
+                  {queueMeta.platforms.map((p) => p.icon).join(" ")} Connected Playlist • {queueMeta.tracks.length} Tracks
                 </span>
               </div>
               <button className="queue-close-btn" onClick={() => setIsQueueOpen(false)} title="Close Queue">
@@ -234,16 +241,24 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
             </div>
 
             <div className="queue-tracks-list">
-              {activePlaylist.tracks.map((track, idx) => {
+              {queueMeta.tracks.map((track, idx) => {
                 let statusClass = "";
                 if (track.status === "played") statusClass = "track-played";
                 if (track.status === "current") statusClass = "track-current";
                 if (track.status === "upcoming") statusClass = "track-upcoming";
 
                 return (
-                  <div key={track.id} className={`queue-track-item ${statusClass}`}>
+                  <div
+                    key={track.id}
+                    className={`queue-track-item ${statusClass}`}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      selectQueueIndex(idx);
+                      setIsQueueOpen(false);
+                    }}
+                  >
                     <span className="track-number">
-                      {track.status === "current" ? "▶" : `0${idx + 1}`}
+                      {track.status === "current" ? "▶" : String(idx + 1).padStart(2, "0")}
                     </span>
                     <div className="queue-track-meta">
                       <span className="queue-track-title">{track.title}</span>

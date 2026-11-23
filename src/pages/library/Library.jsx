@@ -1,6 +1,7 @@
 // src/pages/library/Library.jsx
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { usePlayer } from "../../context/PlayerContext";
 import {
   MusicApiService,
   syncSpotifyLibrary,
@@ -13,8 +14,6 @@ import {
   getVaultPlaylists,
   getPlaylistTracks,
   getPlaylistTrackCounts,
-  setPlaylistArchived,
-  requeuePlaylist,
   vaultDb,
   addTrackToPlaylist,
   removeTrackFromPlaylist,
@@ -55,6 +54,8 @@ const GAPVIZ_RED_ACTIVE = "#e01e2f";
 const BACK_TO_TOP_THRESHOLD = 260;
 
 export default function Library() {
+  const { playTrack } = usePlayer();
+
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -70,11 +71,6 @@ export default function Library() {
   const [crateBtnClicked, setCrateBtnClicked] = useState(false);
   const [buildStationHovered, setBuildStationHovered] = useState(false);
   const [buildStationClicked, setBuildStationClicked] = useState(false);
-
-  // Commentary Vault Filter States
-  const [vaultEra, setVaultEra] = useState("all");
-  const [vaultHost, setVaultHost] = useState("all");
-  const [vaultFocus, setVaultFocus] = useState("all");
 
   // New Playlist Modal / Inline Form State
   const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
@@ -173,28 +169,31 @@ export default function Library() {
     }
   }, []);
 
-  const restorePosition = useCallback((type, targetId, fallbackScroll) => {
-    requestAnimationFrame(() => {
-      const refMap = type === "playlist" ? playlistCardRefs.current : albumCardRefs.current;
-      const cardEl = targetId ? refMap.get(targetId) : null;
+  const restorePosition = useCallback(
+    (type, targetId, fallbackScroll) => {
+      requestAnimationFrame(() => {
+        const refMap = type === "playlist" ? playlistCardRefs.current : albumCardRefs.current;
+        const cardEl = targetId ? refMap.get(targetId) : null;
 
-      if (cardEl && typeof cardEl.scrollIntoView === "function") {
-        cardEl.scrollIntoView({ block: "center", behavior: "auto" });
+        if (cardEl && typeof cardEl.scrollIntoView === "function") {
+          cardEl.scrollIntoView({ block: "center", behavior: "auto" });
+          updateBackToTopVisibility();
+          return;
+        }
+
+        if (fallbackScroll) {
+          if (screenRef.current && fallbackScroll.scrollTop > 0) {
+            screenRef.current.scrollTop = fallbackScroll.scrollTop;
+          }
+          if (typeof window !== "undefined" && fallbackScroll.windowY > 0) {
+            window.scrollTo({ top: fallbackScroll.windowY, behavior: "auto" });
+          }
+        }
         updateBackToTopVisibility();
-        return;
-      }
-
-      if (fallbackScroll) {
-        if (screenRef.current && fallbackScroll.scrollTop > 0) {
-          screenRef.current.scrollTop = fallbackScroll.scrollTop;
-        }
-        if (typeof window !== "undefined" && fallbackScroll.windowY > 0) {
-          window.scrollTo({ top: fallbackScroll.windowY, behavior: "auto" });
-        }
-      }
-      updateBackToTopVisibility();
-    });
-  }, [updateBackToTopVisibility]);
+      });
+    },
+    [updateBackToTopVisibility]
+  );
 
   useEffect(() => {
     if (!pendingRestoreRef.current) return;
@@ -758,7 +757,6 @@ export default function Library() {
                       <h3>{item.name}</h3>
                       <p className="card-subtext">{item.curator} • {item.count} Tracks</p>
                     </div>
-                    {/* Inline management buttons */}
                     <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px" }}>
                       <button onClick={(e) => { e.stopPropagation(); setEditingPlaylist(item); setRenameValue(item.name); }} style={{ background: "none", border: "none", color: "#a1a1aa", cursor: "pointer", fontSize: "12px" }}>
                         <i className="fa-solid fa-pen"></i> Rename
@@ -774,7 +772,7 @@ export default function Library() {
           </div>
         )}
 
-        {/* Detailed Playlist View with Download Sequence Dropdown */}
+        {/* Detailed Playlist View */}
         {activeTab === "playlists" && selectedPlaylist && (
           <div className="playlist-detail-view">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
@@ -782,7 +780,6 @@ export default function Library() {
                 <i className="fa-solid fa-arrow-left"></i> Back to Playlists
               </button>
 
-              {/* In-Playlist Sort Dropdown */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", color: "#a1a1aa" }}><i className="fa-solid fa-arrow-down-wide-short"></i> Sort by:</span>
                 <select
@@ -816,7 +813,6 @@ export default function Library() {
             </div>
             <p style={{ color: "#aaa", marginBottom: "20px" }}>{selectedPlaylist.curator} • {selectedPlaylist.tracks?.length || 0} Tracks</p>
 
-            {/* Bulk Add Tracks Drawer */}
             {isAddingTrack && (
               <div style={{ background: "#18181b", border: `1px solid ${GAPVIZ_RED}`, borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
@@ -864,25 +860,46 @@ export default function Library() {
 
             <div className="library-list-stack">
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
-                getSortedPlaylistTracks().map((track, idx) => (
-                  <div key={`${track.trackKey}-${idx}`} className="library-row-item" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div className="row-item-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span className="row-platform">🟢</span>
-                      <div className="row-text-group">
-                        <span className="row-song-title">{track.title}</span>
-                        <span className="row-song-artist">{track.artist} • <span style={{ color: "#a1a1aa" }}>{track.album}</span></span>
+                (() => {
+                  const sortedTracks = getSortedPlaylistTracks();
+                  return sortedTracks.map((track, idx) => (
+                    <div
+                      key={`${track.trackKey}-${idx}`}
+                      className="library-row-item"
+                      onClick={() =>
+                        playTrack(track, {
+                          name: selectedPlaylist.name,
+                          platforms: [{ name: "Spotify", icon: "🟢" }],
+                          tracks: sortedTracks
+                        })
+                      }
+                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                    >
+                      <div className="row-item-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <span className="row-platform">🟢</span>
+                        <div className="row-text-group">
+                          <span className="row-song-title">{track.title}</span>
+                          <span className="row-song-artist">{track.artist} • <span style={{ color: "#a1a1aa" }}>{track.album}</span></span>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                        <span className="row-duration">{track.duration}</span>
+                        {selectedPlaylist.isCustom && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveTrackFromCurrentPlaylist(track.trackKey);
+                            }}
+                            style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer" }}
+                            title="Remove from playlist"
+                          >
+                            <i className="fa-solid fa-xmark"></i>
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                      <span className="row-duration">{track.duration}</span>
-                      {selectedPlaylist.isCustom && (
-                        <button onClick={() => handleRemoveTrackFromCurrentPlaylist(track.trackKey)} style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer" }} title="Remove from playlist">
-                          <i className="fa-solid fa-xmark"></i>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
+                  ));
+                })()
               ) : (
                 <p style={{ color: "#aaa" }}>No tracks in this playlist yet. Click "Add Tracks" above to select and batch-add songs.</p>
               )}
@@ -907,7 +924,17 @@ export default function Library() {
             </div>
             <div className="library-list-stack">
               {filteredSongs.map((item) => (
-                <Item key={item.id} item={item} />
+                <Item
+                  key={item.id}
+                  item={item}
+                  onSelect={() =>
+                    playTrack(item, {
+                      name: "Master Vault Songs",
+                      platforms: [{ name: "Spotify", icon: "🟢" }],
+                      tracks: filteredSongs
+                    })
+                  }
+                />
               ))}
             </div>
           </div>
@@ -969,7 +996,17 @@ export default function Library() {
             <div className="library-list-stack">
               {selectedAlbum.trackList && selectedAlbum.trackList.length > 0 ? (
                 selectedAlbum.trackList.map((track, idx) => (
-                  <div key={`${track.trackKey || track.id}-${idx}`} className="library-row-item">
+                  <div
+                    key={`${track.trackKey || track.id}-${idx}`}
+                    className="library-row-item"
+                    onClick={() =>
+                      playTrack(track, {
+                        name: `${selectedAlbum.title} (${selectedAlbum.artist})`,
+                        platforms: [{ name: "Spotify", icon: selectedAlbum.platform || "🟢" }],
+                        tracks: selectedAlbum.trackList
+                      })
+                    }
+                  >
                     <div className="row-item-left">
                       <span className="row-platform">{selectedAlbum.platform || "🟢"}</span>
                       <div className="row-text-group">
@@ -1013,9 +1050,9 @@ export default function Library() {
   );
 }
 
-function Item({ item }) {
+function Item({ item, onSelect }) {
   return (
-    <div className="library-row-item">
+    <div className="library-row-item" onClick={onSelect}>
       <div className="row-item-left">
         <span className="row-platform">{item.platform}</span>
         <div className="row-text-group">

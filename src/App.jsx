@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import { UserProvider } from "./context/UserContext";
+import { PlayerProvider } from "./context/PlayerContext";
 import { MusicApiService } from "./services/musicApi";
 
 import Splash from "./components/Splash/Splash";
@@ -67,42 +68,44 @@ function SpotifyAuthListener() {
 export default function App() {
   return (
     <UserProvider>
-      <BrowserRouter>
-        <SpotifyAuthListener />
-        <Routes>
+      <PlayerProvider>
+        <BrowserRouter>
+          <SpotifyAuthListener />
+          <Routes>
 
-          {/* Splash screen & Join (No footer / mini-player) */}
-          <Route path="/" element={<Splash />} />
-          <Route path="/join" element={<Join />} />
+            {/* Splash screen & Join (No footer / mini-player) */}
+            <Route path="/" element={<Splash />} />
+            <Route path="/join" element={<Join />} />
 
-          {/* Main App Layout (Includes MiniPlayer & MobileFooter automatically) */}
-          <Route element={<MainLayout />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/dj" element={<Dj />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/identify" element={<Identify />} />
-            <Route path="/identify-story" element={<IdentifyStory />} />
+            {/* Main App Layout (Includes MiniPlayer & MobileFooter automatically) */}
+            <Route element={<MainLayout />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/dj" element={<Dj />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/identify" element={<Identify />} />
+              <Route path="/identify-story" element={<IdentifyStory />} />
 
-            {/* Profile screen & sub-pages */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/profile/account" element={<Account />} />
-            <Route path="/profile/subscription" element={<Subscription />} />
-            <Route path="/profile/dj" element={<DjSettings />} />
-            <Route path="/profile/connected-services" element={<ConnectedServices />} />
-            <Route path="/profile/notifications" element={<Notifications />} />
-            <Route path="/profile/app" element={<div>App Settings Page</div>} />
-            <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
-            <Route path="/profile/appearance" element={<Appearance />} />
-            <Route path="/profile/privacy-data" element={<PrivacyData />} />
-            <Route path="/profile/help-support" element={<HelpSupport />} />
-            <Route path="/profile/about" element={<About />} />
-          </Route>
+              {/* Profile screen & sub-pages */}
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/account" element={<Account />} />
+              <Route path="/profile/subscription" element={<Subscription />} />
+              <Route path="/profile/dj" element={<DjSettings />} />
+              <Route path="/profile/connected-services" element={<ConnectedServices />} />
+              <Route path="/profile/notifications" element={<Notifications />} />
+              <Route path="/profile/app" element={<div>App Settings Page</div>} />
+              <Route path="/profile/avatar" element={<div>Avatar Editor Page</div>} />
+              <Route path="/profile/appearance" element={<Appearance />} />
+              <Route path="/profile/privacy-data" element={<PrivacyData />} />
+              <Route path="/profile/help-support" element={<HelpSupport />} />
+              <Route path="/profile/about" element={<About />} />
+            </Route>
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/home" replace />} />
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/home" replace />} />
 
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </PlayerProvider>
     </UserProvider>
   );
 }
