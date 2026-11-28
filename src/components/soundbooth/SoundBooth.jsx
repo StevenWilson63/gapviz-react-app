@@ -1,6 +1,16 @@
+// SoundBooth.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { usePlayer } from "../../context/PlayerContext";
 import "./SoundBooth.css";
+
+const formatTime = (ms) => {
+  if (!ms || ms < 0) return "0:00";
+  const totalSec = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSec / 60);
+  const secs = String(totalSec % 60).padStart(2, "0");
+  return `${mins}:${secs}`;
+};
 
 // HTML5 Canvas Text Renderer Component for Script Anti-Copy Security
 function CanvasTeleprompter({ text, fontSize, lineHeightRatio = 1.5 }) {
@@ -85,6 +95,8 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   const {
     currentTrack,
     isPlaying,
+    positionMs,
+    durationMs,
     togglePlay,
     playNext,
     playPrevious,
@@ -110,6 +122,9 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   const handleContextMenu = (e) => {
     e.preventDefault();
   };
+
+  const effectiveDuration = durationMs > 0 ? durationMs : 257000;
+  const progressPercent = Math.min(100, Math.max(0, (positionMs / effectiveDuration) * 100));
 
   return (
     <div className="soundbooth-overlay">
@@ -162,11 +177,11 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
       {/* Track Progress Scrubber Bar */}
       <div className="soundbooth-progress-container">
         <div className="soundbooth-progress-bar">
-          <div className="soundbooth-progress-fill" style={{ width: "35%" }}></div>
+          <div className="soundbooth-progress-fill" style={{ width: `${progressPercent}%` }}></div>
         </div>
         <div className="soundbooth-time-row">
-          <span>1:24</span>
-          <span>{currentTrack.duration || "4:17"}</span>
+          <span>{formatTime(positionMs)}</span>
+          <span>{durationMs > 0 ? formatTime(durationMs) : currentTrack.duration || "4:17"}</span>
         </div>
       </div>
 

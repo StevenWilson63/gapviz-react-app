@@ -1,3 +1,4 @@
+
 // src/context/PlayerContext.jsx
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
@@ -324,18 +325,20 @@ export function PlayerProvider({ children }) {
     setIsPlaying(nextPlaying);
     setPlaybackError(null);
 
-    const uri = resolveSpotifyUri(currentTrackRef.current);
-
     try {
       if (sdkPlayerRef.current?.activateElement) {
         await sdkPlayerRef.current.activateElement();
       }
 
       if (!nextPlaying) {
+        if (sdkPlayerRef.current && spotifyPlayerReady) {
+          await sdkPlayerRef.current.pause();
+        }
         await pauseSpotifyPlayback(deviceIdRef.current);
-      } else if (uri) {
-        await playSpotifyUri({ uri, deviceId: deviceIdRef.current });
       } else {
+        if (sdkPlayerRef.current && spotifyPlayerReady) {
+          await sdkPlayerRef.current.resume();
+        }
         await resumeSpotifyPlayback(deviceIdRef.current);
       }
     } catch (err) {
@@ -346,7 +349,7 @@ export function PlayerProvider({ children }) {
         isTogglingRef.current = false;
       }, 250);
     }
-  }, []);
+  }, [spotifyPlayerReady]);
 
   const selectQueueIndex = useCallback(
     (nextIdx) => {
