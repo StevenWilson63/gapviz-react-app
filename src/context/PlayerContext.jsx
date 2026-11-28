@@ -93,8 +93,14 @@ export function PlayerProvider({ children }) {
   const deviceIdRef = useRef(null);
   const currentTrackRef = useRef(currentTrack);
   const isPlayingRef = useRef(isPlaying);
+  const repeatModeRef = useRef(repeatMode);
+  const isShuffledRef = useRef(isShuffled);
+  const queueMetaRef = useRef(queueMeta);
+  const queueIndexRef = useRef(queueIndex);
   const isTogglingRef = useRef(false);
   const seekingLockRef = useRef(false);
+  const trackEndedRef = useRef(false);
+  const playNextRef = useRef(null);
 
   useEffect(() => {
     currentTrackRef.current = currentTrack;
@@ -105,18 +111,20 @@ export function PlayerProvider({ children }) {
   }, [isPlaying]);
 
   useEffect(() => {
-    if (!isPlaying) return undefined;
-    const interval = setInterval(() => {
-      setPositionMs((prev) => {
-        const next = prev + 1000;
-        if (durationMs > 0 && next >= durationMs) {
-          return durationMs;
-        }
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isPlaying, durationMs]);
+    repeatModeRef.current = repeatMode;
+  }, [repeatMode]);
+
+  useEffect(() => {
+    isShuffledRef.current = isShuffled;
+  }, [isShuffled]);
+
+  useEffect(() => {
+    queueMetaRef.current = queueMeta;
+  }, [queueMeta]);
+
+  useEffect(() => {
+    queueIndexRef.current = queueIndex;
+  }, [queueIndex]);
 
   useEffect(() => {
     const onConnectionChange = () => setConnectionEpoch((prev) => prev + 1);
@@ -165,18 +173,41 @@ export function PlayerProvider({ children }) {
 
         player.addListener("player_state_changed", (state) => {
           if (cancelled || !state) return;
-          if (!isTogglingRef.current) {
-            setIsPlaying(!state.paused);
+
+          const sdkTrackUri = state.track_window?.current_track?.uri;
+          const activeTrackUri = resolveSpotifyUri(currentTrackRef.current);
+          const sdkDur = typeof state.duration === "number" && state.duration > 0 ? state.duration : 0;
+          const sdkPos = typeof state.position === "number" ? state.position : 0;
+
+          if (sdkDur > 0) {
+            setDurationMs(sdkDur);
           }
+
           if (!seekingLockRef.current && typeof state.position === "number") {
-            setPositionMs(state.position);
+            setPositionMs(sdkPos);
           }
-          if (typeof state.duration === "number" && state.duration > 0) {
-            setDurationMs(state.duration);
-          }
+
           const sdkArt = state.track_window?.current_track?.album?.images?.[0]?.url;
           if (sdkArt) {
             setCurrentTrack((prev) => ({ ...prev, artworkUrl: sdkArt }));
+          }
+
+          // Detect natural end of track on Spotify SDK
+          const reachedEnd =
+            state.paused &&
+            sdkPos === 0 &&
+            Array.isArray(state.track_window?.previous_tracks) &&
+            state.track_window.previous_tracks.length > 0 &&
+            (!activeTrackUri || sdkTrackUri !== activeTrackUri);
+
+          if (reachedEnd && !trackEndedRef.current) {
+            trackEndedRef.current = true;
+            playNextRef.current?.();
+            return;
+          }
+
+          if (!isTogglingRef.current) {
+            setIsPlaying(!state.paused);
           }
         });
 
@@ -241,13 +272,13 @@ export function PlayerProvider({ children }) {
     }));
   }, []);
 
-  const executeSpotifyTrackPlay = useCallback(async (track) => {
+  const executeSpotifyTrackPlay = useCallback(async (track, startMs = 0) => {
     const uri = resolveSpotifyUri(track);
     const routeInfo = {
       platform: "spotify",
       uri,
       deviceId: deviceIdRef.current,
-      positionMs: 0,
+      positionMs: startMs,
       shouldPlay: true,
       title: track?.title,
       artist: track?.artist,
@@ -266,7 +297,7 @@ export function PlayerProvider({ children }) {
       await playSpotifyUri({
         uri,
         deviceId: deviceIdRef.current,
-        positionMs: 0
+        positionMs: startMs
       });
     } catch (err) {
       console.error(">>> [PlayerContext] Spotify playback failed:", err?.message || err);
@@ -278,6 +309,7 @@ export function PlayerProvider({ children }) {
     (track, contextOptions = {}) => {
       if (!track) return;
 
+      trackEndedRef.current = false;
       const resolvedUri = resolveSpotifyUri(track) || track.uri || null;
       const trackKey = track.trackKey || track.id || Date.now();
       const trackDurMs = parseDurationToMs(track);
@@ -299,7 +331,7 @@ export function PlayerProvider({ children }) {
       setCurrentTrack(normalizedTrack);
       setIsPlaying(true);
       hydrateTrackArtwork(trackKey, resolvedUri, track.artworkUrl);
-      executeSpotifyTrackPlay(normalizedTrack);
+      executeSpotifyTrackPlay(normalizedTrack, 0);
 
       if (Array.isArray(contextOptions.tracks) && contextOptions.tracks.length > 0) {
         const foundIdx = contextOptions.tracks.findIndex(
@@ -339,6 +371,7 @@ export function PlayerProvider({ children }) {
         }
         await pauseSpotifyPlayback(deviceIdRef.current);
       } else {
+        trackEndedRef.current = false;
         if (sdkPlayerRef.current && spotifyPlayerReady) {
           await sdkPlayerRef.current.resume();
         }
@@ -356,6 +389,7 @@ export function PlayerProvider({ children }) {
 
   const seekToMs = useCallback(async (targetMs) => {
     const clamped = Math.max(0, Math.min(Math.round(targetMs), durationMs > 0 ? durationMs : Math.round(targetMs)));
+    trackEndedRef.current = false;
     seekingLockRef.current = true;
     setPositionMs(clamped);
 
@@ -398,9 +432,11 @@ export function PlayerProvider({ children }) {
 
   const selectQueueIndex = useCallback(
     (nextIdx) => {
-      if (!queueMeta.tracks.length) return;
-      const clamped = Math.max(0, Math.min(nextIdx, queueMeta.tracks.length - 1));
-      const target = queueMeta.tracks[clamped];
+      const tracks = queueMetaRef.current.tracks || [];
+      if (!tracks.length) return;
+      trackEndedRef.current = false;
+      const clamped = Math.max(0, Math.min(nextIdx, tracks.length - 1));
+      const target = tracks[clamped];
       const resolvedUri = resolveSpotifyUri(target) || target.uri || null;
       const trackDurMs = parseDurationToMs(target);
       const nextTrack = {
@@ -426,34 +462,39 @@ export function PlayerProvider({ children }) {
         tracks: buildQueueTracks(prev.tracks, clamped)
       }));
       setIsPlaying(true);
-      executeSpotifyTrackPlay(nextTrack);
+      executeSpotifyTrackPlay(nextTrack, 0);
     },
-    [queueMeta.tracks, buildQueueTracks, executeSpotifyTrackPlay, hydrateTrackArtwork]
+    [buildQueueTracks, executeSpotifyTrackPlay, hydrateTrackArtwork]
   );
 
   const playNext = useCallback(async () => {
-    if (repeatMode === "track") {
+    const mode = repeatModeRef.current;
+    const shuffled = isShuffledRef.current;
+    const tracks = queueMetaRef.current.tracks || [];
+    const currentIdx = queueIndexRef.current;
+
+    if (mode === "track") {
+      trackEndedRef.current = false;
       setPositionMs(0);
-      executeSpotifyTrackPlay(currentTrackRef.current);
+      setIsPlaying(true);
+      await executeSpotifyTrackPlay(currentTrackRef.current, 0);
       return;
     }
 
-    if (queueMeta.tracks.length > 0) {
-      if (isShuffled && queueMeta.tracks.length > 1) {
-        const candidates = queueMeta.tracks
-          .map((_, idx) => idx)
-          .filter((idx) => idx !== queueIndex);
+    if (tracks.length > 0) {
+      if (shuffled && tracks.length > 1) {
+        const candidates = tracks.map((_, idx) => idx).filter((idx) => idx !== currentIdx);
         const randomIdx = candidates[Math.floor(Math.random() * candidates.length)];
         selectQueueIndex(randomIdx);
         return;
       }
 
-      if (queueIndex < queueMeta.tracks.length - 1) {
-        selectQueueIndex(queueIndex + 1);
+      if (currentIdx < tracks.length - 1) {
+        selectQueueIndex(currentIdx + 1);
         return;
       }
 
-      if (repeatMode === "context") {
+      if (mode === "context") {
         selectQueueIndex(0);
         return;
       }
@@ -464,22 +505,28 @@ export function PlayerProvider({ children }) {
     } catch (err) {
       console.error(">>> [PlayerContext] Next track failed:", err?.message || err);
     }
-  }, [repeatMode, queueMeta.tracks, isShuffled, queueIndex, selectQueueIndex, executeSpotifyTrackPlay]);
+  }, [selectQueueIndex, executeSpotifyTrackPlay]);
+
+  useEffect(() => {
+    playNextRef.current = playNext;
+  }, [playNext]);
 
   const playPrevious = useCallback(async () => {
-    if (repeatMode === "track") {
+    if (repeatModeRef.current === "track") {
+      trackEndedRef.current = false;
       setPositionMs(0);
-      executeSpotifyTrackPlay(currentTrackRef.current);
+      setIsPlaying(true);
+      await executeSpotifyTrackPlay(currentTrackRef.current, 0);
       return;
     }
 
-    if (queueIndex > 0) {
-      selectQueueIndex(queueIndex - 1);
+    if (queueIndexRef.current > 0) {
+      selectQueueIndex(queueIndexRef.current - 1);
       return;
     }
 
-    if (repeatMode === "context" && queueMeta.tracks.length > 0) {
-      selectQueueIndex(queueMeta.tracks.length - 1);
+    if (repeatModeRef.current === "context" && (queueMetaRef.current.tracks || []).length > 0) {
+      selectQueueIndex(queueMetaRef.current.tracks.length - 1);
       return;
     }
 
@@ -488,7 +535,28 @@ export function PlayerProvider({ children }) {
     } catch (err) {
       console.error(">>> [PlayerContext] Previous track failed:", err?.message || err);
     }
-  }, [repeatMode, queueIndex, selectQueueIndex, queueMeta.tracks.length, executeSpotifyTrackPlay]);
+  }, [selectQueueIndex, executeSpotifyTrackPlay]);
+
+  // Live progress tick + automatic end-of-track advance/repeat
+  useEffect(() => {
+    if (!isPlaying) return undefined;
+    const interval = setInterval(() => {
+      setPositionMs((prev) => {
+        const next = prev + 1000;
+        if (durationMs > 0 && next >= durationMs) {
+          if (!trackEndedRef.current) {
+            trackEndedRef.current = true;
+            setTimeout(() => {
+              playNextRef.current?.();
+            }, 0);
+          }
+          return durationMs;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPlaying, durationMs]);
 
   return (
     <PlayerContext.Provider
