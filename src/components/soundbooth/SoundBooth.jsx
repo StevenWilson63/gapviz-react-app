@@ -433,7 +433,16 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
                     </div>
                     <span className="queue-track-status-badge">
                       {track.status === "played" && "Played"}
-                      {track.status === "current" && "Now Playing"}
+                      {track.status === "current" && (
+                        <span className="now-playing-badge-inner">
+                          <span className={`equalizer-bars ${isPlaying ? "is-animating" : ""}`} aria-hidden="true">
+                            <span className="eq-bar eq-bar-1"></span>
+                            <span className="eq-bar eq-bar-2"></span>
+                            <span className="eq-bar eq-bar-3"></span>
+                          </span>
+                          <span>Now Playing</span>
+                        </span>
+                      )}
                       {track.status === "upcoming" && "Up Next"}
                     </span>
                   </div>

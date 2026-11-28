@@ -650,6 +650,69 @@
   padding: 3px 8px;
   border-radius: 6px;
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.now-playing-badge-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.equalizer-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+}
+
+.eq-bar {
+  width: 2.5px;
+  height: 4px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  transition: height 0.2s ease;
+}
+
+.eq-bar-1 {
+  height: 5px;
+}
+
+.eq-bar-2 {
+  height: 10px;
+}
+
+.eq-bar-3 {
+  height: 7px;
+}
+
+.equalizer-bars.is-animating .eq-bar-1 {
+  animation: eqBounce1 0.7s ease-in-out infinite;
+}
+
+.equalizer-bars.is-animating .eq-bar-2 {
+  animation: eqBounce2 0.55s ease-in-out infinite;
+}
+
+.equalizer-bars.is-animating .eq-bar-3 {
+  animation: eqBounce3 0.65s ease-in-out infinite;
+}
+
+@keyframes eqBounce1 {
+  0%, 100% { height: 3px; }
+  50% { height: 11px; }
+}
+
+@keyframes eqBounce2 {
+  0%, 100% { height: 10px; }
+  50% { height: 4px; }
+}
+
+@keyframes eqBounce3 {
+  0%, 100% { height: 5px; }
+  50% { height: 11px; }
 }
 
 .track-played .queue-track-status-badge {
