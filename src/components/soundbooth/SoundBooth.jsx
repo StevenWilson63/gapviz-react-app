@@ -111,6 +111,13 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubMs, setScrubMs] = useState(0);
+  const lastVolumeRef = useRef(volume > 0 ? volume : 0.8);
+
+  useEffect(() => {
+    if (volume > 0) {
+      lastVolumeRef.current = volume;
+    }
+  }, [volume]);
 
   const currentScriptText = getCommentaryText(currentTrack);
 
@@ -144,7 +151,21 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   };
 
   const handleVolumeChange = (e) => {
-    setVolume(Number(e.target.value) / 100);
+    const nextVol = Number(e.target.value) / 100;
+    if (nextVol > 0) {
+      lastVolumeRef.current = nextVol;
+    }
+    setVolume(nextVol);
+  };
+
+  const handleToggleMute = () => {
+    if (volume > 0) {
+      lastVolumeRef.current = volume;
+      setVolume(0);
+    } else {
+      const restoreVol = lastVolumeRef.current > 0 ? lastVolumeRef.current : 0.8;
+      setVolume(restoreVol);
+    }
   };
 
   const volumePercent = Math.round(volume * 100);
@@ -270,7 +291,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
       >
         <button
           type="button"
-          onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
+          onClick={handleToggleMute}
           title={volume > 0 ? "Mute" : "Unmute"}
           style={{
             background: "none",
