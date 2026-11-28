@@ -95,21 +95,18 @@ async function refreshAccessToken() {
   return data.access_token;
 }
 
-async function getValidToken() {
+export async function getSpotifyAccessToken() {
   const token = localStorage.getItem(SPOTIFY_TOKEN_KEY);
   const expiresAt = Number(localStorage.getItem(SPOTIFY_EXPIRES_KEY) || 0);
 
   if (token && (!expiresAt || Date.now() < expiresAt - 60000)) return token;
   if (localStorage.getItem(SPOTIFY_REFRESH_KEY)) return refreshAccessToken();
-  if (token) return token; // legacy token with no expiry info: try it
+  if (token) return token;
   throw new SpotifyAuthError("Spotify is not connected.");
 }
 
 // ---------------------------------------------------------------------------
 // Rate-limit-safe request gateway
-// - one request at a time, spaced out
-// - NEVER retries a 429: stores a cooldown and stops
-// - refuses to send anything while a cooldown is active (survives page refreshes)
 // ---------------------------------------------------------------------------
 
 const MIN_GAP_MS = 400;
@@ -120,32 +117,219 @@ export function getCooldownSeconds() {
   return Math.max(0, Math.ceil((until - Date.now()) / 1000));
 }
 
-async function spotifyFetch(url) {
+async function spotifyFetch(url, options = {}) {
   const remaining = getCooldownSeconds();
   if (remaining > 0) throw new SpotifyRateLimitError(remaining);
 
   const gap = lastRequestAt + MIN_GAP_MS - Date.now();
   if (gap > 0) await sleep(gap);
 
-  let token = await getValidToken();
+  let token = await getSpotifyAccessToken();
   lastRequestAt = Date.now();
-  let res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  let res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`
+    }
+  });
 
   if (res.status === 401) {
-    token = await refreshAccessToken(); // throws SpotifyAuthError if it can't
+    token = await refreshAccessToken();
     lastRequestAt = Date.now();
-    res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`
+      }
+    });
     if (res.status === 401) throw new SpotifyAuthError();
   }
 
   if (res.status === 429) {
-    // If the browser can't read the header (CORS), assume 15 minutes
     const retryAfter = Number(res.headers.get("Retry-After")) || 900;
     localStorage.setItem(COOLDOWN_KEY, String(Date.now() + retryAfter * 1000));
     throw new SpotifyRateLimitError(retryAfter);
   }
 
   return res;
+}
+
+// ---------------------------------------------------------------------------
+// On-demand Artwork Resolver (no IndexedDB bulk caching needed)
+// ---------------------------------------------------------------------------
+
+const sessionArtworkCache = new Map();
+
+export async function fetchSpotifyTrackArtwork(uri) {
+  if (!uri || !String(uri).startsWith("spotify:track:")) return "";
+  if (sessionArtworkCache.has(uri)) return sessionArtworkCache.get(uri);
+
+  const trackId = uri.split(":")[2];
+  if (!trackId) return "";
+
+  try {
+    const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(`https://open.spotify.com/track/${trackId}`)}`;
+    const oembedRes = await fetch(oembedUrl);
+    if (oembedRes.ok) {
+      const data = await oembedRes.json();
+      if (data.thumbnail_url) {
+        sessionArtworkCache.set(uri, data.thumbnail_url);
+        return data.thumbnail_url;
+      }
+    }
+  } catch (err) {
+    // Fall through to Web API lookup
+  }
+
+  try {
+    const res = await spotifyFetch(`https://api.spotify.com/v1/tracks/${encodeURIComponent(trackId)}`);
+    if (res.ok) {
+      const tr = await res.json();
+      const art = tr?.album?.images?.[0]?.url || "";
+      if (art) sessionArtworkCache.set(uri, art);
+      return art;
+    }
+  } catch (err) {
+    console.warn(">>> [Artwork] Lookup skipped:", err?.message || err);
+  }
+
+  return "";
+}
+
+// ---------------------------------------------------------------------------
+// Spotify Web Playback SDK & Playback Controls (Phase 4A)
+// ---------------------------------------------------------------------------
+
+let sdkScriptPromise = null;
+
+export function loadSpotifyPlaybackSdk() {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Web Playback SDK requires a browser environment."));
+  }
+  if (window.Spotify?.Player) {
+    return Promise.resolve(window.Spotify);
+  }
+  if (sdkScriptPromise) {
+    return sdkScriptPromise;
+  }
+
+  sdkScriptPromise = new Promise((resolve, reject) => {
+    const existingScript = document.getElementById("spotify-web-playback-sdk");
+    const previousReady = window.onSpotifyWebPlaybackSDKReady;
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      if (typeof previousReady === "function") {
+        previousReady();
+      }
+      if (window.Spotify?.Player) {
+        resolve(window.Spotify);
+      } else {
+        reject(new Error("Spotify SDK loaded without Player constructor."));
+      }
+    };
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.id = "spotify-web-playback-sdk";
+      script.src = "https://sdk.scdn.co/spotify-player.js";
+      script.async = true;
+      script.onerror = () => {
+        sdkScriptPromise = null;
+        reject(new Error("Failed to load Spotify Web Playback SDK script."));
+      };
+      document.body.appendChild(script);
+    }
+  });
+
+  return sdkScriptPromise;
+}
+
+export async function createSpotifySdkPlayer({ name = "Gapviz Web Player", volume = 0.75 } = {}) {
+  const SpotifySdk = await loadSpotifyPlaybackSdk();
+  return new SpotifySdk.Player({
+    name,
+    volume,
+    getOAuthToken: async (cb) => {
+      try {
+        const token = await getSpotifyAccessToken();
+        cb(token);
+      } catch (err) {
+        console.error(">>> [Spotify SDK] Token retrieval failed:", err);
+      }
+    }
+  });
+}
+
+export async function transferSpotifyPlayback(deviceId, play = false) {
+  if (!deviceId) return false;
+  const res = await spotifyFetch("https://api.spotify.com/v1/me/player", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      device_ids: [deviceId],
+      play
+    })
+  });
+  return res.ok || res.status === 204;
+}
+
+export async function playSpotifyUri({ uri, uris, deviceId, positionMs = 0 }) {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : "";
+  const body = {};
+  if (Array.isArray(uris) && uris.length > 0) {
+    body.uris = uris;
+  } else if (uri) {
+    body.uris = [uri];
+  }
+  if (positionMs > 0) {
+    body.position_ms = positionMs;
+  }
+
+  const res = await spotifyFetch(`https://api.spotify.com/v1/me/player/play${query}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok && res.status !== 204) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Spotify play failed (${res.status}): ${errText}`);
+  }
+  return true;
+}
+
+export async function pauseSpotifyPlayback(deviceId) {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : "";
+  const res = await spotifyFetch(`https://api.spotify.com/v1/me/player/pause${query}`, {
+    method: "PUT"
+  });
+  return res.ok || res.status === 204;
+}
+
+export async function resumeSpotifyPlayback(deviceId) {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : "";
+  const res = await spotifyFetch(`https://api.spotify.com/v1/me/player/play${query}`, {
+    method: "PUT"
+  });
+  return res.ok || res.status === 204;
+}
+
+export async function nextSpotifyTrack(deviceId) {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : "";
+  const res = await spotifyFetch(`https://api.spotify.com/v1/me/player/next${query}`, {
+    method: "POST"
+  });
+  return res.ok || res.status === 204;
+}
+
+export async function previousSpotifyTrack(deviceId) {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : "";
+  const res = await spotifyFetch(`https://api.spotify.com/v1/me/player/previous${query}`, {
+    method: "POST"
+  });
+  return res.ok || res.status === 204;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,7 +350,6 @@ const mapTrack = (tr, addedAt) => ({
 
 // ---------------------------------------------------------------------------
 // Resumable sync (checkpointed in IndexedDB)
-// phases: playlists -> liked -> tracks
 // ---------------------------------------------------------------------------
 
 async function getState() {
@@ -189,7 +372,7 @@ export async function getSyncInfo() {
   };
 }
 
-let syncInFlight = null; // single-flight guard: a double click or double mount can't start two syncs
+let syncInFlight = null;
 
 export function syncSpotifyLibrary(opts) {
   if (!syncInFlight) {
@@ -200,7 +383,6 @@ export function syncSpotifyLibrary(opts) {
   return syncInFlight;
 }
 
-// Save every page of a paging object (and follow "next"). Returns how many tracks were saved.
 async function savePagingChain({ playlistKey, firstPaging, signal }) {
   let paging = firstPaging;
   let count = 0;
@@ -223,7 +405,7 @@ async function savePagingChain({ playlistKey, firstPaging, signal }) {
 
     if (!paging.next) break;
     const res = await spotifyFetch(paging.next);
-    if (res.status === 403 || res.status === 404) break; // keep what we already have
+    if (res.status === 403 || res.status === 404) break;
     if (!res.ok) throw new Error(`Spotify playlist page failed (${res.status})`);
     paging = await res.json();
   }
@@ -231,10 +413,6 @@ async function savePagingChain({ playlistKey, firstPaging, signal }) {
   return { aborted: false, count };
 }
 
-// Try to read a playlist's tracks. Two routes, because Spotify treats them differently:
-//   1. /playlists/{id}/items
-//   2. the playlist object itself (its track list is embedded in it)
-// If both are refused the playlist is genuinely unreadable and becomes a shell.
 async function importPlaylistTracks(pl, signal) {
   const id = pl.playlistKey.split(":")[1];
   const diag = {
@@ -245,7 +423,6 @@ async function importPlaylistTracks(pl, signal) {
     imported: 0
   };
 
-  // Route 1
   const itemsRes = await spotifyFetch(`https://api.spotify.com/v1/playlists/${id}/items?limit=100`);
   diag.itemsStatus = itemsRes.status;
   if (itemsRes.ok) {
@@ -255,7 +432,6 @@ async function importPlaylistTracks(pl, signal) {
     return { ok: true, aborted: out.aborted, count: out.count, diag };
   }
 
-  // Route 2
   if (signal?.aborted) return { ok: false, aborted: true, count: 0, diag };
   const objRes = await spotifyFetch(`https://api.spotify.com/v1/playlists/${id}`);
   diag.objectStatus = objRes.status;
@@ -275,7 +451,6 @@ async function importPlaylistTracks(pl, signal) {
 async function runSpotifySync({ onProgress, signal } = {}) {
   let state = await getState();
 
-  // Fresh run (not resuming an interrupted one)
   if (!state.inProgress) {
     state = await patchState({
       inProgress: true,
@@ -289,7 +464,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     });
   }
 
-  // ---- PHASE 1: playlist list (cheap: one call per 50 playlists) ----
   if (state.phase === "playlists") {
     let url = state.playlistsNext || "https://api.spotify.com/v1/me/playlists?limit=50";
     let hiddenTotal = state.hiddenPlaylists || 0;
@@ -300,7 +474,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       if (!res.ok) throw new Error(`Spotify playlist list failed (${res.status})`);
       const data = await res.json();
 
-      // Spotify can return null entries for playlists it won't share with an app: count them
       const rawItems = data.items || [];
       const items = rawItems.filter(Boolean);
       hiddenTotal += rawItems.length - items.length;
@@ -319,10 +492,8 @@ async function runSpotifySync({ onProgress, signal } = {}) {
           name: pl.name,
           platform: "spotify",
           curator: pl.owner?.display_name || "Spotify",
-          trackCount: pl.items?.total ?? pl.tracks?.total ?? prev?.trackCount ?? 0, // field name changed in 2026
+          trackCount: pl.items?.total ?? pl.tracks?.total ?? prev?.trackCount ?? 0,
           snapshotId: pl.snapshot_id,
-          // Only used to word the message: Spotify-made playlists are owned by the "spotify" user.
-          // Whether a playlist is a shell is decided by whether Gapviz can actually read it.
           spotifyOwned: pl.owner?.id === "spotify",
           syncedSnapshotId: prev?.syncedSnapshotId || null,
           restricted: prev?.restricted || false,
@@ -342,7 +513,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
       onProgress?.({ currentTrack: "Reading your playlists...", percent: 8 });
     }
 
-    // Make sure the Liked Songs entry exists
     const likedPrev = await vaultDb.playlists.where("playlistKey").equals(LIKED_KEY).first();
     const likedRow = {
       ...(likedPrev || {}),
@@ -364,7 +534,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "liked" });
   }
 
-  // ---- PHASE 2: Liked Songs, saved page by page, resumable ----
   if (state.phase === "liked") {
     let url = state.likedNext || "https://api.spotify.com/v1/me/tracks?limit=50";
     let fetched = state.likedFetched || 0;
@@ -381,8 +550,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
         .filter((i) => i?.track?.name)
         .map((i) => mapTrack(i.track, i.added_at));
 
-      // Incremental re-sync: Liked Songs come newest first, so once a whole page is
-      // already in the vault there is nothing newer left to fetch.
       if (state.incremental && tracks.length > 0) {
         const keys = tracks.map((t) => buildTrackKey("spotify", t.id, t.title, t.artist));
         const links = await vaultDb.playlistTracks.bulkGet(keys.map((k) => [LIKED_KEY, k]));
@@ -414,10 +581,6 @@ async function runSpotifySync({ onProgress, signal } = {}) {
     state = await patchState({ phase: "tracks" });
   }
 
-  // ---- PHASE 3: playlist tracks ----
-  // A playlist is imported when it has changed since last time. One Gapviz could not read
-  // (a shell) is only tried again after a week, or when the user asks, so a Spotify-made
-  // playlist that changes daily doesn't cost requests on every sync.
   if (state.phase === "tracks") {
     const needsImport = (p) => {
       if (p.playlistKey === LIKED_KEY) return false;
@@ -490,9 +653,11 @@ export const MusicApiService = {
     const tokens = this.getConnectedTokens();
     tokens[platformKey] = isConnected;
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(tokens));
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("gapviz:spotify-connection-changed"));
+    }
   },
 
-  // Guarded so React StrictMode's double effect can't exchange the one-time code twice
   handleAuthCallback() {
     if (!authCallbackInFlight) {
       authCallbackInFlight = this._exchangeCode().finally(() => {
@@ -534,7 +699,6 @@ export const MusicApiService = {
     } catch (err) {
       console.error("Failed to exchange Spotify authorization code for token", err);
     } finally {
-      // The code is single-use: always clear it from the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     return false;
@@ -544,8 +708,16 @@ export const MusicApiService = {
     if (platformKey === "spotify") {
       const clientId = CLIENT_IDS.spotify;
       const redirectUri = window.location.origin;
-      const scopes =
-        "user-library-read playlist-read-private playlist-read-collaborative user-read-private user-read-email";
+      const scopes = [
+        "user-library-read",
+        "playlist-read-private",
+        "playlist-read-collaborative",
+        "user-read-private",
+        "user-read-email",
+        "streaming",
+        "user-read-playback-state",
+        "user-modify-playback-state"
+      ].join(" ");
 
       localStorage.removeItem(SPOTIFY_TOKEN_KEY);
       localStorage.removeItem(SPOTIFY_REFRESH_KEY);
@@ -571,9 +743,6 @@ export const MusicApiService = {
     }
   },
 
-  // ---- Compatibility wrappers: these read from the local vault and make NO Spotify calls.
-  // Use syncSpotifyLibrary() to pull data from Spotify.
-
   async fetchUserPlaylists(platformKey) {
     if (platformKey !== "spotify") return [];
     const rows = await vaultDb.playlists.where("platform").equals("spotify").toArray();
@@ -598,6 +767,15 @@ export const MusicApiService = {
     return links
       .map((l) => byKey.get(l.trackKey))
       .filter(Boolean)
-      .map((t) => ({ id: t.trackKey, title: t.title, artist: t.artist, album: t.album, status: "upcoming" }));
+      .map((t) => ({
+        id: t.trackKey,
+        trackKey: t.trackKey,
+        title: t.title,
+        artist: t.artist,
+        album: t.album,
+        artworkUrl: t.artworkUrl || "",
+        durationMs: t.durationMs || 0,
+        uri: t.uri || ""
+      }));
   }
 };
