@@ -322,8 +322,9 @@ export function PlayerProvider({ children }) {
             positionMsRef.current = sdkPos;
           }
 
+          const activeUri = resolveSpotifyUri(currentTrackRef.current) || currentTrackRef.current?.uri;
           const sdkArt = state.track_window?.current_track?.album?.images?.[0]?.url;
-          if (sdkArt) {
+          if (sdkArt && sdkTrackUri && activeUri && sdkTrackUri === activeUri) {
             setCurrentTrack((prev) => ({ ...prev, artworkUrl: sdkArt }));
           }
 
@@ -438,7 +439,10 @@ export function PlayerProvider({ children }) {
     setPlaybackError(null);
     console.log(">>> [PlayerContext] Playback route:", routeInfo);
 
-    if (!uri) return;
+    if (!uri) {
+      setPlaybackError("No Spotify URI available for this track.");
+      return;
+    }
 
     try {
       if (sdkPlayerRef.current?.activateElement) {
