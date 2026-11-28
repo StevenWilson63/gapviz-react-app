@@ -98,6 +98,7 @@ export function PlayerProvider({ children }) {
   const queueMetaRef = useRef(queueMeta);
   const queueIndexRef = useRef(queueIndex);
   const durationMsRef = useRef(durationMs);
+  const positionMsRef = useRef(positionMs);
   const isTogglingRef = useRef(false);
   const seekingLockRef = useRef(false);
   const lastSdkTrackUriRef = useRef(null);
@@ -132,6 +133,18 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     durationMsRef.current = durationMs;
   }, [durationMs]);
+
+  useEffect(() => {
+    positionMsRef.current = positionMs;
+  }, [positionMs]);
+
+  const triggerEndOfTrack = useCallback(() => {
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+    setTimeout(() => {
+      playNextRef.current?.();
+    }, 0);
+  }, []);
 
   useEffect(() => {
     const onConnectionChange = () => setConnectionEpoch((prev) => prev + 1);
@@ -197,6 +210,7 @@ export function PlayerProvider({ children }) {
 
           if (!seekingLockRef.current && typeof state.position === "number") {
             setPositionMs(sdkPos);
+            positionMsRef.current = sdkPos;
           }
 
           const sdkArt = state.track_window?.current_track?.album?.images?.[0]?.url;
@@ -204,25 +218,33 @@ export function PlayerProvider({ children }) {
             setCurrentTrack((prev) => ({ ...prev, artworkUrl: sdkArt }));
           }
 
-          // Only treat a track URI switch as natural completion if playback actually progressed past 2s
+          // Detect natural track completion when SDK switches URI after active playback
           if (
             prevSdkUri &&
             sdkTrackUri &&
             prevSdkUri !== sdkTrackUri &&
-            maxSeenPosMsRef.current > 2000 &&
-            !advancingRef.current
+            maxSeenPosMsRef.current > 0 &&
+            isPlayingRef.current
           ) {
             lastSdkTrackUriRef.current = sdkTrackUri;
             maxSeenPosMsRef.current = 0;
-            advancingRef.current = true;
-            setTimeout(() => {
-              playNextRef.current?.();
-            }, 0);
+            triggerEndOfTrack();
             return;
           }
 
           if (sdkTrackUri) {
             lastSdkTrackUriRef.current = sdkTrackUri;
+          }
+
+          // Detect end-of-track pause near duration boundary (including after scrubbing near end)
+          const effectiveDur = sdkDur || durationMsRef.current;
+          const nearEnd =
+            effectiveDur > 0 &&
+            (sdkPos >= effectiveDur - 1500 || maxSeenPosMsRef.current >= effectiveDur - 1500);
+
+          if (state.paused && nearEnd && isPlayingRef.current && !isTogglingRef.current) {
+            triggerEndOfTrack();
+            return;
           }
 
           if (!isTogglingRef.current) {
@@ -263,7 +285,7 @@ export function PlayerProvider({ children }) {
         sdkPlayerRef.current = null;
       }
     };
-  }, [connectionEpoch]);
+  }, [connectionEpoch, triggerEndOfTrack]);
 
   const hydrateTrackArtwork = useCallback(async (trackKey, uri, existingArt) => {
     if (existingArt || !uri) return;
@@ -350,6 +372,7 @@ export function PlayerProvider({ children }) {
       };
 
       setPositionMs(0);
+      positionMsRef.current = 0;
       setDurationMs(trackDurMs || DEFAULT_TRACK.durationMs);
       setCurrentTrack(normalizedTrack);
       setIsPlaying(true);
@@ -411,11 +434,13 @@ export function PlayerProvider({ children }) {
   }, [spotifyPlayerReady]);
 
   const seekToMs = useCallback(async (targetMs) => {
-    const clamped = Math.max(0, Math.min(Math.round(targetMs), durationMs > 0 ? durationMs : Math.round(targetMs)));
+    const dur = durationMsRef.current;
+    const clamped = Math.max(0, Math.min(Math.round(targetMs), dur > 0 ? dur : Math.round(targetMs)));
     advancingRef.current = false;
     maxSeenPosMsRef.current = clamped;
     seekingLockRef.current = true;
     setPositionMs(clamped);
+    positionMsRef.current = clamped;
 
     try {
       if (sdkPlayerRef.current?.seek) {
@@ -428,7 +453,7 @@ export function PlayerProvider({ children }) {
         seekingLockRef.current = false;
       }, 300);
     }
-  }, [durationMs]);
+  }, []);
 
   const setVolume = useCallback(async (nextVolume) => {
     const clamped = Math.max(0, Math.min(1, Number(nextVolume)));
@@ -480,6 +505,7 @@ export function PlayerProvider({ children }) {
       };
 
       setPositionMs(0);
+      positionMsRef.current = 0;
       setDurationMs(trackDurMs || DEFAULT_TRACK.durationMs);
       setQueueIndex(clamped);
       setCurrentTrack(nextTrack);
@@ -506,6 +532,7 @@ export function PlayerProvider({ children }) {
     if (mode === "track") {
       maxSeenPosMsRef.current = 0;
       setPositionMs(0);
+      positionMsRef.current = 0;
       setIsPlaying(true);
       await executeSpotifyTrackPlay(currentTrackRef.current, 0);
       setTimeout(() => {
@@ -553,6 +580,7 @@ export function PlayerProvider({ children }) {
     maxSeenPosMsRef.current = 0;
     if (repeatModeRef.current === "track") {
       setPositionMs(0);
+      positionMsRef.current = 0;
       setIsPlaying(true);
       await executeSpotifyTrackPlay(currentTrackRef.current, 0);
       return;
@@ -575,27 +603,23 @@ export function PlayerProvider({ children }) {
     }
   }, [selectQueueIndex, executeSpotifyTrackPlay]);
 
-  // Live progress tick + automatic end-of-track advance/repeat once duration is reached
+  // Live progress tick + automatic end-of-track advance/repeat within 1.5s of end
   useEffect(() => {
     if (!isPlaying) return undefined;
     const interval = setInterval(() => {
       setPositionMs((prev) => {
         const dur = durationMsRef.current;
         const next = prev + 1000;
-        if (dur > 0 && next >= dur) {
-          if (!advancingRef.current) {
-            advancingRef.current = true;
-            setTimeout(() => {
-              playNextRef.current?.();
-            }, 0);
-          }
+        if (dur > 0 && next >= dur - 1500) {
+          triggerEndOfTrack();
           return dur;
         }
+        positionMsRef.current = next;
         return next;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, triggerEndOfTrack]);
 
   return (
     <PlayerContext.Provider
