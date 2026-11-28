@@ -1,20 +1,36 @@
+// src/components/MiniPlayer/MiniPlayer.jsx
+
 import React from "react";
 import { usePlayer } from "../../context/PlayerContext";
 import "./MiniPlayer.css";
 
+const formatTime = (ms) => {
+  if (!ms || ms < 0) return "0:00";
+  const totalSec = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSec / 60);
+  const secs = String(totalSec % 60).padStart(2, "0");
+  return `${mins}:${secs}`;
+};
+
 export default function MiniPlayer({ onOpenSoundBooth }) {
-  const { currentTrack, isPlaying, togglePlay } = usePlayer();
+  const { currentTrack, isPlaying, positionMs, durationMs, togglePlay } = usePlayer();
 
   const handleTogglePlay = (e) => {
-    e.stopPropagation(); // Prevents opening the SoundBooth when clicking play/pause
+    e.stopPropagation();
     togglePlay();
   };
+
+  const progressPercent =
+    durationMs > 0 ? Math.min(100, Math.max(0, (positionMs / durationMs) * 100)) : 0;
 
   return (
     <div id="mini-player-bar" onClick={onOpenSoundBooth}>
       {/* Track Progress Line */}
       <div className="mini-player-progress-track">
-        <div className="mini-player-progress-fill" style={{ width: "35%" }}></div>
+        <div
+          className="mini-player-progress-fill"
+          style={{ width: `${progressPercent}%` }}
+        ></div>
       </div>
 
       {/* Track Info */}
@@ -31,6 +47,9 @@ export default function MiniPlayer({ onOpenSoundBooth }) {
           </div>
           <div className="mini-player-artist">
             {currentTrack.artist} • <span className="mini-player-album">{currentTrack.album}</span>
+            {durationMs > 0 && (
+              <span> • {formatTime(positionMs)} / {formatTime(durationMs)}</span>
+            )}
           </div>
         </div>
       </div>

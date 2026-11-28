@@ -20,6 +20,7 @@ const DEFAULT_TRACK = {
   artist: "Fleetwood Mac",
   album: "Rumours (1977)",
   duration: "4:17",
+  durationMs: 257000,
   artworkUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400",
   uri: null
 };
@@ -57,11 +58,26 @@ const resolveSpotifyUri = (track) => {
   return null;
 };
 
+const parseDurationToMs = (track) => {
+  if (typeof track?.durationMs === "number" && track.durationMs > 0) {
+    return track.durationMs;
+  }
+  if (typeof track?.duration === "string" && track.duration.includes(":")) {
+    const [m, s] = track.duration.split(":").map(Number);
+    if (!Number.isNaN(m) && !Number.isNaN(s)) {
+      return (m * 60 + s) * 1000;
+    }
+  }
+  return 0;
+};
+
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
   const [currentTrack, setCurrentTrack] = useState(DEFAULT_TRACK);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [positionMs, setPositionMs] = useState(0);
+  const [durationMs, setDurationMs] = useState(DEFAULT_TRACK.durationMs);
   const [queueMeta, setQueueMeta] = useState(DEFAULT_QUEUE_META);
   const [queueIndex, setQueueIndex] = useState(2);
   const [lastPlaybackRoute, setLastPlaybackRoute] = useState(null);
@@ -74,6 +90,7 @@ export function PlayerProvider({ children }) {
   const deviceIdRef = useRef(null);
   const currentTrackRef = useRef(currentTrack);
   const isPlayingRef = useRef(isPlaying);
+  const isTogglingRef = useRef(false);
 
   useEffect(() => {
     currentTrackRef.current = currentTrack;
@@ -82,6 +99,20 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isPlaying) return undefined;
+    const interval = setInterval(() => {
+      setPositionMs((prev) => {
+        const next = prev + 1000;
+        if (durationMs > 0 && next >= durationMs) {
+          return durationMs;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPlaying, durationMs]);
 
   useEffect(() => {
     const onConnectionChange = () => setConnectionEpoch((prev) => prev + 1);
@@ -100,7 +131,6 @@ export function PlayerProvider({ children }) {
 
     (async () => {
       try {
-        console.log(">>> [Spotify SDK] Initializing Gapviz Web Player...");
         const player = await createSpotifySdkPlayer({ name: "Gapviz Web Player", volume: 0.8 });
         if (cancelled) {
           player.disconnect();
@@ -119,7 +149,7 @@ export function PlayerProvider({ children }) {
           try {
             await transferSpotifyPlayback(device_id, false);
           } catch (e) {
-            // Safe to ignore until user initiates playback
+            // Safe to ignore until playback starts
           }
         });
 
@@ -131,11 +161,24 @@ export function PlayerProvider({ children }) {
 
         player.addListener("player_state_changed", (state) => {
           if (cancelled || !state) return;
-          setIsPlaying(!state.paused);
+          if (!isTogglingRef.current) {
+            setIsPlaying(!state.paused);
+          }
+          if (typeof state.position === "number") {
+            setPositionMs(state.position);
+          }
+          if (typeof state.duration === "number" && state.duration > 0) {
+            setDurationMs(state.duration);
+          }
           const sdkArt = state.track_window?.current_track?.album?.images?.[0]?.url;
           if (sdkArt) {
             setCurrentTrack((prev) => ({ ...prev, artworkUrl: sdkArt }));
           }
+        });
+
+        player.addListener("playback_error", ({ message }) => {
+          console.error(">>> [Spotify SDK] Playback error:", message);
+          setPlaybackError(message);
         });
 
         player.addListener("initialization_error", ({ message }) => {
@@ -153,8 +196,7 @@ export function PlayerProvider({ children }) {
           setPlaybackError("Spotify Web Playback SDK requires an active Spotify Premium account.");
         });
 
-        const connected = await player.connect();
-        console.log(">>> [Spotify SDK] connect() result:", connected);
+        await player.connect();
       } catch (err) {
         console.error(">>> [Spotify SDK] Could not initialize:", err?.message || err);
       }
@@ -170,8 +212,7 @@ export function PlayerProvider({ children }) {
   }, [connectionEpoch]);
 
   const hydrateTrackArtwork = useCallback(async (trackKey, uri, existingArt) => {
-    if (existingArt) return;
-    if (!uri) return;
+    if (existingArt || !uri) return;
     const liveArt = await fetchSpotifyTrackArtwork(uri);
     if (liveArt) {
       setCurrentTrack((prev) =>
@@ -188,6 +229,7 @@ export function PlayerProvider({ children }) {
       artist: t.artist,
       album: t.album || "Master Vault",
       duration: t.duration || "",
+      durationMs: parseDurationToMs(t),
       artworkUrl: t.artworkUrl || DEFAULT_TRACK.artworkUrl,
       uri: resolveSpotifyUri(t) || t.uri || null,
       narrative: t.narrative || t.commentary || null,
@@ -201,6 +243,7 @@ export function PlayerProvider({ children }) {
       platform: "spotify",
       uri,
       deviceId: deviceIdRef.current,
+      positionMs: 0,
       shouldPlay: true,
       title: track?.title,
       artist: track?.artist,
@@ -210,23 +253,17 @@ export function PlayerProvider({ children }) {
     setPlaybackError(null);
     console.log(">>> [PlayerContext] Playback route:", routeInfo);
 
-    if (!uri) {
-      console.warn(">>> [PlayerContext] No Spotify URI on track; UI-only state updated.");
-      return;
-    }
+    if (!uri) return;
 
     try {
-      // Unlock browser audio output on user click gesture
       if (sdkPlayerRef.current?.activateElement) {
         await sdkPlayerRef.current.activateElement();
       }
-
-      if (deviceIdRef.current) {
-        await transferSpotifyPlayback(deviceIdRef.current, false);
-        await playSpotifyUri({ uri, deviceId: deviceIdRef.current });
-      } else {
-        await playSpotifyUri({ uri });
-      }
+      await playSpotifyUri({
+        uri,
+        deviceId: deviceIdRef.current,
+        positionMs: 0
+      });
     } catch (err) {
       console.error(">>> [PlayerContext] Spotify playback failed:", err?.message || err);
       setPlaybackError(err?.message || "Could not start Spotify playback.");
@@ -239,6 +276,7 @@ export function PlayerProvider({ children }) {
 
       const resolvedUri = resolveSpotifyUri(track) || track.uri || null;
       const trackKey = track.trackKey || track.id || Date.now();
+      const trackDurMs = parseDurationToMs(track);
       const normalizedTrack = {
         id: trackKey,
         trackKey,
@@ -246,11 +284,14 @@ export function PlayerProvider({ children }) {
         artist: track.artist || "Unknown Artist",
         album: track.album || "Master Vault",
         duration: track.duration || "",
+        durationMs: trackDurMs,
         artworkUrl: track.artworkUrl || DEFAULT_TRACK.artworkUrl,
         uri: resolvedUri,
         narrative: track.narrative || track.commentary || null
       };
 
+      setPositionMs(0);
+      setDurationMs(trackDurMs || DEFAULT_TRACK.durationMs);
       setCurrentTrack(normalizedTrack);
       setIsPlaying(true);
       hydrateTrackArtwork(trackKey, resolvedUri, track.artworkUrl);
@@ -276,6 +317,9 @@ export function PlayerProvider({ children }) {
   );
 
   const togglePlay = useCallback(async () => {
+    if (isTogglingRef.current) return;
+    isTogglingRef.current = true;
+
     const nextPlaying = !isPlayingRef.current;
     setIsPlaying(nextPlaying);
     setPlaybackError(null);
@@ -288,28 +332,21 @@ export function PlayerProvider({ children }) {
       }
 
       if (!nextPlaying) {
-        if (sdkPlayerRef.current && spotifyPlayerReady) {
-          await sdkPlayerRef.current.pause();
-        } else {
-          await pauseSpotifyPlayback(deviceIdRef.current);
-        }
+        await pauseSpotifyPlayback(deviceIdRef.current);
+      } else if (uri) {
+        await playSpotifyUri({ uri, deviceId: deviceIdRef.current });
       } else {
-        if (deviceIdRef.current) {
-          await transferSpotifyPlayback(deviceIdRef.current, false);
-        }
-        if (sdkPlayerRef.current && spotifyPlayerReady) {
-          await sdkPlayerRef.current.resume();
-        } else if (uri) {
-          await playSpotifyUri({ uri, deviceId: deviceIdRef.current });
-        } else {
-          await resumeSpotifyPlayback(deviceIdRef.current);
-        }
+        await resumeSpotifyPlayback(deviceIdRef.current);
       }
     } catch (err) {
       console.error(">>> [PlayerContext] Toggle play failed:", err?.message || err);
       setPlaybackError(err?.message || "Could not toggle Spotify playback.");
+    } finally {
+      setTimeout(() => {
+        isTogglingRef.current = false;
+      }, 250);
     }
-  }, [spotifyPlayerReady]);
+  }, []);
 
   const selectQueueIndex = useCallback(
     (nextIdx) => {
@@ -317,6 +354,7 @@ export function PlayerProvider({ children }) {
       const clamped = Math.max(0, Math.min(nextIdx, queueMeta.tracks.length - 1));
       const target = queueMeta.tracks[clamped];
       const resolvedUri = resolveSpotifyUri(target) || target.uri || null;
+      const trackDurMs = parseDurationToMs(target);
       const nextTrack = {
         id: target.id,
         trackKey: target.trackKey,
@@ -324,11 +362,14 @@ export function PlayerProvider({ children }) {
         artist: target.artist,
         album: target.album || "Master Vault",
         duration: target.duration || "",
+        durationMs: trackDurMs,
         artworkUrl: target.artworkUrl || DEFAULT_TRACK.artworkUrl,
         uri: resolvedUri,
         narrative: target.narrative || target.commentary || null
       };
 
+      setPositionMs(0);
+      setDurationMs(trackDurMs || DEFAULT_TRACK.durationMs);
       setQueueIndex(clamped);
       setCurrentTrack(nextTrack);
       hydrateTrackArtwork(nextTrack.trackKey, resolvedUri, target.artworkUrl);
@@ -372,6 +413,8 @@ export function PlayerProvider({ children }) {
         currentTrack,
         isPlaying,
         setIsPlaying,
+        positionMs,
+        durationMs,
         togglePlay,
         playTrack,
         playNext,
