@@ -13,6 +13,8 @@ import {
   fetchSpotifyTrackArtwork
 } from "../services/musicApi";
 
+const LAST_PLAYBACK_STORAGE_KEY = "gapviz_last_playback_state_v1";
+
 const DEFAULT_TRACK = {
   id: "default-dreams",
   trackKey: "default-dreams",
@@ -71,18 +73,118 @@ const parseDurationToMs = (track) => {
   return 0;
 };
 
+const loadSavedPlaybackState = () => {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(LAST_PLAYBACK_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.currentTrack) return null;
+
+    const savedTrack = {
+      ...DEFAULT_TRACK,
+      ...parsed.currentTrack,
+      durationMs: parseDurationToMs(parsed.currentTrack) || DEFAULT_TRACK.durationMs
+    };
+
+    const savedQueueMeta =
+      parsed.queueMeta && typeof parsed.queueMeta === "object" && Array.isArray(parsed.queueMeta.tracks)
+        ? {
+            name: parsed.queueMeta.name || "Library Queue",
+            platforms: Array.isArray(parsed.queueMeta.platforms) && parsed.queueMeta.platforms.length > 0
+              ? parsed.queueMeta.platforms
+              : [{ name: "Spotify", icon: "🟢" }],
+            tracks: parsed.queueMeta.tracks
+          }
+        : DEFAULT_QUEUE_META;
+
+    const savedQueueIndex =
+      typeof parsed.queueIndex === "number" && parsed.queueIndex >= 0
+        ? parsed.queueIndex
+        : 0;
+
+    return {
+      currentTrack: savedTrack,
+      durationMs: savedTrack.durationMs || DEFAULT_TRACK.durationMs,
+      queueMeta: savedQueueMeta,
+      queueIndex: savedQueueIndex
+    };
+  } catch (err) {
+    console.warn(">>> [PlayerContext] Could not read saved playback state:", err);
+    return null;
+  }
+};
+
+const persistPlaybackState = (track, qMeta, qIndex) => {
+  try {
+    if (typeof window === "undefined" || !window.localStorage || !track) return;
+    const compactTracks = Array.isArray(qMeta?.tracks)
+      ? qMeta.tracks.slice(0, 100).map((t, idx) => ({
+          id: t.id ?? t.trackKey ?? idx,
+          trackKey: t.trackKey ?? t.id ?? idx,
+          title: t.title || "Unknown Track",
+          artist: t.artist || "Unknown Artist",
+          album: t.album || "Master Vault",
+          duration: t.duration || "",
+          durationMs: parseDurationToMs(t),
+          artworkUrl: t.artworkUrl || "",
+          uri: resolveSpotifyUri(t) || t.uri || null,
+          status: t.status || "upcoming"
+        }))
+      : [];
+
+    const payload = {
+      currentTrack: {
+        id: track.id,
+        trackKey: track.trackKey,
+        title: track.title,
+        artist: track.artist,
+        album: track.album || "Master Vault",
+        duration: track.duration || "",
+        durationMs: parseDurationToMs(track),
+        artworkUrl: track.artworkUrl || DEFAULT_TRACK.artworkUrl,
+        uri: resolveSpotifyUri(track) || track.uri || null,
+        narrative: track.narrative || track.commentary || null
+      },
+      queueMeta: {
+        name: qMeta?.name || "Library Queue",
+        platforms: Array.isArray(qMeta?.platforms) && qMeta.platforms.length > 0
+          ? qMeta.platforms
+          : [{ name: "Spotify", icon: "🟢" }],
+        tracks: compactTracks
+      },
+      queueIndex: typeof qIndex === "number" ? qIndex : 0,
+      savedAt: Date.now()
+    };
+
+    window.localStorage.setItem(LAST_PLAYBACK_STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn(">>> [PlayerContext] Could not persist playback state:", err);
+  }
+};
+
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
-  const [currentTrack, setCurrentTrack] = useState(DEFAULT_TRACK);
+  const initialStateRef = useRef(null);
+  if (!initialStateRef.current) {
+    initialStateRef.current = loadSavedPlaybackState() || {
+      currentTrack: DEFAULT_TRACK,
+      durationMs: DEFAULT_TRACK.durationMs,
+      queueMeta: DEFAULT_QUEUE_META,
+      queueIndex: 2
+    };
+  }
+
+  const [currentTrack, setCurrentTrack] = useState(initialStateRef.current.currentTrack);
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
-  const [durationMs, setDurationMs] = useState(DEFAULT_TRACK.durationMs);
+  const [durationMs, setDurationMs] = useState(initialStateRef.current.durationMs);
   const [volume, setVolumeState] = useState(0.8);
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState("off"); // 'off' | 'context' | 'track'
-  const [queueMeta, setQueueMeta] = useState(DEFAULT_QUEUE_META);
-  const [queueIndex, setQueueIndex] = useState(2);
+  const [queueMeta, setQueueMeta] = useState(initialStateRef.current.queueMeta);
+  const [queueIndex, setQueueIndex] = useState(initialStateRef.current.queueIndex);
   const [lastPlaybackRoute, setLastPlaybackRoute] = useState(null);
   const [spotifyDeviceId, setSpotifyDeviceId] = useState(null);
   const [spotifyPlayerReady, setSpotifyPlayerReady] = useState(false);
@@ -137,6 +239,13 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     positionMsRef.current = positionMs;
   }, [positionMs]);
+
+  useEffect(() => {
+    if (currentTrack?.id === DEFAULT_TRACK.id && queueMeta?.name === DEFAULT_QUEUE_META.name) {
+      return;
+    }
+    persistPlaybackState(currentTrack, queueMeta, queueIndex);
+  }, [currentTrack, queueMeta, queueIndex]);
 
   const triggerEndOfTrack = useCallback(() => {
     if (advancingRef.current) return;
@@ -376,8 +485,9 @@ export function PlayerProvider({ children }) {
       setDurationMs(trackDurMs || DEFAULT_TRACK.durationMs);
       setCurrentTrack(normalizedTrack);
       setIsPlaying(true);
-      hydrateTrackArtwork(trackKey, resolvedUri, track.artworkUrl);
-      executeSpotifyTrackPlay(normalizedTrack, 0);
+
+      let nextQueueMeta = queueMetaRef.current;
+      let nextQueueIndex = queueIndexRef.current;
 
       if (Array.isArray(contextOptions.tracks) && contextOptions.tracks.length > 0) {
         const foundIdx = contextOptions.tracks.findIndex(
@@ -387,13 +497,19 @@ export function PlayerProvider({ children }) {
             (t.title === normalizedTrack.title && t.artist === normalizedTrack.artist)
         );
         const activeIdx = foundIdx >= 0 ? foundIdx : 0;
-        setQueueIndex(activeIdx);
-        setQueueMeta({
+        nextQueueIndex = activeIdx;
+        nextQueueMeta = {
           name: contextOptions.name || "Library Queue",
           platforms: contextOptions.platforms || [{ name: "Spotify", icon: "🟢" }],
           tracks: buildQueueTracks(contextOptions.tracks, activeIdx)
-        });
+        };
+        setQueueIndex(nextQueueIndex);
+        setQueueMeta(nextQueueMeta);
       }
+
+      persistPlaybackState(normalizedTrack, nextQueueMeta, nextQueueIndex);
+      hydrateTrackArtwork(trackKey, resolvedUri, track.artworkUrl);
+      executeSpotifyTrackPlay(normalizedTrack, 0);
     },
     [buildQueueTracks, executeSpotifyTrackPlay, hydrateTrackArtwork]
   );
@@ -504,16 +620,19 @@ export function PlayerProvider({ children }) {
         narrative: target.narrative || target.commentary || null
       };
 
+      const updatedQueueMeta = {
+        ...queueMetaRef.current,
+        tracks: buildQueueTracks(tracks, clamped)
+      };
+
       setPositionMs(0);
       positionMsRef.current = 0;
       setDurationMs(trackDurMs || DEFAULT_TRACK.durationMs);
       setQueueIndex(clamped);
       setCurrentTrack(nextTrack);
+      setQueueMeta(updatedQueueMeta);
+      persistPlaybackState(nextTrack, updatedQueueMeta, clamped);
       hydrateTrackArtwork(nextTrack.trackKey, resolvedUri, target.artworkUrl);
-      setQueueMeta((prev) => ({
-        ...prev,
-        tracks: buildQueueTracks(prev.tracks, clamped)
-      }));
       setIsPlaying(true);
       executeSpotifyTrackPlay(nextTrack, 0);
       setTimeout(() => {
