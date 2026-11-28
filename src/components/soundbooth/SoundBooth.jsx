@@ -200,7 +200,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
               <span key={idx} title={p.name}>{p.icon}</span>
             ))}
           </div>
-          <button className="queue-toggle-btn">
+          <button type="button" className="queue-toggle-btn">
             Track List <i className="fa-solid fa-chevron-down"></i>
           </button>
         </div>
@@ -220,13 +220,10 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
 
       {/* Interactive Track Progress Scrubber Bar */}
       <div className="soundbooth-progress-container">
-        <div
-          className="soundbooth-progress-bar"
-          style={{ position: "relative", display: "flex", alignItems: "center" }}
-        >
+        <div className="soundbooth-progress-bar">
           <div
             className="soundbooth-progress-fill"
-            style={{ width: `${progressPercent}%`, pointerEvents: "none" }}
+            style={{ width: `${progressPercent}%` }}
           ></div>
           <input
             type="range"
@@ -238,15 +235,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
             onTouchEnd={commitScrub}
             onKeyUp={commitScrub}
             aria-label="Seek track position"
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              margin: 0,
-              opacity: 0.01,
-              cursor: "pointer"
-            }}
+            className="soundbooth-scrubber-input"
           />
         </div>
         <div className="soundbooth-time-row">
@@ -257,50 +246,30 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
 
       {/* Full Playback Controls */}
       <div className="soundbooth-playback-controls">
-        <button className="soundbooth-sub-control-btn" title="Shuffle">
+        <button type="button" className="soundbooth-sub-control-btn" title="Shuffle">
           <i className="fa-solid fa-shuffle"></i>
         </button>
-        <button className="soundbooth-sub-control-btn" onClick={playPrevious} title="Previous Track">
+        <button type="button" className="soundbooth-sub-control-btn" onClick={playPrevious} title="Previous Track">
           <i className="fa-solid fa-backward-step"></i>
         </button>
-        <button className="soundbooth-main-play-btn" onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
+        <button type="button" className="soundbooth-main-play-btn" onClick={togglePlay} title={isPlaying ? "Pause" : "Play"}>
           <i className={`fa-solid ${isPlaying ? "fa-pause" : "fa-play"}`}></i>
         </button>
-        <button className="soundbooth-sub-control-btn" onClick={playNext} title="Next Track">
+        <button type="button" className="soundbooth-sub-control-btn" onClick={playNext} title="Next Track">
           <i className="fa-solid fa-forward-step"></i>
         </button>
-        <button className="soundbooth-sub-control-btn" title="Repeat">
+        <button type="button" className="soundbooth-sub-control-btn" title="Repeat">
           <i className="fa-solid fa-repeat"></i>
         </button>
       </div>
 
       {/* SoundBooth Volume Control */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          padding: "8px 16px",
-          margin: "0 auto 14px auto",
-          width: "100%",
-          maxWidth: "420px",
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "10px"
-        }}
-      >
+      <div className="soundbooth-volume-box">
         <button
           type="button"
           onClick={handleToggleMute}
           title={volume > 0 ? "Mute" : "Unmute"}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#fff",
-            cursor: "pointer",
-            fontSize: "14px",
-            padding: "4px"
-          }}
+          className="soundbooth-volume-btn"
         >
           <i
             className={`fa-solid ${
@@ -312,22 +281,24 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
             }`}
           ></i>
         </button>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          value={volumePercent}
-          onChange={handleVolumeChange}
-          aria-label="Volume"
-          style={{
-            flex: 1,
-            accentColor: "#ff3344",
-            cursor: "pointer"
-          }}
-        />
-        <span style={{ fontSize: "12px", color: "#a1a1aa", minWidth: "34px", textAlign: "right" }}>
-          {volumePercent}%
-        </span>
+        <div className="soundbooth-volume-slider-wrap">
+          <div className="soundbooth-volume-track">
+            <div
+              className="soundbooth-volume-fill"
+              style={{ width: `${volumePercent}%` }}
+            ></div>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={volumePercent}
+            onChange={handleVolumeChange}
+            aria-label="Volume"
+            className="soundbooth-volume-input"
+          />
+        </div>
+        <span className="soundbooth-volume-value">{volumePercent}%</span>
       </div>
 
       {/* Live Commentary Card with HTML5 Canvas Teleprompter & Right-Click Suppression */}
@@ -342,8 +313,8 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
           <div className="commentary-controls-right">
             <span className="soundbooth-host-tag">DJ Rude Boy</span>
             <div className="font-size-buttons">
-              <button onClick={decreaseText} title="Decrease text size" className="font-size-btn">A-</button>
-              <button onClick={increaseText} title="Increase text size" className="font-size-btn">A+</button>
+              <button type="button" onClick={decreaseText} title="Decrease text size" className="font-size-btn">A-</button>
+              <button type="button" onClick={increaseText} title="Increase text size" className="font-size-btn">A+</button>
             </div>
           </div>
         </div>
@@ -360,7 +331,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
       </div>
 
       {/* Gapviz Red Control Room Button */}
-      <button className="soundbooth-control-room-btn" onClick={onOpenControlRoom}>
+      <button type="button" className="soundbooth-control-room-btn" onClick={onOpenControlRoom}>
         <i className="fa-solid fa-sliders"></i>
         <span>🎛️ OPEN DJ CONTROL ROOM</span>
       </button>
@@ -376,7 +347,7 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
                   {queueMeta.platforms.map((p) => p.icon).join(" ")} Connected Playlist • {queueMeta.tracks.length} Tracks
                 </span>
               </div>
-              <button className="queue-close-btn" onClick={() => setIsQueueOpen(false)} title="Close Queue">
+              <button type="button" className="queue-close-btn" onClick={() => setIsQueueOpen(false)} title="Close Queue">
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
@@ -392,7 +363,6 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
                   <div
                     key={track.id}
                     className={`queue-track-item ${statusClass}`}
-                    style={{ cursor: "pointer" }}
                     onClick={() => {
                       selectQueueIndex(idx);
                       setIsQueueOpen(false);
