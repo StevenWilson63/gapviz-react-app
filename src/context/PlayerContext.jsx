@@ -101,6 +101,7 @@ export function PlayerProvider({ children }) {
   const isTogglingRef = useRef(false);
   const seekingLockRef = useRef(false);
   const lastSdkTrackUriRef = useRef(null);
+  const maxSeenPosMsRef = useRef(0);
   const advancingRef = useRef(false);
   const playNextRef = useRef(null);
 
@@ -190,6 +191,10 @@ export function PlayerProvider({ children }) {
             durationMsRef.current = sdkDur;
           }
 
+          if (sdkPos > maxSeenPosMsRef.current) {
+            maxSeenPosMsRef.current = sdkPos;
+          }
+
           if (!seekingLockRef.current && typeof state.position === "number") {
             setPositionMs(sdkPos);
           }
@@ -199,15 +204,16 @@ export function PlayerProvider({ children }) {
             setCurrentTrack((prev) => ({ ...prev, artworkUrl: sdkArt }));
           }
 
-          // Track changed inside SDK while playing -> song finished naturally
+          // Only treat a track URI switch as natural completion if playback actually progressed past 2s
           if (
             prevSdkUri &&
             sdkTrackUri &&
             prevSdkUri !== sdkTrackUri &&
-            isPlayingRef.current &&
+            maxSeenPosMsRef.current > 2000 &&
             !advancingRef.current
           ) {
             lastSdkTrackUriRef.current = sdkTrackUri;
+            maxSeenPosMsRef.current = 0;
             advancingRef.current = true;
             setTimeout(() => {
               playNextRef.current?.();
@@ -217,21 +223,6 @@ export function PlayerProvider({ children }) {
 
           if (sdkTrackUri) {
             lastSdkTrackUriRef.current = sdkTrackUri;
-          }
-
-          // SDK paused at 0 after being near/at end of track
-          if (
-            state.paused &&
-            sdkPos === 0 &&
-            sdkDur > 0 &&
-            isPlayingRef.current &&
-            !advancingRef.current
-          ) {
-            advancingRef.current = true;
-            setTimeout(() => {
-              playNextRef.current?.();
-            }, 0);
-            return;
           }
 
           if (!isTogglingRef.current) {
@@ -338,6 +329,7 @@ export function PlayerProvider({ children }) {
       if (!track) return;
 
       advancingRef.current = false;
+      maxSeenPosMsRef.current = 0;
       const resolvedUri = resolveSpotifyUri(track) || track.uri || null;
       if (resolvedUri) {
         lastSdkTrackUriRef.current = resolvedUri;
@@ -421,6 +413,7 @@ export function PlayerProvider({ children }) {
   const seekToMs = useCallback(async (targetMs) => {
     const clamped = Math.max(0, Math.min(Math.round(targetMs), durationMs > 0 ? durationMs : Math.round(targetMs)));
     advancingRef.current = false;
+    maxSeenPosMsRef.current = clamped;
     seekingLockRef.current = true;
     setPositionMs(clamped);
 
@@ -465,6 +458,7 @@ export function PlayerProvider({ children }) {
     (nextIdx) => {
       const tracks = queueMetaRef.current.tracks || [];
       if (!tracks.length) return;
+      maxSeenPosMsRef.current = 0;
       const clamped = Math.max(0, Math.min(nextIdx, tracks.length - 1));
       const target = tracks[clamped];
       const resolvedUri = resolveSpotifyUri(target) || target.uri || null;
@@ -498,7 +492,7 @@ export function PlayerProvider({ children }) {
       executeSpotifyTrackPlay(nextTrack, 0);
       setTimeout(() => {
         advancingRef.current = false;
-      }, 400);
+      }, 500);
     },
     [buildQueueTracks, executeSpotifyTrackPlay, hydrateTrackArtwork]
   );
@@ -510,12 +504,13 @@ export function PlayerProvider({ children }) {
     const currentIdx = queueIndexRef.current;
 
     if (mode === "track") {
+      maxSeenPosMsRef.current = 0;
       setPositionMs(0);
       setIsPlaying(true);
       await executeSpotifyTrackPlay(currentTrackRef.current, 0);
       setTimeout(() => {
         advancingRef.current = false;
-      }, 400);
+      }, 500);
       return;
     }
 
@@ -545,7 +540,7 @@ export function PlayerProvider({ children }) {
     } finally {
       setTimeout(() => {
         advancingRef.current = false;
-      }, 400);
+      }, 500);
     }
   }, [selectQueueIndex, executeSpotifyTrackPlay]);
 
@@ -555,6 +550,7 @@ export function PlayerProvider({ children }) {
 
   const playPrevious = useCallback(async () => {
     advancingRef.current = false;
+    maxSeenPosMsRef.current = 0;
     if (repeatModeRef.current === "track") {
       setPositionMs(0);
       setIsPlaying(true);
@@ -579,7 +575,7 @@ export function PlayerProvider({ children }) {
     }
   }, [selectQueueIndex, executeSpotifyTrackPlay]);
 
-  // Live progress tick + automatic end-of-track advance/repeat
+  // Live progress tick + automatic end-of-track advance/repeat once duration is reached
   useEffect(() => {
     if (!isPlaying) return undefined;
     const interval = setInterval(() => {
