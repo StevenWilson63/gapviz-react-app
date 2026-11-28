@@ -1,4 +1,3 @@
-
 // src/context/PlayerContext.jsx
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
@@ -79,6 +78,7 @@ export function PlayerProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(DEFAULT_TRACK.durationMs);
+  const [volume, setVolumeState] = useState(0.8);
   const [queueMeta, setQueueMeta] = useState(DEFAULT_QUEUE_META);
   const [queueIndex, setQueueIndex] = useState(2);
   const [lastPlaybackRoute, setLastPlaybackRoute] = useState(null);
@@ -92,6 +92,7 @@ export function PlayerProvider({ children }) {
   const currentTrackRef = useRef(currentTrack);
   const isPlayingRef = useRef(isPlaying);
   const isTogglingRef = useRef(false);
+  const seekingLockRef = useRef(false);
 
   useEffect(() => {
     currentTrackRef.current = currentTrack;
@@ -132,7 +133,7 @@ export function PlayerProvider({ children }) {
 
     (async () => {
       try {
-        const player = await createSpotifySdkPlayer({ name: "Gapviz Web Player", volume: 0.8 });
+        const player = await createSpotifySdkPlayer({ name: "Gapviz Web Player", volume });
         if (cancelled) {
           player.disconnect();
           return;
@@ -165,7 +166,7 @@ export function PlayerProvider({ children }) {
           if (!isTogglingRef.current) {
             setIsPlaying(!state.paused);
           }
-          if (typeof state.position === "number") {
+          if (!seekingLockRef.current && typeof state.position === "number") {
             setPositionMs(state.position);
           }
           if (typeof state.duration === "number" && state.duration > 0) {
@@ -351,6 +352,36 @@ export function PlayerProvider({ children }) {
     }
   }, [spotifyPlayerReady]);
 
+  const seekToMs = useCallback(async (targetMs) => {
+    const clamped = Math.max(0, Math.min(Math.round(targetMs), durationMs > 0 ? durationMs : Math.round(targetMs)));
+    seekingLockRef.current = true;
+    setPositionMs(clamped);
+
+    try {
+      if (sdkPlayerRef.current?.seek) {
+        await sdkPlayerRef.current.seek(clamped);
+      }
+    } catch (err) {
+      console.error(">>> [PlayerContext] Seek failed:", err?.message || err);
+    } finally {
+      setTimeout(() => {
+        seekingLockRef.current = false;
+      }, 300);
+    }
+  }, [durationMs]);
+
+  const setVolume = useCallback(async (nextVolume) => {
+    const clamped = Math.max(0, Math.min(1, Number(nextVolume)));
+    setVolumeState(clamped);
+    try {
+      if (sdkPlayerRef.current?.setVolume) {
+        await sdkPlayerRef.current.setVolume(clamped);
+      }
+    } catch (err) {
+      console.error(">>> [PlayerContext] Volume update failed:", err?.message || err);
+    }
+  }, []);
+
   const selectQueueIndex = useCallback(
     (nextIdx) => {
       if (!queueMeta.tracks.length) return;
@@ -418,6 +449,9 @@ export function PlayerProvider({ children }) {
         setIsPlaying,
         positionMs,
         durationMs,
+        volume,
+        setVolume,
+        seekToMs,
         togglePlay,
         playTrack,
         playNext,

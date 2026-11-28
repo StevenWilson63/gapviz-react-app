@@ -97,6 +97,9 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
     isPlaying,
     positionMs,
     durationMs,
+    volume,
+    setVolume,
+    seekToMs,
     togglePlay,
     playNext,
     playPrevious,
@@ -106,6 +109,8 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
 
   const [commentaryFontSize, setCommentaryFontSize] = useState(15);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubMs, setScrubMs] = useState(0);
 
   const currentScriptText = getCommentaryText(currentTrack);
 
@@ -124,7 +129,25 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   };
 
   const effectiveDuration = durationMs > 0 ? durationMs : 257000;
-  const progressPercent = Math.min(100, Math.max(0, (positionMs / effectiveDuration) * 100));
+  const activePositionMs = isScrubbing ? scrubMs : positionMs;
+  const progressPercent = Math.min(100, Math.max(0, (activePositionMs / effectiveDuration) * 100));
+
+  const handleScrubChange = (e) => {
+    setIsScrubbing(true);
+    setScrubMs(Number(e.target.value));
+  };
+
+  const commitScrub = (e) => {
+    const nextVal = Number(e.target.value);
+    setIsScrubbing(false);
+    seekToMs(nextVal);
+  };
+
+  const handleVolumeChange = (e) => {
+    setVolume(Number(e.target.value) / 100);
+  };
+
+  const volumePercent = Math.round(volume * 100);
 
   return (
     <div className="soundbooth-overlay">
@@ -174,13 +197,39 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         <p className="soundbooth-album">Album: {currentTrack.album}</p>
       </div>
 
-      {/* Track Progress Scrubber Bar */}
+      {/* Interactive Track Progress Scrubber Bar */}
       <div className="soundbooth-progress-container">
-        <div className="soundbooth-progress-bar">
-          <div className="soundbooth-progress-fill" style={{ width: `${progressPercent}%` }}></div>
+        <div
+          className="soundbooth-progress-bar"
+          style={{ position: "relative", display: "flex", alignItems: "center" }}
+        >
+          <div
+            className="soundbooth-progress-fill"
+            style={{ width: `${progressPercent}%`, pointerEvents: "none" }}
+          ></div>
+          <input
+            type="range"
+            min={0}
+            max={effectiveDuration}
+            value={Math.min(effectiveDuration, Math.max(0, activePositionMs))}
+            onChange={handleScrubChange}
+            onMouseUp={commitScrub}
+            onTouchEnd={commitScrub}
+            onKeyUp={commitScrub}
+            aria-label="Seek track position"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              margin: 0,
+              opacity: 0.01,
+              cursor: "pointer"
+            }}
+          />
         </div>
         <div className="soundbooth-time-row">
-          <span>{formatTime(positionMs)}</span>
+          <span>{formatTime(activePositionMs)}</span>
           <span>{durationMs > 0 ? formatTime(durationMs) : currentTrack.duration || "4:17"}</span>
         </div>
       </div>
@@ -202,6 +251,62 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         <button className="soundbooth-sub-control-btn" title="Repeat">
           <i className="fa-solid fa-repeat"></i>
         </button>
+      </div>
+
+      {/* SoundBooth Volume Control */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "8px 16px",
+          margin: "0 auto 14px auto",
+          width: "100%",
+          maxWidth: "420px",
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: "10px"
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
+          title={volume > 0 ? "Mute" : "Unmute"}
+          style={{
+            background: "none",
+            border: "none",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: "14px",
+            padding: "4px"
+          }}
+        >
+          <i
+            className={`fa-solid ${
+              volumePercent === 0
+                ? "fa-volume-xmark"
+                : volumePercent < 50
+                ? "fa-volume-low"
+                : "fa-volume-high"
+            }`}
+          ></i>
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={volumePercent}
+          onChange={handleVolumeChange}
+          aria-label="Volume"
+          style={{
+            flex: 1,
+            accentColor: "#ff3344",
+            cursor: "pointer"
+          }}
+        />
+        <span style={{ fontSize: "12px", color: "#a1a1aa", minWidth: "34px", textAlign: "right" }}>
+          {volumePercent}%
+        </span>
       </div>
 
       {/* Live Commentary Card with HTML5 Canvas Teleprompter & Right-Click Suppression */}
