@@ -53,8 +53,19 @@ const GAPVIZ_RED = "#ff3344";
 const GAPVIZ_RED_ACTIVE = "#e01e2f";
 const BACK_TO_TOP_THRESHOLD = 260;
 
+const isSameTrack = (a, b) => {
+  if (!a || !b) return false;
+  if (a.trackKey && b.trackKey && a.trackKey === b.trackKey) return true;
+  if (a.uri && b.uri && a.uri === b.uri) return true;
+  if (a.id && b.id && String(a.id) === String(b.id)) return true;
+  return (
+    (a.title || "").toLowerCase() === (b.title || "").toLowerCase() &&
+    (a.artist || "").toLowerCase() === (b.artist || "").toLowerCase()
+  );
+};
+
 export default function Library() {
-  const { playTrack } = usePlayer();
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
 
   const [activeTab, setActiveTab] = useState("playlists");
   const [searchQuery, setSearchQuery] = useState("");
@@ -868,43 +879,56 @@ export default function Library() {
               {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
                 (() => {
                   const sortedTracks = getSortedPlaylistTracks();
-                  return sortedTracks.map((track, idx) => (
-                    <div
-                      key={`${track.trackKey}-${idx}`}
-                      className="library-row-item"
-                      onClick={() =>
-                        playTrack(track, {
-                          name: selectedPlaylist.name,
-                          platforms: [{ name: "Spotify", icon: "🟢" }],
-                          tracks: sortedTracks
-                        })
-                      }
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                    >
-                      <div className="row-item-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        <span className="row-platform">🟢</span>
-                        <div className="row-text-group">
-                          <span className="row-song-title">{track.title}</span>
-                          <span className="row-song-artist">{track.artist} • <span style={{ color: "#a1a1aa" }}>{track.album}</span></span>
+                  return sortedTracks.map((track, idx) => {
+                    const isCurrent = isSameTrack(track, currentTrack);
+                    return (
+                      <div
+                        key={`${track.trackKey}-${idx}`}
+                        className={`library-row-item ${isCurrent ? "vault-track-current" : ""}`}
+                        onClick={() =>
+                          playTrack(track, {
+                            name: selectedPlaylist.name,
+                            platforms: [{ name: "Spotify", icon: "🟢" }],
+                            tracks: sortedTracks
+                          })
+                        }
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                      >
+                        <div className="row-item-left" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span className="row-platform">🟢</span>
+                          <div className="row-text-group">
+                            <span className="row-song-title">{track.title}</span>
+                            <span className="row-song-artist">{track.artist} • <span style={{ color: "#a1a1aa" }}>{track.album}</span></span>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          {isCurrent && (
+                            <span className="vault-track-status-badge status-current">
+                              <span className={`equalizer-bars ${isPlaying ? "is-animating" : ""}`} aria-hidden="true">
+                                <span className="eq-bar eq-bar-1"></span>
+                                <span className="eq-bar eq-bar-2"></span>
+                                <span className="eq-bar eq-bar-3"></span>
+                              </span>
+                              <span>Now Playing</span>
+                            </span>
+                          )}
+                          <span className="row-duration">{track.duration}</span>
+                          {selectedPlaylist.isCustom && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveTrackFromCurrentPlaylist(track.trackKey);
+                              }}
+                              style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer" }}
+                              title="Remove from playlist"
+                            >
+                              <i className="fa-solid fa-xmark"></i>
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        <span className="row-duration">{track.duration}</span>
-                        {selectedPlaylist.isCustom && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveTrackFromCurrentPlaylist(track.trackKey);
-                            }}
-                            style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer" }}
-                            title="Remove from playlist"
-                          >
-                            <i className="fa-solid fa-xmark"></i>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ));
+                    );
+                  });
                 })()
               ) : (
                 <p style={{ color: "#aaa" }}>No tracks in this playlist yet. Click "Add Tracks" above to select and batch-add songs.</p>

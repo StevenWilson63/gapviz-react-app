@@ -1,3 +1,5 @@
+/* library.css */
+
 .library-screen {
   min-height: calc(100vh - 70px);
   background-color: #0b0b0b;
@@ -452,6 +454,86 @@
   border-color: #ff1a1a;
   box-shadow: 0 0 0 3px rgba(255, 26, 26, 0.25);
   transform: scale(0.99);
+}
+
+.library-row-item.vault-track-current {
+  border-color: #ff1a1a;
+  background-color: rgba(255, 26, 26, 0.1);
+}
+
+.library-row-item.vault-track-current .row-song-title {
+  color: #ff1a1a;
+}
+
+.vault-track-status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.vault-track-status-badge.status-current {
+  color: #ffffff;
+  background-color: #ff1a1a;
+}
+
+.equalizer-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+}
+
+.eq-bar {
+  width: 2.5px;
+  height: 4px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  transition: height 0.2s ease;
+}
+
+.eq-bar-1 {
+  height: 5px;
+}
+
+.eq-bar-2 {
+  height: 10px;
+}
+
+.eq-bar-3 {
+  height: 7px;
+}
+
+.equalizer-bars.is-animating .eq-bar-1 {
+  animation: eqBounce1 0.7s ease-in-out infinite;
+}
+
+.equalizer-bars.is-animating .eq-bar-2 {
+  animation: eqBounce2 0.55s ease-in-out infinite;
+}
+
+.equalizer-bars.is-animating .eq-bar-3 {
+  animation: eqBounce3 0.65s ease-in-out infinite;
+}
+
+@keyframes eqBounce1 {
+  0%, 100% { height: 3px; }
+  50% { height: 11px; }
+}
+
+@keyframes eqBounce2 {
+  0%, 100% { height: 10px; }
+  50% { height: 4px; }
+}
+
+@keyframes eqBounce3 {
+  0%, 100% { height: 5px; }
+  50% { height: 11px; }
 }
 
 .row-item-left {
