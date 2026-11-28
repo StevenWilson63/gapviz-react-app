@@ -100,6 +100,10 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
     volume,
     setVolume,
     seekToMs,
+    isShuffled,
+    repeatMode,
+    toggleShuffle,
+    cycleRepeatMode,
     togglePlay,
     playNext,
     playPrevious,
@@ -169,6 +173,12 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
   };
 
   const volumePercent = Math.round(volume * 100);
+  const repeatTitle =
+    repeatMode === "track"
+      ? "Repeat: Current Track"
+      : repeatMode === "context"
+      ? "Repeat: Queue / Playlist"
+      : "Repeat: Off";
 
   return (
     <div className="soundbooth-overlay">
@@ -246,7 +256,22 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
 
       {/* Full Playback Controls */}
       <div className="soundbooth-playback-controls">
-        <button type="button" className="soundbooth-sub-control-btn" title="Shuffle">
+        <button
+          type="button"
+          className={`soundbooth-sub-control-btn ${isShuffled ? "active" : ""}`}
+          onClick={toggleShuffle}
+          title={isShuffled ? "Shuffle: On" : "Shuffle: Off"}
+          aria-pressed={isShuffled}
+          style={
+            isShuffled
+              ? {
+                  borderColor: "#ff1a1a",
+                  color: "#ff1a1a",
+                  backgroundColor: "rgba(255, 26, 26, 0.14)"
+                }
+              : undefined
+          }
+        >
           <i className="fa-solid fa-shuffle"></i>
         </button>
         <button type="button" className="soundbooth-sub-control-btn" onClick={playPrevious} title="Previous Track">
@@ -258,8 +283,39 @@ export default function SoundBooth({ isOpen, onClose, onOpenControlRoom }) {
         <button type="button" className="soundbooth-sub-control-btn" onClick={playNext} title="Next Track">
           <i className="fa-solid fa-forward-step"></i>
         </button>
-        <button type="button" className="soundbooth-sub-control-btn" title="Repeat">
+        <button
+          type="button"
+          className={`soundbooth-sub-control-btn ${repeatMode !== "off" ? "active" : ""}`}
+          onClick={cycleRepeatMode}
+          title={repeatTitle}
+          aria-pressed={repeatMode !== "off"}
+          style={
+            repeatMode !== "off"
+              ? {
+                  borderColor: "#ff1a1a",
+                  color: "#ff1a1a",
+                  backgroundColor: "rgba(255, 26, 26, 0.14)",
+                  position: "relative"
+                }
+              : { position: "relative" }
+          }
+        >
           <i className="fa-solid fa-repeat"></i>
+          {repeatMode === "track" && (
+            <span
+              style={{
+                position: "absolute",
+                top: "3px",
+                right: "5px",
+                fontSize: "9px",
+                fontWeight: 700,
+                lineHeight: 1,
+                color: "#ff1a1a"
+              }}
+            >
+              1
+            </span>
+          )}
         </button>
       </div>
 

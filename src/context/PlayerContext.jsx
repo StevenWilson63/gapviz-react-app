@@ -79,6 +79,8 @@ export function PlayerProvider({ children }) {
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(DEFAULT_TRACK.durationMs);
   const [volume, setVolumeState] = useState(0.8);
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [repeatMode, setRepeatMode] = useState("off"); // 'off' | 'context' | 'track'
   const [queueMeta, setQueueMeta] = useState(DEFAULT_QUEUE_META);
   const [queueIndex, setQueueIndex] = useState(2);
   const [lastPlaybackRoute, setLastPlaybackRoute] = useState(null);
@@ -382,6 +384,18 @@ export function PlayerProvider({ children }) {
     }
   }, []);
 
+  const toggleShuffle = useCallback(() => {
+    setIsShuffled((prev) => !prev);
+  }, []);
+
+  const cycleRepeatMode = useCallback(() => {
+    setRepeatMode((prev) => {
+      if (prev === "off") return "context";
+      if (prev === "context") return "track";
+      return "off";
+    });
+  }, []);
+
   const selectQueueIndex = useCallback(
     (nextIdx) => {
       if (!queueMeta.tracks.length) return;
@@ -418,28 +432,63 @@ export function PlayerProvider({ children }) {
   );
 
   const playNext = useCallback(async () => {
-    if (queueIndex < queueMeta.tracks.length - 1) {
-      selectQueueIndex(queueIndex + 1);
+    if (repeatMode === "track") {
+      setPositionMs(0);
+      executeSpotifyTrackPlay(currentTrackRef.current);
       return;
     }
+
+    if (queueMeta.tracks.length > 0) {
+      if (isShuffled && queueMeta.tracks.length > 1) {
+        const candidates = queueMeta.tracks
+          .map((_, idx) => idx)
+          .filter((idx) => idx !== queueIndex);
+        const randomIdx = candidates[Math.floor(Math.random() * candidates.length)];
+        selectQueueIndex(randomIdx);
+        return;
+      }
+
+      if (queueIndex < queueMeta.tracks.length - 1) {
+        selectQueueIndex(queueIndex + 1);
+        return;
+      }
+
+      if (repeatMode === "context") {
+        selectQueueIndex(0);
+        return;
+      }
+    }
+
     try {
       await nextSpotifyTrack(deviceIdRef.current);
     } catch (err) {
       console.error(">>> [PlayerContext] Next track failed:", err?.message || err);
     }
-  }, [queueIndex, queueMeta.tracks.length, selectQueueIndex]);
+  }, [repeatMode, queueMeta.tracks, isShuffled, queueIndex, selectQueueIndex, executeSpotifyTrackPlay]);
 
   const playPrevious = useCallback(async () => {
+    if (repeatMode === "track") {
+      setPositionMs(0);
+      executeSpotifyTrackPlay(currentTrackRef.current);
+      return;
+    }
+
     if (queueIndex > 0) {
       selectQueueIndex(queueIndex - 1);
       return;
     }
+
+    if (repeatMode === "context" && queueMeta.tracks.length > 0) {
+      selectQueueIndex(queueMeta.tracks.length - 1);
+      return;
+    }
+
     try {
       await previousSpotifyTrack(deviceIdRef.current);
     } catch (err) {
       console.error(">>> [PlayerContext] Previous track failed:", err?.message || err);
     }
-  }, [queueIndex, selectQueueIndex]);
+  }, [repeatMode, queueIndex, selectQueueIndex, queueMeta.tracks.length, executeSpotifyTrackPlay]);
 
   return (
     <PlayerContext.Provider
@@ -452,6 +501,10 @@ export function PlayerProvider({ children }) {
         volume,
         setVolume,
         seekToMs,
+        isShuffled,
+        repeatMode,
+        toggleShuffle,
+        cycleRepeatMode,
         togglePlay,
         playTrack,
         playNext,
